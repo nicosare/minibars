@@ -1397,13 +1397,38 @@ function fallbackCopy(text) {
     
     return t;
 }
-        function addAccise(text) { if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => { const conv = convertLayout(p);
+        function addAccise(text) {
+    if (!text || !text.trim()) return;
+    const parts = text.split(/[\s\n]+/).filter(Boolean);
+
+    parts.forEach(p => {
+        const conv = convertLayout(p);
+
         // Проверка на дубликаты
         if (appData.accises.some(x => x.text === conv)) {
             alert("Такой акциз уже добавлен");
             return;
-        } const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); renderAcciseItem(item); saveDebounced(); }); updateAcciseStats(); }
-        function renderAcciseItem(a) { const list = $('#accises-list'); const el = document.createElement('div'); el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid'); el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; background:var(--card)'; el.innerHTML = `<div><div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div><small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small></div><div class="accise-actions"><button class="btn ghost small accise-remove" title="Удалить"><i class="fas fa-trash"></i></button></div>`; el.querySelector('.accise-remove').addEventListener('click', () => { appData.accises = appData.accises.filter(x => x.id !== a.id); el.remove(); updateAcciseStats(); saveDebounced(); }); list.prepend(el); }
+        }
+
+        const isValid = conv.length >= 20 && /^\d/.test(conv);
+        const item = {
+            id: Date.now() + Math.random(),
+            text: conv,
+            isValid,
+            ts: new Date().toISOString()
+        };
+
+        // Добавляем в начало массива
+        appData.accises.unshift(item);
+    });
+
+    // Сохраняем в локал и Firebase
+    saveDebounced();
+
+    // Перерисовываем весь список один раз
+    updateUIFromData();
+}
+function renderAcciseItem(a) { const list = $('#accises-list'); const el = document.createElement('div'); el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid'); el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; background:var(--card)'; el.innerHTML = `<div><div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div><small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small></div><div class="accise-actions"><button class="btn ghost small accise-remove" title="Удалить"><i class="fas fa-trash"></i></button></div>`; el.querySelector('.accise-remove').addEventListener('click', () => { appData.accises = appData.accises.filter(x => x.id !== a.id); el.remove(); updateAcciseStats(); saveDebounced(); }); list.prepend(el); }
         function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
         /* ===== ROOMS & MODAL (unchanged) ===== */
