@@ -760,6 +760,253 @@
     border: 2px solid #e53e3e;   /* красная рамка */
 }
 
+
+/* ==== ADDED: Mobile top header and burger menu ==== */
+.mb-header{display:none;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);box-shadow:var(--shadow-sm);border-radius:12px;margin-bottom:12px;position:sticky;top:0;z-index:3000;width:100%;}
+.mb-burger-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);line-height:1;}
+.mb-burger-menu{display:none;position:absolute;top:60px;left:12px;background:var(--card);border-radius:12px;box-shadow:var(--shadow-sm);padding:10px;width:190px;flex-direction:column;gap:8px;z-index:3500;}
+.mb-burger-menu.show{display:flex;}
+.mb-burger-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--muted);transition:background var(--transition);}
+.mb-burger-item:hover{background:rgba(39,103,73,0.08);color:var(--primary-strong);}
+.mb-header .right{display:flex;align-items:center;gap:8px;}
+/* Only show header on mobile (nav hidden there already) */
+@media (max-width:920px){ .mb-header{display:flex;} }
+/* extra desktop nav items look like native nav items */
+.nav .nav-item.extra{opacity:0.9}
+/* New sections base */
+.page-section{display:none;}
+.page-section.show{display:block;}
+
+
+/* ==== Separators between nav sections on desktop ==== */
+.nav-separator {
+    height: 1px;
+    margin: 6px 0;
+    background: rgba(15, 23, 36, 0.06);
+    width: 100%;
+}
+
+
+/* ==== Mobile burger button improved ==== */
+.mb-burger-btn {
+    font-size: 24px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background var(--transition);
+    background-color: transparent;
+}
+.mb-burger-btn:hover {
+    background: rgba(39,103,73,0.08);
+}
+/* Sync indicator align right in header */
+.mb-header .right {
+    margin-left: auto;
+}
+
+
+/* ==== Fix bottom nav tab alignment on mobile ==== */
+#bottomNav {
+    display: flex;
+    justify-content: space-around !important;
+    align-items: center;
+    padding: 0 4px;
+}
+#bottomNav .nav-item {
+    flex: 1;
+    text-align: center;
+}
+
+
+/* === Mobile fixes (requested) === */
+@media (max-width: 920px) {
+    /* Move the green connection dot to the RIGHT inside the mobile header */
+    #mbHeaderRight .mobile-connection-indicator {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        margin-left: 8px;
+        display: inline-block;
+    }
+    /* Bottom tab: make items perfectly even and centered */
+    .bottom-nav {
+        padding-top: 8px !important; /* remove extra space that was reserved for the dot */
+        justify-content: space-between !important;
+    }
+    .bottom-nav .b-item {
+        flex: 1 1 0;
+        text-align: center;
+    }
+}
+
+
+/* Скрываем нижний таб на десктопах */
+@media (min-width: 921px) {
+    #bottomNav {
+        display: none !important;
+    }
+}
+
+
+/* Заголовок активной страницы в центре мобильной шапки */
+@media (max-width: 920px) {
+    #pageTitle {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        pointer-events: none;
+    }
+}
+
+
+/* === Фиксированная мобильная шапка === */
+@media (max-width: 920px) {
+    header, .mb-header, .mobile-header {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+    body {
+        padding-top: 60px !important;
+    }
+}
+
+
+/* === Фиксированное левое меню на десктопе === */
+@media (min-width: 921px) {
+    nav, .sidebar, .tabs-left, .left-menu, .left-nav {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        background-color: var(--bg, #fff);
+        z-index: 999;
+    }
+    main, .main-content, .content, .page-container {
+        margin-left: 240px !important; /* ширина левого меню */
+    }
+}
+
+
+/* === Мобильная шапка как нижний таб === */
+@media (max-width: 920px) {
+    .mb-header, header, .mobile-header {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: #fff;
+        border-radius: 16px;
+        margin: 8px 12px;
+        padding: 10px 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Контент под шапкой */
+    body {
+        padding-top: 76px !important; /* учитываем margin + padding шапки */
+    }
+}
+
+
+/* === Фиксированное аккуратное левое меню === */
+@media (min-width: 921px) {
+    nav, .sidebar, .tabs-left, .left-menu, .left-nav {
+        position: fixed !important;
+        top: 16px;
+        left: 16px;
+        width: 220px;
+        height: calc(100vh - 32px);
+        overflow-y: auto;
+        background-color: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 10px 0;
+        z-index: 999;
+    }
+
+    /* Контент сдвигаем на ширину меню + отступы */
+    main, .main-content, .content, .page-container {
+        margin-left: 252px !important;
+        padding: 16px;
+    }
+}
+
+
+/* === Нижний таб в едином стиле с шапкой === */
+@media (max-width: 920px) {
+    #bottomNav {
+        background-color: #fff;
+        border-radius: 16px;
+        margin: 8px 12px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+}
+
+
+/* === Фиксированная мобильная шапка без вылезания за границы === */
+@media (max-width: 920px) {
+    .mb-header, header, .mobile-header {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: #fff;
+        border-radius: 16px;
+        padding: 10px 14px;
+        margin: 8px auto 0 auto;
+        max-width: calc(100% - 24px); /* предотвращает вылезание за границы */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Контент под шапкой */
+    body {
+        padding-top: 76px !important;
+    }
+
+    /* Нижний таб тоже ограничиваем по ширине и центруем */
+    #bottomNav {
+        background-color: #fff;
+        border-radius: 16px;
+        margin: 0 auto 8px auto;
+        max-width: calc(100% - 24px);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+}
+
+
+/* === Левое меню с симметричными отступами === */
+@media (min-width: 921px) {
+    nav, .sidebar, .tabs-left, .left-menu, .left-nav {
+        position: fixed !important;
+        top: 24px;
+        left: 24px;
+        width: 220px;
+        height: calc(100vh - 48px);
+        overflow-y: auto;
+        background-color: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 10px 0;
+        z-index: 999;
+    }
+
+    /* Основной контент отступает на ширину меню + одинаковый зазор */
+    main, .main-content, .content, .page-container {
+        margin-left: calc(220px + 24px + 24px) !important;
+        padding: 24px;
+        margin-top: 24px;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -770,8 +1017,16 @@
             <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
             <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
             <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
+            <div class="nav-separator"></div>
+            <!-- ADDED: extra desktop tabs (above connection status) -->
+            <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
+            <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+            <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+
+
             
-            <!-- Desktop connection status -->
+            <div class="nav-separator"></div>
+<!-- Desktop connection status -->
             <div id="connectionStatus" class="connection-status disconnected">
                 <span class="dot"></span>
                 <span class="text">Соединение...</span>
@@ -779,6 +1034,20 @@
         </nav>
 
         <main class="content" id="main-content">
+
+            <!-- ADDED: Mobile top header (burger + sync) -->
+            <div class="mb-header" id="mbHeader">
+                <button id="mbBurgerBtn" class="mb-burger-btn" aria-label="Открыть меню">☰</button>
+                <div class="right" id="mbHeaderRight">
+                    <!-- сюда перенесём #mobileConnectionIndicator на мобильной ширине -->
+                </div>
+                <div id="mbBurgerMenu" class="mb-burger-menu" role="menu">
+                    <div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
+                    <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+                    <div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+                </div>
+            </div>
+
             <div class="card" id="accises-section">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                    <div>
@@ -832,7 +1101,30 @@
 
                 <div id="gih-records" class="gih-records"></div>
             </div>
-        </main>
+        
+            <!-- ADDED: new page sections -->
+            <div class="card page-section" id="settings-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-weight:700;font-size:16px">Настройки</div>
+                </div>
+                <div class="muted">Раздел находится в разработке.</div>
+            </div>
+
+            <div class="card page-section" id="learning-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-weight:700;font-size:16px">Обучение</div>
+                </div>
+                <div class="muted">Раздел находится в разработке.</div>
+            </div>
+
+            <div class="card page-section" id="practice-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-weight:700;font-size:16px">Практика</div>
+                </div>
+                <div class="muted">Раздел находится в разработке.</div>
+            </div>
+
+</main>
     </div>
 
     <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
@@ -1607,6 +1899,149 @@ function fallbackCopy(text) {
                 $$('#bottomNav .b-item').forEach(el => { el.setAttribute('tabindex', '0'); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); el.click(); } }); });
             } catch (e) {}
         })();
-    </script>
+    
+// ==== ADDED: extend tab logic + burger + move mobile indicator ====
+(function(){
+    const $ = (s, r=document) => r.querySelector(s);
+    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+    // Extend showTab to include new sections
+    const originalShowTab = window.showTab;
+    window.showTab = function(tab){
+        try {
+            // hide new sections
+            ['settings','learning','practice'].forEach(t => {
+                const el = $('#' + t + '-section');
+                if (el) el.classList.remove('show'), el.classList.add('hidden');
+            });
+        } catch(e){}
+        // call original
+        if (typeof originalShowTab === 'function') originalShowTab(tab);
+        // show new section if matched
+        if (['settings','learning','practice'].includes(tab)) {
+            // hide base sections
+            ['accises','sroki','gih'].forEach(t => {
+                const el = $('#' + t + '-section');
+                if (el) el.classList.add('hidden');
+            });
+            // show our section
+            const target = $('#' + tab + '-section');
+            if (target) target.classList.add('show'), target.classList.remove('hidden');
+        }
+        try { document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' }); } catch(e){}
+    };
+
+    // Burger interactions
+    const burgerBtn = $('#mbBurgerBtn');
+    const burgerMenu = $('#mbBurgerMenu');
+    if (burgerBtn && burgerMenu){
+        burgerBtn.addEventListener('click', () => burgerMenu.classList.toggle('show'));
+        document.addEventListener('click', (e) => {
+            if (!burgerMenu.contains(e.target) && !burgerBtn.contains(e.target)) burgerMenu.classList.remove('show');
+        });
+        $$('.mb-burger-item').forEach(it => {
+            it.addEventListener('click', () => {
+                const tab = it.dataset.tab;
+                burgerMenu.classList.remove('show');
+                if (window.showTab) window.showTab(tab);
+                if (typeof syncTopNav === 'function') syncTopNav(tab);
+            });
+        });
+    }
+
+    // Move mobile connection indicator (#mobileConnectionIndicator) into header on mobile; return on desktop
+    const mobInd = document.getElementById('mobileConnectionIndicator');
+    const headerRight = document.getElementById('mbHeaderRight');
+    const bottomNav = document.getElementById('bottomNav');
+    let placeholder = null;
+
+    function moveIndicatorIfNeeded(){
+        if (!mobInd || !headerRight) return;
+        if (window.innerWidth <= 920) {
+            if (!placeholder) {
+                placeholder = document.createElement('span');
+                placeholder.id = 'mobileIndicatorPlaceholder';
+                if (mobInd.parentNode) mobInd.parentNode.insertBefore(placeholder, mobInd);
+            }
+            headerRight.appendChild(mobInd); // move into header (right side)
+        } else {
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(mobInd, placeholder);
+            } else if (bottomNav) {
+                bottomNav.insertBefore(mobInd, bottomNav.firstChild);
+            }
+        }
+    }
+    window.addEventListener('resize', moveIndicatorIfNeeded);
+    document.addEventListener('DOMContentLoaded', moveIndicatorIfNeeded);
+    // also call immediately in case this runs late
+    try { moveIndicatorIfNeeded(); } catch(e){}
+})();
+
+</script>
+<script>
+// === Обновление заголовка активной страницы в мобильной шапке ===
+(function() {
+    const pageTitle = document.getElementById('pageTitle');
+    if (!pageTitle) return;
+
+    const tabTitles = {
+        excises: 'Акцизы',
+        deadlines: 'Сроки',
+        gih: 'GIH',
+        settings: 'Настройки',
+        learning: 'Обучение',
+        practice: 'Практика'
+    };
+
+    const origShowTab = window.showTab;
+    window.showTab = function(tabName) {
+        if (origShowTab) origShowTab(tabName);
+        if (tabTitles[tabName]) {
+            pageTitle.textContent = tabTitles[tabName];
+        } else {
+            pageTitle.textContent = '';
+        }
+    };
+})();
+</script>
+<script>
+// === Фикс перекрытия верхнего блока шапкой ===
+(function() {
+    const header = document.querySelector('header, .mb-header, .mobile-header');
+    const headerHeight = header ? header.offsetHeight : 0;
+
+    const origShowTab = window.showTab;
+    window.showTab = function(tabName) {
+        if (origShowTab) origShowTab(tabName);
+        // Прокрутка так, чтобы шапка не перекрывала контент
+        setTimeout(() => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'instant'
+            });
+        }, 50);
+    };
+})();
+</script>
+
+<script>
+// === Переопределение showTab без автопрокрутки ===
+(function(){
+    window.showTab = function(tab){
+        var $ = (sel)=>document.querySelector(sel);
+        // Скрываем все секции
+        ['accises','sroki','gih'].forEach(function(name){
+            var el = document.getElementById(name+'-section');
+            if (el) el.classList.toggle('hidden', name !== tab);
+        });
+        // Обновляем состояние навигации
+        try { syncBottomNav(tab); } catch(e) {}
+        try { syncTopNav(tab); } catch(e) {}
+        // Не скроллим страницу
+    };
+})();
+</script>
+
 </body>
 </html>
