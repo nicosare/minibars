@@ -751,7 +751,16 @@
                 padding-top: 20px; /* add space for the indicator */
             }
         }
-    </style>
+    
+/* Валидация акцизов */
+.accise-item.valid {
+    border: 2px solid #2f9d3a;   /* зелёная рамка */
+}
+.accise-item.invalid {
+    border: 2px solid #e53e3e;   /* красная рамка */
+}
+
+</style>
 </head>
 <body>
     <div class="app">
@@ -774,7 +783,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                    <div>
                         <div style="font-weight:700; font-size:16px">Управление акцизами</div>
-                        <div class="muted">Ввод автоматически после паузы / Enter / пробел</div>
+
                     </div>
                     <div class="row">
                         <div class="muted">Всего: <strong id="total-accises">0</strong></div>
@@ -787,14 +796,14 @@
 
                 <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
                     <input id="new-accise" class="input" placeholder="Введите акциз (Enter / пробел / пауза 1с)">
-                    <div class="muted">Можно вводить несколько</div>
+
                 </div>
             </div>
 
             <div class="card hidden" id="sroki-section">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="font-weight:700; font-size:16px">Контроль сроки</div>
-                    <div class="muted">Клик на номер — открыть выбор продуктов</div>
+
                 </div>
                 <div class="rooms-grid" id="rooms-grid"></div>
             </div>
@@ -811,7 +820,7 @@
                     <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                         <input id="gih-room" class="input" style="width:140px" placeholder="Номер комнаты" />
                         <div style="flex:1">
-                            <div class="muted" style="margin-bottom:6px">Выберите продукты (клик — увеличить кол-во до лимита, ещё клик — обнулить). Для некоторых товаров можно выбрать 2 или 3 шт.</div>
+
                             <div id="gih-products-area" class="gih-products-area"></div>
                         </div>
                     </div>
@@ -1064,9 +1073,45 @@ function fallbackCopy(text) {
     document.body.removeChild(textarea);
 }
         }
-        function convertLayout(t) { const rus = 'йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,'; const eng = 'qwertyuiop[]asdfghjkl;\'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?'; return t.split('').map(ch => { const i = rus.indexOf(ch); return i > -1 ? eng[i] : ch }).join(''); }
-        function addAccise(text) { if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => { const conv = convertLayout(p); const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); renderAcciseItem(item); saveDebounced(); }); updateAcciseStats(); }
-        function renderAcciseItem(a) { const list = $('#accises-list'); const el = document.createElement('div'); el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid'); el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; border:1px solid rgba(15,23,36,0.04); background:var(--card)'; el.innerHTML = `<div><div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div><small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small></div><div class="accise-actions"><button class="btn ghost small accise-remove" title="Удалить"><i class="fas fa-trash"></i></button></div>`; el.querySelector('.accise-remove').addEventListener('click', () => { appData.accises = appData.accises.filter(x => x.id !== a.id); el.remove(); updateAcciseStats(); saveDebounced(); }); list.prepend(el); }
+        function convertLayout(t) {
+    const rus = 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ';
+    const eng = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
+    const rusFull = 'йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,';
+    const engFull = 'qwertyuiop[]asdfghjkl;\'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?';
+    
+    // Определяем раскладку по первому буквенному символу
+    let isRussian = false;
+    let isEnglish = false;
+    
+    // Ищем первую букву в тексте
+    for (let i = 0; i < t.length; i++) {
+        const ch = t[i];
+        if (rus.includes(ch)) {
+            isRussian = true;
+            break;
+        } else if (eng.includes(ch)) {
+            isEnglish = true;
+            break;
+        }
+    }
+    
+    // Если русская раскладка - конвертируем, иначе оставляем как есть
+    if (isRussian) {
+        return t.split('').map(ch => {
+            const i = rusFull.indexOf(ch);
+            return i > -1 ? engFull[i] : ch;
+        }).join('');
+    }
+    
+    return t;
+}
+        function addAccise(text) { if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => { const conv = convertLayout(p);
+        // Проверка на дубликаты
+        if (appData.accises.some(x => x.text === conv)) {
+            alert("Такой акциз уже добавлен");
+            return;
+        } const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); renderAcciseItem(item); saveDebounced(); }); updateAcciseStats(); }
+        function renderAcciseItem(a) { const list = $('#accises-list'); const el = document.createElement('div'); el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid'); el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; background:var(--card)'; el.innerHTML = `<div><div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div><small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small></div><div class="accise-actions"><button class="btn ghost small accise-remove" title="Удалить"><i class="fas fa-trash"></i></button></div>`; el.querySelector('.accise-remove').addEventListener('click', () => { appData.accises = appData.accises.filter(x => x.id !== a.id); el.remove(); updateAcciseStats(); saveDebounced(); }); list.prepend(el); }
         function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
         /* ===== ROOMS & MODAL (unchanged) ===== */
