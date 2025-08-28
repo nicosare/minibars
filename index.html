@@ -1,69 +1,1516 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="description" content="Affordable and professional web design">
-	  <meta name="keywords" content="web design, affordable web design, professional web design">
-  	<meta name="author" content="Brad Traversy">
-    <title>Acme Web Deisgn | Welcome</title>
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="icon" href="img/favicon.png">
-  </head>
-  <body>
-    <header>
-      <div class="container">
-        <div id="branding">
-          <h1><span class="highlight">Acme</span> Web Design</h1>
-        </div>
-        <nav>
-          <ul>
-            <li class="current"><a href="index.html">Home</a></li>
-            <li><a href="about.html">About</a></li>
-            <li><a href="services.html">Services</a></li>
-          </ul>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Minibar — мобильная версия</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase App (обязательный скрипт для Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #fff;
+            --muted: #8b95a3;
+            --text: #0f1724;
+            --primary: #276749;
+            --primary-strong: #1b5e20;
+            --accent: #ff8a00;
+            --radius: 14px;
+            --shadow-sm: 0 6px 18px rgba(12,18,24,0.06);
+            --transition: 260ms cubic-bezier(.2,.9,.3,1);
+            --bottom-nav-height: 70px; /* MOBILE */
+            --safe-bottom: env(safe-area-inset-bottom, 12px); /* MOBILE */
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+            margin: 0;
+            padding: 0
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+            padding: 18px;
+        }
+
+        .app {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* LEFT NAV (desktop) */
+        .nav {
+            width: 220px;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            height: fit-content;
+        }
+
+        .logo {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 16px;
+            padding: 8px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+            .nav-item.active {
+                background: rgba(39,103,73,0.09);
+                color: var(--primary-strong);
+                box-shadow: 0 6px 14px rgba(39,103,73,0.06);
+            }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding-bottom: 18px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition),box-shadow var(--transition);
+        }
+
+            .card:hover {
+                transform: translateY(-3px);
+            }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(15,23,36,0.06);
+            background: transparent;
+            color: var(--text);
+        }
+
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .room-item {
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform var(--transition),box-shadow var(--transition),background var(--transition),border var(--transition);
+            border: 1px solid rgba(15,23,36,0.04);
+            background: linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.46));
+            min-height: 82px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .room-number {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary-strong);
+        }
+
+        .room-products {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .room-item.completed {
+            background: linear-gradient(180deg, rgba(39,103,73,0.08), rgba(39,103,73,0.02));
+            border-color: rgba(39,103,73,0.12);
+        }
+
+        .room-item.has-products {
+            background: linear-gradient(180deg, rgba(255,138,0,0.06), rgba(255,138,0,0.02));
+            border-color: rgba(255,138,0,0.12);
+        }
+
+        /* Overlay modal */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10,12,18,0.36);
+            z-index: 1400;
+            padding: 22px;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 920px;
+            border-radius: 14px;
+            padding: 18px;
+            background: linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.98));
+            box-shadow: 0 30px 80px rgba(6,10,15,0.3);
+            transform: translateY(18px);
+            opacity: 0;
+            transition: transform var(--transition),opacity var(--transition);
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .modal.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .products-wrap {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 8px;
+            max-height: 48vh;
+            overflow: auto;
+            border-radius: 10px;
+            background: transparent;
+        }
+
+        .product-btn {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(15,23,36,0.06);
+            background: transparent;
+            cursor: pointer;
+            min-width: 110px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform var(--transition),box-shadow var(--transition),background var(--transition),color var(--transition);
+        }
+
+            .product-btn:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 18px rgba(12,18,24,0.06);
+            }
+
+            .product-btn.active {
+                background: var(--primary);
+                color: #fff;
+                border-color: var(--primary-strong);
+            }
+
+        .product-count {
+            background: var(--accent);
+            color: #fff;
+            padding: 3px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .gih-form {
+            display: none;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .gih-products-area {
+            padding: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-radius: 10px;
+            border: 1px solid rgba(15,23,36,0.04);
+            max-height: 260px;
+            overflow: auto;
+            background: transparent;
+        }
+
+        .gih-records {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .gih-card {
+            padding: 14px;
+            border-radius: 12px;
+            background: var(--card);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gih-products {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .gih-product {
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: var(--card);
+            font-size: 13px;
+            border: 1px solid rgba(15,23,36,0.04);
+            cursor: pointer;
+            transition: transform 140ms ease;
+        }
+
+            .gih-product:hover {
+                transform: translateY(-2px);
+            }
+
+            .gih-product.disabled {
+                opacity: 0.6;
+                pointer-events: none;
+            }
+
+        .status-0 {
+            background: #fff;
+            color: var(--text);
+            border-color: rgba(15,23,36,0.06);
+            text-decoration: none;
+        }
+
+        .status-1 {
+            background: #bfeec0;
+            color: #064e17;
+            border-color: rgba(39,103,73,0.12);
+        }
+
+        .status-2 {
+            background: #bfe0f6;
+            color: #044a6a;
+            border-color: rgba(11,111,176,0.12);
+            text-decoration: line-through;
+        }
+
+        .status-3 {
+            background: #e0e0e0;
+            color: #333;
+            border-color: rgba(120,120,120,0.12);
+        }
+
+        .status-4 {
+            background: #f7bdbd;
+            color: #6b0b0b;
+            border-color: rgba(229,62,62,0.12);
+        }
+
+        .legend {
+            margin-top: 8px;
+            font-size: 13px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+            .legend .item {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 8px;
+                border-radius: 8px;
+            }
+
+            .legend .color {
+                width: 14px;
+                height: 14px;
+                border-radius: 4px;
+                display: inline-block;
+                border: 1px solid rgba(15,23,36,0.04);
+            }
+
+            .legend .t-added {
+                background: #bfeec0;
+            }
+
+            .legend .t-here {
+                background: #bfe0f6;
+            }
+
+            .legend .t-out {
+                background: #e0e0e0;
+            }
+
+            .legend .t-miss {
+                background: #f7bdbd;
+            }
+
+        .gih-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+            .gih-footer .mode-btn {
+                border: 1px solid rgba(15,23,36,0.08);
+                background: #fff;
+                color: var(--primary-strong);
+                padding: 6px 10px;
+                border-radius: 999px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 150ms ease;
+            }
+
+                .gih-footer .mode-btn.active {
+                    background: var(--primary);
+                    color: #fff;
+                    border-color: var(--primary-strong);
+                    box-shadow: 0 6px 14px rgba(39,103,73,0.06);
+                }
+
+                .gih-footer .mode-btn[disabled] {
+                    opacity: 0.55;
+                    pointer-events: none;
+                }
+
+        .muted-note {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 180ms ease;
+            font-weight: 600;
+            color: #fff;
+            background: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            min-height: 40px; /* touch-friendly baseline */
+        }
+
+            .btn.ghost {
+                background: transparent;
+                color: var(--primary-strong);
+                border: 1px solid rgba(15,23,36,0.04);
+            }
+
+            .btn.small {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+
+            .btn.secondary {
+                background: var(--card);
+                color: var(--primary-strong);
+                border: 1px solid rgba(15,23,36,0.06);
+            }
+
+        .card-save {
+            background: #2f9d3a;
+            color: #fff;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+            .card-save[disabled] {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+        .card-save-wrap {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-direction: column;
+            min-width: 160px;
+        }
+
+        .saved-at {
+            font-size: 13px;
+            color: #1b7a2b;
+            margin-top: 6px;
+        }
+
+        .card-footer-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        /* MOBILE: touch-friendly tweaks */
+        .btn {
+            min-height: 44px;
+            padding: 12px 14px;
+        }
+
+        .product-btn {
+            min-height: 44px;
+            padding: 10px 12px;
+        }
+
+        .room-item {
+            min-height: 90px;
+            padding: 14px;
+        }
+
+        /* MOBILE: bottom navigation (hidden on desktop, visible on small screens) */
+        .bottom-nav {
+            display: none; /* shown at small sizes */
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: calc(12px + var(--safe-bottom));
+            height: var(--bottom-nav-height);
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(6,10,15,0.12);
+            align-items: center;
+            justify-content: space-around;
+            z-index: 1600;
+            padding: 8px;
+            transition: transform 260ms ease, opacity 260ms ease;
+        }
+
+            .bottom-nav.hide {
+                transform: translateY(120%);
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .bottom-nav .b-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                color: var(--muted);
+                font-size: 12px;
+                cursor: pointer;
+                padding: 6px 8px;
+                border-radius: 8px;
+            }
+
+                .bottom-nav .b-item.active {
+                    color: var(--primary-strong);
+                }
+
+        /* MOBILE: modal full screen */
+        @media (max-width:920px) {
+            body {
+                padding: 12px 12px calc(var(--bottom-nav-height) + 32px);
+            }
+            /* reserve space for bottom nav */
+            .nav {
+                display: none;
+            }
+            /* hide left nav */
+            .rooms-grid {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+            .gih-records {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                width: 100%;
+                max-width: 100%;
+                height: calc(100vh - 24px);
+                max-height: none;
+                border-radius: 12px;
+                padding: 14px;
+            }
+
+            .overlay {
+                align-items: flex-end; /* bring modal from bottom */
+                padding: 0;
+            }
+
+            .modal-head {
+                margin-bottom: 8px;
+            }
+
+            .products-wrap {
+                max-height: 36vh;
+            }
+
+            .gih-products {
+                gap: 6px;
+            }
+
+            .product-btn {
+                min-width: 90px;
+            }
+
+            .card {
+                padding: 12px;
+                border-radius: 12px;
+            }
+
+            .bottom-nav {
+                display: flex;
+            }
+        }
+
+        /* MOBILE: very small screens */
+        @media (max-width:480px) {
+            .rooms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .product-btn {
+                min-width: 88px;
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .modal {
+                padding-bottom: calc(var(--safe-bottom) + 18px);
+                border-radius: 12px 12px 0 0;
+            }
+
+            .card-save-wrap {
+                min-width: 140px;
+            }
+
+            .input {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            .btn.small {
+                padding: 12px;
+                width: 100%;
+                border-radius: 10px;
+            }
+
+            .gih-form > div {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .gih-form .input[style] {
+                width: 100% !important;
+            }
+
+            .card-footer-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        /* small visual polish for bottom nav icons */
+        .bottom-nav i {
+            font-size: 18px;
+        }
+
+        .bottom-nav .b-label {
+            font-size: 11px;
+        }
+
+        /* Firebase connection status */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .connection-status.connected {
+            color: var(--primary-strong);
+        }
+
+        .connection-status.disconnected {
+            color: #e53e3e;
+        }
+
+        .connection-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .connection-status.connected .dot {
+            background: var(--primary-strong);
+        }
+
+        .connection-status.disconnected .dot {
+            background: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- LEFT NAV (desktop) -->
+        <nav class="nav" aria-hidden="false">
+            <div class="logo"><i class="fas fa-wine-bottle"></i> Minibar</div>
+            <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
+            <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
+            <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
         </nav>
-      </div>
-    </header>
 
-    <section id="showcase">
-      <div class="container">
-        <h1>Affordable Professional Web Design</h1>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu luctus ipsum, rhoncus semper magna. Nulla nec magna sit amet sem interdum condimentum.</p>
-      </div>
-    </section>
+        <main class="content" id="main-content">
+            <div class="card" id="accises-section">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <div>
+                        <div style="font-weight:700; font-size:16px">Управление акцизами</div>
+                        <div class="muted">Ввод автоматически после паузы / Enter / пробел</div>
+                    </div>
+                    <div class="row">
+                        <div class="muted">Всего: <strong id="total-accises">0</strong></div>
+                        <div class="muted">Символов: <strong id="total-chars">0</strong></div>
+                        <button id="copy-accises" class="btn ghost small" title="Копировать все валидные акцизы"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
 
-    <section id="newsletter">
-      <div class="container">
-        <h1>Subscribe To Our Newsletter</h1>
-        <form>
-          <input type="email" placeholder="Enter Email..." required>
-          <button type="submit" class="button_1">Subscribe</button>
-        </form>
-      </div>
-    </section>
+                <div id="accises-list" style="margin-top:12px;"></div>
 
-    <section id="boxes">
-      <div class="container">
-        <div class="box">
-          <img src="./img/logo_html.png">
-          <h3>HTML5 Markup</h3>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus mi augue, viverra sit amet ultricies</p>
+                <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+                    <input id="new-accise" class="input" placeholder="Введите акциз (Enter / пробел / пауза 1с)">
+                    <div class="muted">Можно вводить несколько</div>
+                </div>
+            </div>
+
+            <div class="card hidden" id="sroki-section">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:700; font-size:16px">Контроль сроков</div>
+                    <div class="muted">Клик на номер — открыть выбор продуктов</div>
+                </div>
+                <div class="rooms-grid" id="rooms-grid"></div>
+            </div>
+
+            <div class="card hidden" id="gih-section">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:700; font-size:16px">GIH — Guest In House</div>
+                    <div class="row">
+                        <button id="add-gih-btn" class="btn secondary small"><i class="fas fa-plus"></i> Новая запись</button>
+                    </div>
+                </div>
+
+                <div id="gih-form" class="gih-form" aria-hidden="true">
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <input id="gih-room" class="input" style="width:140px" placeholder="Номер комнаты" />
+                        <div style="flex:1">
+                            <div class="muted" style="margin-bottom:6px">Выберите продукты (клик — увеличить кол-во до лимита, ещё клик — обнулить). Для некоторых товаров можно выбрать 2 или 3 шт.</div>
+                            <div id="gih-products-area" class="gih-products-area"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                        <button id="cancel-gih" class="btn ghost small">Отмена</button>
+                        <button id="save-gih" class="btn small">Сохранить</button>
+                    </div>
+                </div>
+
+                <div id="gih-records" class="gih-records"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
+    <div class="bottom-nav" id="bottomNav" aria-hidden="true">
+        <div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
+        <div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
+        <div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
+    </div>
+
+    <!-- Modal (rooms) -->
+    <div id="modal" class="overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-head">
+                <div>
+                    <div class="modal-title" style="font-weight:700">Номер <span id="modal-room">—</span></div>
+                    <div class="muted">Выберите продукты</div>
+                </div>
+                <div>
+                    <button id="modal-close" class="btn ghost small" aria-label="Закрыть"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div id="modal-products" class="products-wrap"></div>
+
+            <div class="modal-foot" style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+                <button id="modal-reset" class="btn ghost small">Сброс</button>
+                <button id="modal-ok-order" class="btn secondary small">Сроки в порядке</button>
+                <button id="modal-save" class="btn small"><i class="fas fa-check"></i> Завершить</button>
+            </div>
         </div>
-        <div class="box">
-          <img src="./img/logo_css.png">
-          <h3>CSS3 Styling</h3>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus mi augue, viverra sit amet ultricies</p>
-        </div>
-        <div class="box">
-          <img src="./img/logo_brush.png">
-          <h3>Graphic Design</h3>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus mi augue, viverra sit amet ultricies</p>
-        </div>
-      </div>
-    </section>
+    </div>
 
-    <footer>
-      <p>Acme Web Deisgn, Copyright &copy; 2019</p>
-    </footer>
-  </body>
+    <!-- Connection status indicator -->
+    <div id="connectionStatus" class="connection-status disconnected">
+        <span class="dot"></span>
+        <span class="text">Соединение...</span>
+    </div>
+
+    <script>
+        // ===== FIREBASE CONFIGURATION =====
+        // ЗАМЕНИТЕ НА СВОЮ КОНФИГУРАЦИЮ FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcVgoGZ6MnjQOghbYRmnvITPU-O-zDYao",
+    authDomain: "minibars-17502.firebaseapp.com",
+    databaseURL: "https://minibars-17502-default-rtdb.firebaseio.com",
+    projectId: "minibars-17502",
+    storageBucket: "minibars-17502.firebasestorage.app",
+    messagingSenderId: "464067936838",
+    appId: "1:464067936838:web:f6c37ecf3ec4ae5d598047"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Firebase connection status
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.classList.remove('disconnected');
+                statusEl.classList.add('connected');
+                statusEl.querySelector('.text').textContent = 'Синхронизировано';
+            } else {
+                statusEl.classList.remove('connected');
+                statusEl.classList.add('disconnected');
+                statusEl.querySelector('.text').textContent = 'Оффлайн';
+            }
+        }
+
+        // Listen for connection status changes
+        firebase.database().ref('.info/connected').on('value', (snapshot) => {
+            updateConnectionStatus(snapshot.val() === true);
+        });
+
+        /* ==== data & config ==== */
+        const appData = {
+            accises: [],
+            rooms: [],
+            selectedRoom: null,
+            roomProducts: {
+                standard: ['twix', 'pepper', 'redbull', 'cola', 'baikal', 'borjomi', 'apple', 'tomato', 'corona', 'stella'],
+                lux: ['twix', 'redbull', 'orange', 'cherry', 'apple', 'tomato', 'borjomi', 'cola', 'stella', 'corona']
+            },
+            gihRecords: [],
+            products: {
+                twix: 'Твикс', jager: 'Ягер', gin: 'Джин', rum: 'Ром', cognac: 'Коньяк',
+                whiskey: 'Виски', vodka: 'Водка', pepper: 'Пеппер', redbull: 'Ред Булл',
+                cola: 'Кола', baikal: 'Байкал', borjomi: 'Боржоми', white_wine: 'Белое вино',
+                red_wine: 'Красное вино', apple: 'Яблоко', tomato: 'Томат', corona: 'Корона',
+                stella: 'Стелла', gancha: 'Ганча', martini: 'Мартини', orange: 'Апельсин',
+                cherry: 'Вишня', loriot: 'Лориот', whiskey02: 'Виски 0.2'
+            },
+            roomsList: [500, 502, 504, 506, 508, 509, 510, 512, 514, 516, 518, 520, 522, 524, 526, 528, 530, 532, 534, 600, 602, 604, 606, 608, 609, 610, 612, 614, 616, 618, 620, 622, 624, 626, 628, 630, 632, 634, 700, 702, 704, 706, 708, 709, 710, 712, 714, 716, 717, 718, 720, 722, 724, 725, 726, 728, 730, 732, 734, 800, 802, 804, 806, 808, 809, 810, 812, 814, 816, 817, 818, 820, 822, 824, 825, 826, 828, 830, 832, 834, 900, 902, 904, 906, 908, 909, 910, 912, 914, 916, 917, 918, 920, 922, 924, 925, 926, 928, 930, 932, 934, 1000, 1002, 1004, 1006, 1008, 1009, 1010, 1012, 1014, 1016, 1017, 1018, 1020, 1022, 1024, 1025, 1026, 1028, 1030, 1032, 1034, 1100, 1102, 1104, 1106, 1108, 1109, 1110, 1112, 1114, 1116, 1117, 1118, 1120, 1122, 1124, 1125, 1126, 1128, 1130, 1132, 1134, 1200, 1202, 1204, 1206, 1208, 1209, 1210, 1212, 1214, 1216, 1217, 1218, 1220, 1222, 1224, 1225, 1226, 1228, 1230, 1232, 1234, 1300, 1302, 1304, 1306, 1308, 1309, 1310, 1312, 1314, 1316, 1317, 1318, 1320, 1322, 1324, 1325, 1326, 1328, 1330, 1332, 1334, 1400, 1402, 1404, 1406, 1408, 1409, 1410, 1412, 1414, 1416, 1417, 1418, 1420, 1422, 1424, 1425, 1426, 1428, 1430, 1432, 1434, 1500, 1502, 1504, 1506, 1508, 1509, 1510, 1512, 1514, 1516, 1517, 1518, 1520, 1522, 1524, 1525, 1526, 1528, 1530, 1532, 1534, 1600, 1602, 1604, 1606, 1608, 1609, 1610, 1612, 1614, 1616, 1617, 1618, 1620, 1622, 1624, 1625, 1626, 1628, 1630, 1632, 1634, 1700, 1702, 1704, 1706, 1708, 1709, 1710, 1712, 1714, 1716, 1717, 1718, 1720, 1722, 1724, 1725, 1726, 1728, 1730, 1732, 1734, 1800, 1802, 1804, 1806, 1807, 1808, 1810, 1811, 1812, 1814, 1816, 1818, 1902, 1904, 1906, 1908, 1910, 1911, 1912, 1914, 1916, 1918, 1919, 1920]
+        };
+
+        /* Which products have multi-select limits */
+        const MULTI_LIMITS = {
+            jager: 2,
+            gin: 2,
+            vodka: 2,
+            whiskey: 3,
+            pepper: 2,
+            redbull: 2,
+            cola: 2,
+            baikal: 2,
+            borjomi: 2
+        };
+
+        const $ = s => document.querySelector(s);
+        const $$ = s => Array.from(document.querySelectorAll(s));
+
+        /* Firebase synchronization */
+        let isUpdatingFromFirebase = false;
+        
+        // Save data to Firebase
+        async function saveToFirebase() {
+            if (isUpdatingFromFirebase) return;
+            
+            try {
+                await database.ref('minibarData').set(appData);
+                console.log('Data saved to Firebase');
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+            }
+        }
+        
+        // Load data from Firebase
+        async function loadFromFirebase() {
+            try {
+                const snapshot = await database.ref('minibarData').once('value');
+                const data = snapshot.val();
+                
+                if (data) {
+                    isUpdatingFromFirebase = true;
+                    Object.assign(appData, data);
+                    localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+                    isUpdatingFromFirebase = false;
+                    
+                    // Update UI
+                    updateUIFromData();
+                }
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+            }
+        }
+        
+        // Listen for real-time updates from Firebase
+        function setupFirebaseListener() {
+            database.ref('minibarData').on('value', (snapshot) => {
+                const data = snapshot.val();
+                
+                if (data && !isUpdatingFromFirebase) {
+                    isUpdatingFromFirebase = true;
+                    Object.assign(appData, data);
+                    localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+                    isUpdatingFromFirebase = false;
+                    
+                    // Update UI
+                    updateUIFromData();
+                }
+            });
+        }
+        
+        // Update UI when data changes
+        function updateUIFromData() {
+            appData.gihRecords.forEach(r => normalizeRecordProducts(r));
+            $('#accises-list').innerHTML = '';
+            (appData.accises || []).forEach(renderAcciseItem);
+            updateAcciseStats();
+            appData.rooms = appData.rooms || [];
+            renderRooms();
+            renderAllGIHRecords();
+        }
+
+        /* debounce save */
+        let saveTimer; 
+        function saveDebounced() { 
+            clearTimeout(saveTimer); 
+            saveTimer = setTimeout(() => { 
+                try { 
+                    localStorage.setItem('hotelMinibarData', JSON.stringify(appData)); 
+                    saveToFirebase();
+                } catch (e) { 
+                    console.warn(e); 
+                } 
+            }, 200); 
+        }
+
+        /* status title */
+        function statusTitle(s) {
+            switch (Number(s)) { case 1: return 'Пополнено'; case 2: return 'На месте'; case 3: return 'Выложили'; case 4: return 'Не пополнено'; default: return 'Нейтральный'; }
+        }
+
+        /* ===== ACCISES (same) ===== */
+        function initAccises() {
+            const inp = $('#new-accise'); let t;
+            inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { addAccise(inp.value); inp.value = ''; }, 1000); });
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clearTimeout(t); addAccise(inp.value); inp.value = ''; } });
+            $('#copy-accises').addEventListener('click', () => {
+    const v = appData.accises.filter(a => a.isValid).map(a => a.text);
+    if (!v.length) return alert('Нет валидных акциз');
+    const textToCopy = v.join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => alert('Скопировано'))
+            .catch(() => fallbackCopy(textToCopy));
+    } else {
+        fallbackCopy(textToCopy);
+    }
+});
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        alert('Скопировано');
+    } catch (err) {
+        alert('Ошибка копирования');
+    }
+    document.body.removeChild(textarea);
+}
+        }
+        function convertLayout(t) { const rus = 'йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,'; const eng = 'qwertyuiop[]asdfghjkl;\'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?'; return t.split('').map(ch => { const i = rus.indexOf(ch); return i > -1 ? eng[i] : ch }).join(''); }
+        function addAccise(text) { if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => { const conv = convertLayout(p); const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); renderAcciseItem(item); saveDebounced(); }); updateAcciseStats(); }
+        function renderAcciseItem(a) { const list = $('#accises-list'); const el = document.createElement('div'); el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid'); el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; border:1px solid rgba(15,23,36,0.04); background:var(--card)'; el.innerHTML = `<div><div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div><small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small></div><div class="accise-actions"><button class="btn ghost small accise-remove" title="Удалить"><i class="fas fa-trash"></i></button></div>`; el.querySelector('.accise-remove').addEventListener('click', () => { appData.accises = appData.accises.filter(x => x.id !== a.id); el.remove(); updateAcciseStats(); saveDebounced(); }); list.prepend(el); }
+        function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
+
+        /* ===== ROOMS & MODAL (unchanged) ===== */
+        function initSroki() {
+            renderRooms();
+            $('#modal-close').addEventListener('click', closeModal);
+            $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
+            $('#modal-save').addEventListener('click', () => {
+                const n = appData.selectedRoom; if (n == null) return closeModal();
+                const room = appData.rooms.find(r => r.number === n); if (room) { room.completed = true; room.completedAt = new Date().toISOString(); saveDebounced(); renderRooms(); } closeModal();
+            });
+            $('#modal-ok-order').addEventListener('click', () => {
+                const n = appData.selectedRoom; if (n == null) return;
+                const room = appData.rooms.find(r => r.number === n); if (!room) return;
+                room.products = {}; saveDebounced(); renderRooms();
+                const btn = $('#modal-ok-order'); btn.style.background = 'var(--primary)'; btn.style.color = '#fff';
+            });
+            $('#modal-reset').addEventListener('click', () => {
+                const n = appData.selectedRoom; if (n == null) return;
+                const room = appData.rooms.find(r => r.number === n); if (!room) return;
+                const keys = appData.roomProducts[room.type] || [];
+                renderProductButtons($('#modal-products'), keys, room.products, () => { renderRooms(); }, { allowMaxTwo: true });
+            });
+        }
+        function renderRooms() {
+            const grid = $('#rooms-grid'); grid.innerHTML = '';
+            appData.rooms = appData.rooms || [];
+            appData.roomsList.forEach(num => {
+                let room = appData.rooms.find(r => r.number === num);
+                if (!room) { const isLux = (num % 2 === 1) || num === 1818 || String(num).endsWith('00') || String(num).endsWith('34'); room = { number: num, type: isLux ? 'lux' : 'standard', completed: false, completedAt: null, products: {} }; appData.rooms.push(room); }
+                const el = document.createElement('div'); el.className = 'room-item'; if (room.completed) el.classList.add('completed'); else if (Object.keys(room.products || {}).length) el.classList.add('has-products');
+                const productsText = Object.entries(room.products || {}).filter(([, c]) => c > 0).map(([k, c]) => `${appData.products[k] || k}${c > 1 ? ` (x${c})` : ''}`).join(', ');
+                el.innerHTML = `<div class="room-number">${room.number}</div><div class="room-products">${productsText || '&nbsp;'}</div>`;
+                el.addEventListener('click', () => { appData.selectedRoom = room.number; openModal(room); });
+                grid.appendChild(el);
+            });
+        }
+        function openModal(room) {
+            $('#modal-room').textContent = room.number;
+            const overlay = $('#modal'); overlay.classList.add('show'); overlay.style.display = 'flex';
+            const modalEl = overlay.querySelector('.modal'); modalEl.classList.add('show');
+            const keys = appData.roomProducts[room.type] || [];
+            renderProductButtons($('#modal-products'), keys, room.products, (k, c) => { renderRooms(); }, { allowMaxTwo: true });
+            $('#modal-ok-order').style.background = ''; $('#modal-ok-order').style.color = '';
+        }
+        function closeModal() { const overlay = $('#modal'); const modalEl = overlay.querySelector('.modal'); modalEl.classList.remove('show'); overlay.classList.remove('show'); setTimeout(() => overlay.style.display = 'none', 260); appData.selectedRoom = null; renderRooms(); }
+
+        /* renderProductButtons for forms */
+        function renderProductButtons(container, keys = [], targetObj = {}, onChange = null, options = {}) {
+            if (!container) return;
+            container.innerHTML = '';
+            keys.forEach(k => {
+                const name = appData.products[k] || k;
+                const btn = document.createElement('button'); btn.className = 'product-btn'; btn.dataset.product = k; btn.textContent = name;
+                const maxQ = MULTI_LIMITS[k] || 1;
+                const cur = targetObj[k] || 0;
+                if (cur > 0) { btn.classList.add('active'); const span = document.createElement('span'); span.className = 'product-count'; span.textContent = cur; btn.appendChild(span); }
+                btn.addEventListener('click', () => {
+                    const cur = targetObj[k] || 0;
+                    const next = (cur + 1) % (maxQ + 1);
+                    if (next === 0) delete targetObj[k]; else targetObj[k] = next;
+                    btn.querySelectorAll('.product-count').forEach(n => n.remove());
+                    if (next > 0) { btn.classList.add('active'); const span = document.createElement('span'); span.className = 'product-count'; span.textContent = next; btn.appendChild(span); } else { btn.classList.remove('active'); }
+                    if (typeof onChange === 'function') onChange(k, next);
+                    saveDebounced();
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        /* ===== GIH logic ===== */
+        let gihTempProducts = {}; let editingGIHId = null;
+
+        /* sort */
+        function sortGIHRecords() {
+            appData.gihRecords.sort((a, b) => {
+                const na = Number(a.room); const nb = Number(b.room);
+                if (!isFinite(na) && !isFinite(nb)) return 0;
+                if (!isFinite(na)) return 1;
+                if (!isFinite(nb)) return -1;
+                return na - nb;
+            });
+        }
+
+        /* rerender all */
+        function renderAllGIHRecords() {
+            const container = $('#gih-records');
+            container.innerHTML = '';
+            sortGIHRecords();
+            (appData.gihRecords || []).forEach(rec => renderGIHRecord(rec));
+        }
+
+        /* build form area */
+        function buildGIHProductsArea() { gihTempProducts = {}; renderProductButtons($('#gih-products-area'), Object.keys(appData.products), gihTempProducts, () => { }, { allowMaxTwo: true }); }
+        function clearGIHForm() { $('#gih-room').value = ''; gihTempProducts = {}; buildGIHProductsArea(); editingGIHId = null; }
+
+        /* handle form save (create/edit) */
+        function handleGIHSave() {
+            const roomInput = $('#gih-room').value.trim(); if (!roomInput) { $('#gih-room').focus(); return alert('Введите номер комнаты'); }
+
+            const area = $('#gih-products-area'); const selectedCounts = {};
+            area.querySelectorAll('.product-btn.active').forEach(btn => {
+                const key = btn.dataset.product;
+                if (!key) return;
+                const q = btn.querySelector('.product-count');
+                selectedCounts[key] = q ? parseInt(q.textContent || '1', 10) : 1;
+            });
+
+            if (Object.keys(selectedCounts).length === 0) {
+                for (const [k, v] of Object.entries(gihTempProducts)) if (v > 0) selectedCounts[k] = v;
+            }
+            if (Object.keys(selectedCounts).length === 0) return alert('Выберите хотя бы один продукт');
+
+            if (editingGIHId) {
+                const rec = appData.gihRecords.find(r => r.id === editingGIHId); if (!rec) return alert('Запись не найдена');
+                const queues = {};
+                (rec.products || []).forEach(p => { queues[p.name] = queues[p.name] || []; queues[p.name].push(Number(p.status || 0)); });
+                const newArr = [];
+                Object.entries(selectedCounts).forEach(([k, cnt]) => {
+                    for (let i = 0; i < cnt; i++) {
+                        const st = (queues[k] && queues[k].length) ? queues[k].shift() : 0;
+                        newArr.push({ name: k, status: st });
+                    }
+                });
+                rec.room = roomInput; rec.products = newArr; rec.updatedAt = new Date().toISOString();
+                // ensure consistent statusMode: if products non-neutral, clear mode
+                if ((rec.products || []).some(p => Number(p.status || 0) !== 0)) rec.statusMode = null;
+                sortGIHRecords(); renderAllGIHRecords(); saveDebounced();
+            } else {
+                const productsArr = [];
+                Object.entries(selectedCounts).forEach(([k, cnt]) => { for (let i = 0; i < cnt; i++) productsArr.push({ name: k, status: 0 }); });
+                const safeId = `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+                const rec = { id: safeId, room: roomInput, products: productsArr, statusMode: null, comment: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), completedAt: null, savedAt: null };
+                appData.gihRecords.push(rec);
+                sortGIHRecords(); renderAllGIHRecords(); saveDebounced();
+            }
+
+            $('#gih-form').style.display = 'none'; clearGIHForm();
+        }
+
+        /* normalize old formats and ensure consistency */
+        function normalizeRecordProducts(record) {
+            if (!record) return;
+            if (!Array.isArray(record.products)) {
+                const newArr = [];
+                const p = record.products || {};
+                Object.entries(p).forEach(([k, v]) => {
+                    if (typeof v === 'number') { for (let i = 0; i < v; i++) newArr.push({ name: k, status: 0 }); }
+                    else if (typeof v === 'string') { const map = { inplace: 2, added: 1, removed: 3 }; const st = map[v] || 0; newArr.push({ name: k, status: st }); }
+                    else newArr.push({ name: k, status: 0 });
+                });
+                record.products = newArr;
+            }
+            if (record.status && typeof record.status === 'object' && !('statusMode' in record)) {
+                const s = record.status;
+                if (s.dnd) record.statusMode = 'dnd';
+                else if (s.allInPlace) record.statusMode = 'allInPlace';
+                else if (s.putOut) record.statusMode = 'putOut';
+                else record.statusMode = null;
+            }
+            if (!('statusMode' in record)) record.statusMode = null;
+            // If any product non-neutral, clear mode to avoid conflict
+            const anyNon = (record.products || []).some(p => Number(p.status || 0) !== 0);
+            if (anyNon && record.statusMode) record.statusMode = null;
+        }
+
+        /* Save rules: enabled if either mode selected OR all products non-neutral */
+        function canSaveCard(rec) {
+            if (!rec) return false;
+            const allNonNeutral = (rec.products || []).length > 0 && (rec.products || []).every(p => Number(p.status || 0) !== 0);
+            return (rec.statusMode !== null) || allNonNeutral;
+        }
+
+        /* Format HH:MM */
+        function formatHHMM(d) { const hh = String(d.getHours()).padStart(2, '0'); const mm = String(d.getMinutes()).padStart(2, '0'); return `${hh}:${mm}`; }
+
+        /* Render single record card */
+        function renderGIHRecord(record) {
+            const container = $('#gih-records');
+            normalizeRecordProducts(record);
+
+            const card = document.createElement('div');
+            card.className = 'gih-card';
+            card.setAttribute('data-id', record.id);
+
+            const headerHtml = `<div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;color:var(--primary-strong)">${record.room}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn ghost small edit-btn" title="Редактировать"><i class="fas fa-edit"></i></button>
+          <button class="btn ghost small delete-btn" title="Удалить"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+
+            const productsHtml = `<div class="gih-products"></div>`;
+            const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
+            const footerHtml = `<div class="gih-footer">
+        <button class="mode-btn" data-mode="dnd">DND</button>
+        <button class="mode-btn" data-mode="allInPlace">Всё на месте</button>
+        <button class="mode-btn" data-mode="putOut">Всё выложили</button>
+        <button class="btn ghost small" data-action="comment">Комментарий</button>
+      </div>`;
+            const legendHtml = `<div class="legend">
+        <div class="item"><span class="color t-added"></span>Пополнено</div>
+        <div class="item"><span class="color t-here"></span>На месте</div>
+        <div class="item"><span class="color t-out"></span>Выложили</div>
+        <div class="item"><span class="color t-miss"></span>Не пополнено</div>
+      </div>`;
+            const saveRowHtml = `<div class="card-footer-row">
+        <div style="flex:1"></div>
+        <div class="card-save-wrap">
+          <button class="card-save"${canSaveCard(record) ? '' : ' disabled'}>Сохранить</button>
+          <div class="saved-at">${record.savedAt ? `Сохранено в ${record.savedAt}` : ''}</div>
+        </div>
+      </div>`;
+
+            card.innerHTML = headerHtml + productsHtml + commentHtml + footerHtml + legendHtml + saveRowHtml;
+
+            // products
+            const prodWrap = card.querySelector('.gih-products'); prodWrap.innerHTML = '';
+            (record.products || []).forEach((entry, idx) => {
+                const key = entry.name;
+                const display = appData.products[key] || key;
+                const status = typeof entry.status === 'number' ? entry.status : 0;
+                const p = document.createElement('div');
+                p.className = 'gih-product status-' + status;
+                p.textContent = display;
+                p.dataset.index = idx;
+                p.dataset.key = key;
+                p.title = statusTitle(status);
+                p.addEventListener('click', () => {
+                    const rec = appData.gihRecords.find(r => r.id === record.id);
+                    if (!rec) return;
+                    // if mode selected -> cannot change statuses
+                    if (rec.statusMode) return;
+                    const el = rec.products[parseInt(p.dataset.index, 10)];
+                    el.status = (Number(el.status || 0) + 1) % 5;
+                    p.className = 'gih-product status-' + el.status;
+                    p.title = statusTitle(el.status);
+                    saveDebounced();
+                    updateCardSaveUI(rec, card);
+                });
+                prodWrap.appendChild(p);
+            });
+
+            container.appendChild(card);
+
+            // mode buttons
+            card.querySelectorAll('.mode-btn').forEach(btn => {
+                const mode = btn.dataset.mode;
+                btn.classList.toggle('active', record.statusMode === mode);
+                btn.addEventListener('click', () => {
+                    // if button disabled via anyNonNeutral, ignore
+                    if (btn.disabled) return;
+                    const rec = appData.gihRecords.find(r => r.id === record.id);
+                    if (!rec) return;
+                    rec.statusMode = (rec.statusMode === mode) ? null : mode;
+                    // when mode selected -> products disabled in UI; when cleared -> products enabled
+                    saveDebounced();
+                    updateCardSaveUI(rec, card);
+                });
+            });
+
+            // comment
+            const commentBtn = card.querySelector('[data-action="comment"]');
+            if (commentBtn) {
+                commentBtn.addEventListener('click', () => {
+                    const val = prompt('Комментарий:', record.comment || '');
+                    if (val !== null) { record.comment = val; saveDebounced(); card.remove(); renderGIHRecord(record); }
+                });
+            }
+
+            // edit
+            const editBtn = card.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    editingGIHId = record.id;
+                    $('#gih-form').style.display = 'block';
+                    $('#gih-room').value = record.room;
+                    // focus on room input
+                    setTimeout(() => { try { $('#gih-room').focus(); $('#gih-room').select(); } catch (e) { } }, 50);
+                    // prepare counts preserving quantities
+                    gihTempProducts = {};
+                    (record.products || []).forEach(p => { gihTempProducts[p.name] = (gihTempProducts[p.name] || 0) + 1; });
+                    renderProductButtons($('#gih-products-area'), Object.keys(appData.products), gihTempProducts, () => { }, { allowMaxTwo: true });
+                });
+            }
+
+            // delete
+            const delBtn = card.querySelector('.delete-btn');
+            if (delBtn) {
+                delBtn.addEventListener('click', () => {
+                    if (confirm('Удалить запись?')) {
+                        appData.gihRecords = appData.gihRecords.filter(r => r.id !== record.id);
+                        card.remove();
+                        saveDebounced();
+                        renderAllGIHRecords();
+                    }
+                });
+            }
+
+            // save button
+            const saveBtn = card.querySelector('.card-save');
+            const savedAtEl = card.querySelector('.saved-at');
+
+            saveBtn.addEventListener('click', () => {
+                const rec = appData.gihRecords.find(r => r.id === record.id);
+                if (!rec) return;
+                if (!canSaveCard(rec)) return;
+                rec.savedAt = formatHHMM(new Date());
+                rec.updatedAt = new Date().toISOString();
+                savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
+                saveDebounced();
+                updateCardSaveUI(rec, card);
+            });
+
+            // initial UI sync: disable/enable mode buttons & products & save
+            updateCardSaveUI(record, card);
+        }
+
+        /* Update UI elements inside a card based on record state */
+        function updateCardSaveUI(rec, cardEl) {
+            const record = rec;
+            const card = cardEl || document.querySelector(`.gih-card[data-id="${record.id}"]`);
+            if (!card) return;
+
+            // Determine any non-neutral product
+            const anyNonNeutral = (record.products || []).some(p => Number(p.status || 0) !== 0);
+            const allNonNeutral = (record.products || []).length > 0 && (record.products || []).every(p => Number(p.status || 0) !== 0);
+
+            // Mode buttons disabled if any product non-neutral
+            card.querySelectorAll('.mode-btn').forEach(b => {
+                b.disabled = anyNonNeutral;
+                // visual active class if selected
+                b.classList.toggle('active', record.statusMode === b.dataset.mode);
+            });
+
+            // If mode is set but anyNonNeutral is true -> clear mode to stay consistent
+            if (record.statusMode && anyNonNeutral) {
+                record.statusMode = null;
+                saveDebounced();
+                card.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            }
+
+            // Products disabled if a mode is active
+            card.querySelectorAll('.gih-product').forEach((pEl, idx) => {
+                if (record.statusMode) {
+                    pEl.classList.add('disabled');
+                    pEl.title = statusTitle(record.products[idx].status);
+                } else {
+                    pEl.classList.remove('disabled');
+                    pEl.title = statusTitle(record.products[idx].status);
+                }
+            });
+
+            // Save button enabled if mode selected OR all products non-neutral
+            const enabled = (record.statusMode !== null) || allNonNeutral;
+            const saveBtn = card.querySelector('.card-save');
+            if (saveBtn) saveBtn.disabled = !enabled;
+
+            // saved-at text
+            const savedAtEl = card.querySelector('.saved-at');
+            if (savedAtEl) savedAtEl.textContent = record.savedAt ? `Сохранено в ${record.savedAt}` : '';
+        }
+
+        /* ===== LOAD & NAV ===== */
+        async function loadData() {
+            // First try to load from Firebase
+            await loadFromFirebase();
+            
+            // If Firebase doesn't have data, load from localStorage
+            if (appData.accises.length === 0 && appData.rooms.length === 0 && appData.gihRecords.length === 0) {
+                const raw = localStorage.getItem('hotelMinibarData');
+                if (raw) {
+                    try { 
+                        const parsed = JSON.parse(raw); 
+                        Object.assign(appData, parsed); 
+                    } catch (e) { 
+                        console.warn(e); 
+                    }
+                }
+            }
+            
+            appData.gihRecords = appData.gihRecords || [];
+            appData.gihRecords.forEach(r => normalizeRecordProducts(r));
+            (appData.accises || []).forEach(renderAcciseItem); 
+            updateAcciseStats();
+            appData.rooms = appData.rooms || []; 
+            renderRooms();
+            renderAllGIHRecords();
+            buildGIHProductsArea();
+        }
+
+        function initNav() {
+            // desktop nav items
+            $$('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    $$('.nav-item').forEach(n => n.classList.remove('active')); item.classList.add('active');
+                    const tab = item.dataset.tab;
+                    showTab(tab);
+                    syncBottomNav(tab);
+                });
+            });
+
+            // bottom nav items (MOBILE)
+            $$('#bottomNav .b-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    $$('#bottomNav .b-item').forEach(n => n.classList.remove('active')); item.classList.add('active');
+                    const tab = item.dataset.tab;
+                    showTab(tab);
+                    syncTopNav(tab);
+                });
+            });
+        }
+
+        function showTab(tab) {
+            $('#accises-section').classList.add('hidden'); $('#sroki-section').classList.add('hidden'); $('#gih-section').classList.add('hidden');
+            if (tab === 'accises') $('#accises-section').classList.remove('hidden');
+            if (tab === 'sroki') $('#sroki-section').classList.remove('hidden');
+            if (tab === 'gih') $('#gih-section').classList.remove('hidden');
+            // scroll to top of main content on mobile for better UX
+            try { document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+        }
+
+        function syncBottomNav(tab) {
+            const bottom = $$('#bottomNav .b-item');
+            bottom.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        }
+        function syncTopNav(tab) {
+            const top = $$('.nav-item');
+            top.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        }
+
+        /* MOBILE: hide bottom nav on scroll down, show on scroll up */
+        (function bottomNavAutoHide() {
+            const nav = $('#bottomNav');
+            if (!nav) return;
+            let lastScroll = window.scrollY || document.documentElement.scrollTop;
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (window.innerWidth > 920) return; // only mobile
+                const cur = window.scrollY || document.documentElement.scrollTop;
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        if (cur > lastScroll + 10) { nav.classList.add('hide'); } // scrolling down
+                        else if (cur < lastScroll - 10) { nav.classList.remove('hide'); } // scrolling up
+                        lastScroll = cur;
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        })();
+
+        /* INIT */
+        document.addEventListener('DOMContentLoaded', async () => {
+            initNav(); 
+            initAccises(); 
+            initSroki(); 
+            initGIH(); 
+            
+            // Setup Firebase listener
+            setupFirebaseListener();
+            
+            // Load data
+            await loadData();
+            
+            // ensure bottom nav reflects initial active top nav
+            const activeTop = document.querySelector('.nav-item.active')?.dataset?.tab || 'accises';
+            syncBottomNav(activeTop);
+            
+            // Small UX: close modal on orientation change
+            window.addEventListener('orientationchange', () => { if ($('#modal').classList.contains('show')) closeModal(); });
+        });
+
+        /* initGIH (form controls) */
+        function initGIH() {
+            buildGIHProductsArea();
+            $('#add-gih-btn').addEventListener('click', () => {
+                const f = $('#gih-form');
+                if (f.style.display === 'block') { f.style.display = 'none'; editingGIHId = null; clearGIHForm(); }
+                else { f.style.display = 'block'; editingGIHId = null; clearGIHForm(); setTimeout(() => { try { $('#gih-room').focus(); $('#gih-room').select(); } catch (e) { } }, 40); }
+            });
+            $('#cancel-gih').addEventListener('click', () => { $('#gih-form').style.display = 'none'; editingGIHId = null; clearGIHForm(); });
+            $('#save-gih').addEventListener('click', handleGIHSave);
+        }
+
+        /* Escape closes modal */
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('#modal').classList.contains('show')) closeModal(); } });
+
+        /* small accessibility improvement: make bottom nav items keyboard focusable */
+        (function makeBottomNavFocusable() {
+            try {
+                $$('#bottomNav .b-item').forEach(el => { el.setAttribute('tabindex', '0'); el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); el.click(); } }); });
+            } catch (e) {}
+        })();
+    </script>
+</body>
 </html>
