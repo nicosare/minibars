@@ -1,16 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Minibar — мобильная версия</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Firebase App (обязательный скрипт для Firebase) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <!-- Firebase Realtime Database -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>Minibar — мобильная версия</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Firebase App (обязательный скрипт для Firebase) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<!-- Firebase Realtime Database -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
         :root {
             --bg: #f6f7fb;
             --card: #fff;
@@ -888,9 +889,6 @@
         background-color: var(--bg, #fff);
         z-index: 999;
     }
-    main, .main-content, .content, .page-container {
-        margin-left: 240px !important; /* ширина левого меню */
-    }
 }
 
 
@@ -911,7 +909,7 @@
 
     /* Контент под шапкой */
     body {
-        padding-top: 76px !important; /* учитываем margin + padding шапки */
+        padding-top: 82px !important; /* учитываем margin + padding шапки */
     }
 }
 
@@ -933,10 +931,7 @@
     }
 
     /* Контент сдвигаем на ширину меню + отступы */
-    main, .main-content, .content, .page-container {
-        margin-left: 252px !important;
-        padding: 16px;
-    }
+    
 }
 
 
@@ -969,7 +964,7 @@
 
     /* Контент под шапкой */
     body {
-        padding-top: 76px !important;
+        padding-top: 82px !important;
     }
 
     /* Нижний таб тоже ограничиваем по ширине и центруем */
@@ -1001,166 +996,221 @@
 
     /* Основной контент отступает на ширину меню + одинаковый зазор */
     main, .main-content, .content, .page-container {
-        margin-left: calc(220px + 24px + 24px) !important;
-        padding: 24px;
-        margin-top: 24px;
+        margin-left: calc(220px + 24px) !important;
+                padding: 6px;
     }
+}
+
+
+/* Красивое поле для ввода акцизов */
+#new-accise,
+#new-accise-mobile {
+    padding: 12px 16px;
+    border: 1px solid rgba(15, 23, 36, 0.08);
+    border-radius: 14px;
+    background-color: #fff;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(12, 18, 24, 0.06);
+    transition: all 0.25s ease;
+    outline: none;
+}
+
+/* Ховер эффект */
+#new-accise:hover,
+#new-accise-mobile:hover {
+    border-color: rgba(39, 103, 73, 0.2);
+    box-shadow: 0 3px 10px rgba(12, 18, 24, 0.08);
+}
+
+/* Фокус эффект */
+#new-accise:focus,
+#new-accise-mobile:focus {
+    border-color: var(--primary);
+    box-shadow: 0 4px 14px rgba(39, 103, 73, 0.16);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 920px) {
+    #new-accise-mobile {
+        flex: 1;
+        min-width: 0;
+        padding: 12px;
+        font-size: 16px;
+    }
+}
+
+
+/* === Центрирование поля ввода в мобильной шапке === */
+@media (max-width: 920px) {
+    /* Убедимся, что header - flex с равными полями по краям */
+    .mb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        width: 100%;
+    }
+
+    /* Бургер и индикатор остаются по краям */
+    .mb-burger-btn { flex: 0 0 auto; }
+    .mb-header .right { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+
+    /* Поле ввода расположено по центру и занимает доступную ширину
+       с аккуратными отступами по сторонам. Перекрываем возможный inline-style. */
+    #new-accise-mobile {
+        flex: 1 1 auto !important;
+        max-width: none !important;
+        margin: 0 12px !important;
+        padding: 12px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(15, 23, 36, 0.08);
+        background-color: #fff;
+        box-shadow: 0 2px 6px rgba(12, 18, 24, 0.06);
+        transition: all 0.20s ease;
+        outline: none;
+        text-align: left; /* текст вводим слева, но поле визуально по центру */
+        min-width: 0; /* важно для корректного сжатия в flex */
+    }
+
+    /* Если нужно — можно сделать placeholder по центру, но обычно это хуже для UX */
+    /* #new-accise-mobile::placeholder { text-align: center; } */
+
+    /* Hover / focus эффекты (мобильные) */
+    #new-accise-mobile:hover { border-color: rgba(39, 103, 73, 0.18); box-shadow: 0 3px 10px rgba(12,18,24,0.08); }
+    #new-accise-mobile:focus { border-color: var(--primary); box-shadow: 0 4px 14px rgba(39,103,73,0.16); }
 }
 
 </style>
 </head>
 <body>
-    <div class="app">
-        <!-- LEFT NAV (desktop) -->
-        <nav class="nav" aria-hidden="false">
-            <div class="logo"><i class="fas fa-wine-bottle"></i> Minibar</div>
-            <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
-            <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
-            <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
-            <div class="nav-separator"></div>
-            <!-- ADDED: extra desktop tabs (above connection status) -->
-            <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
-            <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
-            <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
-
-
-            
-            <div class="nav-separator"></div>
+<div class="app">
+<!-- LEFT NAV (desktop) -->
+<nav aria-hidden="false" class="nav">
+<div class="logo"><i class="fas fa-wine-bottle"></i> Minibar</div>
+<div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
+<div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
+<div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
+<div class="nav-separator"></div>
+<!-- ADDED: extra desktop tabs (above connection status) -->
+<div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
+<div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+<div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+<div class="nav-separator"></div>
 <!-- Desktop connection status -->
-            <div id="connectionStatus" class="connection-status disconnected">
-                <span class="dot"></span>
-                <span class="text">Соединение...</span>
-            </div>
-        </nav>
+<div class="connection-status disconnected" id="connectionStatus">
+<span class="dot"></span>
+<span class="text">Соединение...</span>
+</div><div id="accise-input-container" style="margin-top:12px; display:flex; gap:10px; align-items:center;"><input class="input" id="new-accise" placeholder="Введите акциз ..."/></div>
+</nav>
+<main class="content" id="main-content">
+<!-- ADDED: Mobile top header (burger + sync) -->
+<div class="mb-header" id="mbHeader">
+<button aria-label="Открыть меню" class="mb-burger-btn" id="mbBurgerBtn">☰</button><input class="input" id="new-accise-mobile" placeholder="Введите акциз ..." style="max-width:160px; margin-left:10px;"/>
+<div class="right" id="mbHeaderRight">
+<!-- сюда перенесём #mobileConnectionIndicator на мобильной ширине -->
+</div>
+<div class="mb-burger-menu" id="mbBurgerMenu" role="menu">
+<div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
+<div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+<div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+</div>
+</div>
+<div class="card" id="accises-section">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<div>
+<div style="font-weight:700; font-size:16px">Управление акцизами</div>
+</div>
+<div class="row">
+<div class="muted">Всего: <strong id="total-accises">0</strong></div>
+<div class="muted">Символов: <strong id="total-chars">0</strong></div>
+<button class="btn ghost small" id="copy-accises" title="Копировать все валидные акцизы"><i class="fas fa-copy"></i></button>
+</div>
+</div>
+<div id="accises-list" style="margin-top:12px;"></div>
+<div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
 
-        <main class="content" id="main-content">
-
-            <!-- ADDED: Mobile top header (burger + sync) -->
-            <div class="mb-header" id="mbHeader">
-                <button id="mbBurgerBtn" class="mb-burger-btn" aria-label="Открыть меню">☰</button>
-                <div class="right" id="mbHeaderRight">
-                    <!-- сюда перенесём #mobileConnectionIndicator на мобильной ширине -->
-                </div>
-                <div id="mbBurgerMenu" class="mb-burger-menu" role="menu">
-                    <div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
-                    <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
-                    <div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
-                </div>
-            </div>
-
-            <div class="card" id="accises-section">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                   <div>
-                        <div style="font-weight:700; font-size:16px">Управление акцизами</div>
-
-                    </div>
-                    <div class="row">
-                        <div class="muted">Всего: <strong id="total-accises">0</strong></div>
-                        <div class="muted">Символов: <strong id="total-chars">0</strong></div>
-                        <button id="copy-accises" class="btn ghost small" title="Копировать все валидные акцизы"><i class="fas fa-copy"></i></button>
-                    </div>
-                </div>
-
-                <div id="accises-list" style="margin-top:12px;"></div>
-
-                <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-                    <input id="new-accise" class="input" placeholder="Введите акциз (Enter / пробел / пауза 1с)">
-
-                </div>
-            </div>
-
-            <div class="card hidden" id="sroki-section">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-weight:700; font-size:16px">Контроль сроки</div>
-
-                </div>
-                <div class="rooms-grid" id="rooms-grid"></div>
-            </div>
-
-            <div class="card hidden" id="gih-section">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-weight:700; font-size:16px">GIH — Guest In House</div>
-                    <div class="row">
-                        <button id="add-gih-btn" class="btn secondary small"><i class="fas fa-plus"></i> Новая запись</button>
-                    </div>
-                </div>
-
-                <div id="gih-form" class="gih-form" aria-hidden="true">
-                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                        <input id="gih-room" class="input" style="width:140px" placeholder="Номер комнаты" />
-                        <div style="flex:1">
-
-                            <div id="gih-products-area" class="gih-products-area"></div>
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-                        <button id="cancel-gih" class="btn ghost small">Отмена</button>
-                        <button id="save-gih" class="btn small">Сохранить</button>
-                    </div>
-                </div>
-
-                <div id="gih-records" class="gih-records"></div>
-            </div>
-        
-            <!-- ADDED: new page sections -->
-            <div class="card page-section" id="settings-section">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-weight:700;font-size:16px">Настройки</div>
-                </div>
-                <div class="muted">Раздел находится в разработке.</div>
-            </div>
-
-            <div class="card page-section" id="learning-section">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-weight:700;font-size:16px">Обучение</div>
-                </div>
-                <div class="muted">Раздел находится в разработке.</div>
-            </div>
-
-            <div class="card page-section" id="practice-section">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-weight:700;font-size:16px">Практика</div>
-                </div>
-                <div class="muted">Раздел находится в разработке.</div>
-            </div>
-
+</div>
+</div>
+<div class="card hidden" id="sroki-section">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<div style="font-weight:700; font-size:16px">Контроль сроки</div>
+</div>
+<div class="rooms-grid" id="rooms-grid"></div>
+</div>
+<div class="card hidden" id="gih-section">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<div style="font-weight:700; font-size:16px">GIH — Guest In House</div>
+<div class="row">
+<button class="btn secondary small" id="add-gih-btn"><i class="fas fa-plus"></i> Новая запись</button>
+</div>
+</div>
+<div aria-hidden="true" class="gih-form" id="gih-form">
+<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+<input class="input" id="gih-room" placeholder="Номер комнаты" style="width:140px">
+<div style="flex:1">
+<div class="gih-products-area" id="gih-products-area"></div>
+</div>
+</input></div>
+<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+<button class="btn ghost small" id="cancel-gih">Отмена</button>
+<button class="btn small" id="save-gih">Сохранить</button>
+</div>
+</div>
+<div class="gih-records" id="gih-records"></div>
+</div>
+<!-- ADDED: new page sections -->
+<div class="card page-section" id="settings-section">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<div style="font-weight:700;font-size:16px">Настройки</div>
+</div>
+<div class="muted">Раздел находится в разработке.</div>
+</div>
+<div class="card page-section" id="learning-section">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<div style="font-weight:700;font-size:16px">Обучение</div>
+</div>
+<div class="muted">Раздел находится в разработке.</div>
+</div>
+<div class="card page-section" id="practice-section">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<div style="font-weight:700;font-size:16px">Практика</div>
+</div>
+<div class="muted">Раздел находится в разработке.</div>
+</div>
 </main>
-    </div>
-
-    <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
-    <div class="bottom-nav" id="bottomNav" aria-hidden="true">
-        <!-- Mobile connection indicator -->
-        <div id="mobileConnectionIndicator" class="mobile-connection-indicator disconnected"></div>
-        
-        <div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
-        <div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
-        <div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
-    </div>
-
-    <!-- Modal (rooms) -->
-    <div id="modal" class="overlay" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true">
-            <div class="modal-head">
-                <div>
-                    <div class="modal-title" style="font-weight:700">Номер <span id="modal-room">—</span></div>
-                    <div class="muted">Выберите продукты</div>
-                </div>
-                <div>
-                    <button id="modal-close" class="btn ghost small" aria-label="Закрыть"><i class="fas fa-times"></i></button>
-                </div>
-            </div>
-
-            <div id="modal-products" class="products-wrap"></div>
-
-            <div class="modal-foot" style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
-                <button id="modal-reset" class="btn ghost small">Сброс</button>
-                <button id="modal-ok-order" class="btn secondary small">Сроки в порядке</button>
-                <button id="modal-save" class="btn small"><i class="fas fa-check"></i> Завершить</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
+</div>
+<!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
+<div aria-hidden="true" class="bottom-nav" id="bottomNav">
+<!-- Mobile connection indicator -->
+<div class="mobile-connection-indicator disconnected" id="mobileConnectionIndicator"></div>
+<div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
+<div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
+<div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
+</div>
+<!-- Modal (rooms) -->
+<div aria-hidden="true" class="overlay" id="modal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="modal-head">
+<div>
+<div class="modal-title" style="font-weight:700">Номер <span id="modal-room">—</span></div>
+<div class="muted">Выберите продукты</div>
+</div>
+<div>
+<button aria-label="Закрыть" class="btn ghost small" id="modal-close"><i class="fas fa-times"></i></button>
+</div>
+</div>
+<div class="products-wrap" id="modal-products"></div>
+<div class="modal-foot" style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+<button class="btn ghost small" id="modal-reset">Сброс</button>
+<button class="btn secondary small" id="modal-ok-order">Сроки в порядке</button>
+<button class="btn small" id="modal-save"><i class="fas fa-check"></i> Завершить</button>
+</div>
+</div>
+</div>
+<script>
         // ===== FIREBASE CONFIGURATION =====
         // ЗАМЕНИТЕ НА СВОЮ КОНФИГУРАЦИЮ FIREBASE
         const firebaseConfig = {
@@ -1337,9 +1387,27 @@ let isRendering = false;
 
         /* ===== ACCISES (same) ===== */
         function initAccises() {
-            const inp = $('#new-accise'); let t;
-            inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { addAccise(inp.value); inp.value = ''; }, 1000); });
-            inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clearTimeout(t); addAccise(inp.value); inp.value = ''; } });
+            const bindAcciseInput = (el) => {
+                if (!el) return;
+                let t;
+                el.addEventListener('input', () => { 
+                    clearTimeout(t); 
+                    t = setTimeout(() => { 
+                        addAccise(el.value); 
+                        el.value = ''; 
+                    }, 1000); 
+                });
+                el.addEventListener('keydown', e => { 
+                    if (e.key === 'Enter') { 
+                        e.preventDefault(); 
+                        clearTimeout(t); 
+                        addAccise(el.value); 
+                        el.value = ''; 
+                    } 
+                });
+            };
+            bindAcciseInput($('#new-accise'));
+            bindAcciseInput($('#new-accise-mobile'));
             $('#copy-accises').addEventListener('click', () => {
     const v = appData.accises.filter(a => a.isValid).map(a => a.text);
     if (!v.length) return alert('Нет валидных акциз');
@@ -2057,7 +2125,6 @@ function fallbackCopy(text) {
     };
 })();
 </script>
-
 <script>
 // === Переопределение showTab без автопрокрутки ===
 (function(){
@@ -2075,6 +2142,5 @@ function fallbackCopy(text) {
     };
 })();
 </script>
-
 </body>
 </html>
