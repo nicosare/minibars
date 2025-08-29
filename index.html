@@ -45,6 +45,102 @@ function updateGIHSummary() {
     container.style.display = "block";
 }
 
+
+
+        function applySummaryState() {
+            if (isCollapsed) {
+                summaryList.style.display = "none";
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            } else {
+                summaryList.style.display = "block";
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            }
+        }
+    }
+});
+
+
+
+        function applySummaryState() {
+            if (isCollapsed) {
+                summaryList.classList.add("collapsed");
+                icon.classList.remove("fa-chevron-up");
+                icon.classList.add("fa-chevron-down");
+            } else {
+                summaryList.classList.remove("collapsed");
+                icon.classList.remove("fa-chevron-down");
+                icon.classList.add("fa-chevron-up");
+            }
+        }
+    }
+});
+
+
+  mo.observe(list, { childList: true, subtree: true, characterData: true });
+
+  // Recalculate on resize when expanded
+  window.addEventListener("resize", () => {
+    if (!isCollapsed) {
+      list.style.maxHeight = "auto";
+      const h = list.scrollHeight;
+      list.style.maxHeight = h + "px";
+    }
+  });
+
+  // Toggle handler
+  btn.addEventListener("click", () => {
+    isCollapsed = !isCollapsed;
+    localStorage.setItem("gihSummaryCollapsed", String(isCollapsed));
+    apply();
+  });
+
+  // Kick off
+  apply();
+});
+
+
+  mo.observe(list, { childList: true, subtree: true, characterData: true });
+
+  window.addEventListener("resize", () => {
+    if (!isCollapsed) {
+      list.style.maxHeight = "auto";
+      list.style.maxHeight = list.scrollHeight + "px";
+    }
+  });
+
+  // Клик по блоку
+  summary.addEventListener("click", () => {
+    isCollapsed = !isCollapsed;
+    localStorage.setItem("gihSummaryCollapsed", String(isCollapsed));
+    applyState();
+  });
+
+  // Стартовое состояние
+  applyState();
+});
+
+
+mo.observe(list, { childList: true, subtree: true, characterData: true });
+
+  // Пересчёт при ресайзе
+  window.addEventListener("resize", () => {
+    if (!isCollapsed) {
+      list.style.maxHeight = "auto";
+      list.style.maxHeight = list.scrollHeight + "px";
+    }
+  });
+
+  // Клик по блоку
+  summary.addEventListener("click", () => {
+    isCollapsed = !isCollapsed;
+    localStorage.setItem("gihSummaryCollapsed", String(isCollapsed));
+    applyState();
+  });
+
+  // Применяем стартовое состояние
+  applyState();
+});
+
 </script>
 <!-- Firebase Realtime Database -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
@@ -1157,6 +1253,123 @@ function updateGIHSummary() {
     #new-accise-mobile:focus { border-color: var(--primary); box-shadow: 0 4px 14px rgba(39,103,73,0.16); }
 }
 
+
+
+
+
+
+
+/* GIH summary compact styles */
+#gih-summary { 
+  margin: 8px 0; 
+  padding: 10px; 
+  cursor: pointer; 
+}
+#gih-summary .title { font-weight:600; font-size:13px; }
+#gih-summary-list {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  will-change: max-height, opacity;
+}
+#toggle-summary { background:none; border:none; padding:2px; cursor:pointer; line-height:1; }
+#toggle-summary svg { width:14px; height:14px; }
+
+
+/* GIH summary compact styles */
+#gih-summary { 
+  margin: 8px 0; 
+  padding: 10px; 
+  cursor: pointer; 
+}
+#gih-summary:hover {
+  background: rgba(0,0,0,0.03);
+}
+#gih-summary-title {
+  font-weight:600;
+  font-size:13px;
+}
+#gih-summary-list {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  will-change: max-height, opacity;
+  max-height: 600px;
+  opacity: 1;
+}
+
+
+/* GIH summary compact styles */
+#gih-summary { 
+  margin: 8px 0; 
+  padding: 10px; 
+  cursor: pointer; 
+}
+#gih-summary:hover {
+  background: rgba(0,0,0,0.03);
+}
+#gih-summary-title {
+  font-weight:600;
+  font-size:13px;
+}
+#gih-summary-list {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  will-change: max-height, opacity;
+  max-height: 600px;
+  opacity: 1;
+}
+
+
+/* GIH summary toggle (fixed) */
+#gih-summary { 
+  margin: 8px 0; 
+  padding: 10px; 
+  cursor: pointer; 
+}
+#gih-summary .gih-summary-header { user-select:none; }
+#gih-summary-title { font-weight:600; font-size:13px; }
+#gih-summary-arrow { transition: transform 0.25s ease; }
+
+/* Base: collapsed */
+#gih-summary #gih-summary-list {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.2s ease;
+  will-change: max-height, opacity;
+}
+
+/* Expanded state */
+#gih-summary.expanded #gih-summary-list {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* Arrow rotation: right (collapsed) -> down (expanded) */
+#gih-summary.collapsed #gih-summary-arrow { transform: rotate(-90deg); }
+#gih-summary.expanded  #gih-summary-arrow { transform: rotate(0deg); }
+
+
+/* === Disable positional shifts on hover/active/focus ===
+   Prevent translate/translateY/transform shifts for interactive elements
+   without affecting other visual styles (color, shadow). */
+.card, .card:hover, .card:active,
+.product-btn, .product-btn:hover, .product-btn:active, .product-btn:focus, .product-btn:focus-visible,
+.gih-product, .gih-product:hover, .gih-product:active,
+.room-item, .room-item:hover, .room-item:active,
+.btn, .btn:active, .btn:focus, .btn:focus-visible,
+.room-item, .room-item:hover, .room-item:active,
+.modal, .modal.show {
+  transform: none !important;
+}
+
+/* Also ensure transition remains but doesn't move position */
+.product-btn, .gih-product, .card, .room-item, .btn {
+  transition: box-shadow 180ms ease, background 180ms ease, color 180ms ease !important;
+}
+
+/* Safety: neutralize inline transform styles that might be applied via JS on these elements */
+[data-style-transform] { transform: none !important; }
+
 </style>
 </head>
 <body>
@@ -1233,8 +1446,16 @@ function updateGIHSummary() {
 <button class="btn small" id="save-gih">Сохранить</button>
 </div>
 </div>
-<div class="gih-records" id="gih-records"></div>
-<div class="card" id="gih-summary" style="margin-top:16px; padding:14px; display:none;"><div style="font-weight:700; font-size:16px; margin-bottom:8px;">Итог по продуктам</div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div></div>
+<div class="card" id="gih-summary" style="margin:8px 0;  padding:10px; cursor:pointer;">
+  <div class="gih-summary-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div id="gih-summary-title" style="font-weight:600; font-size:13px;">Список продуктов</div>
+    <svg id="gih-summary-arrow" viewBox="0 0 24 24" width="16" height="16">
+      <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div id="gih-summary-list" class="muted" style="font-size:12px; line-height:1.35; margin-top:6px;"></div>
+</div>
+<div class="gih-records" id="gih-records"></div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div></div>
 </div>
 <!-- ADDED: new page sections -->
 <div class="card page-section" id="settings-section">
@@ -2486,6 +2707,34 @@ function updateGIHSummary() {
     listEl.innerHTML = htmlParts.join("");
     container.style.display = "block";
 }
+
+
+// --- Свернуть/Развернуть список продуктов: клик по блоку, стрелка-индикатор (фикс) ---
+document.addEventListener("DOMContentLoaded", () => {
+  const summary = document.getElementById("gih-summary");
+  const list = document.getElementById("gih-summary-list");
+  const arrow = document.getElementById("gih-summary-arrow");
+  if (!summary || !list || !arrow) return;
+
+  // Начальное состояние: читаем из localStorage, по умолчанию свернуто
+  let isCollapsedStored = localStorage.getItem("gihSummaryCollapsed");
+  let isCollapsed = isCollapsedStored === null ? true : (isCollapsedStored === "true");
+
+  function apply() {
+    summary.classList.toggle("collapsed", isCollapsed);
+    summary.classList.toggle("expanded", !isCollapsed);
+  }
+
+  // Обработчик клика по блоку
+  summary.addEventListener("click", () => {
+    isCollapsed = !isCollapsed;
+    localStorage.setItem("gihSummaryCollapsed", String(isCollapsed));
+    apply();
+  });
+
+  // Инициализация
+  apply();
+});
 
 </script>
 </body>
