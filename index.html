@@ -1478,34 +1478,44 @@ function fallbackCopy(text) {
             return;
         } const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); saveDebounced();
     updateUIFromData(); }); updateAcciseStats(); }
+        
+        
         function renderAcciseItem(a) {
     const list = document.querySelector('#accises-list');
-    // Если акциз уже есть в DOM — не создаём повторно
+    // Avoid duplicates
     if (list.querySelector(`[data-id="${a.id}"]`)) return;
+
     const el = document.createElement('div');
     el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid');
     el.dataset.id = a.id;
-    el.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:8px; background:var(--card)';
+    el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
+
     el.innerHTML = `
-        <div>
-            <div class="text" style="font-weight:600; word-break:break-word; white-space:normal; overflow-wrap:anywhere;">${a.text}</div>
-            <small style="color:var(--muted)">${new Date(a.ts).toLocaleTimeString()}</small>
+        <button class="btn ghost small accise-remove" title="Удалить"
+                style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+            <i class="fas fa-trash"></i>
+        </button>
+
+        <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
+            <div class="text" style="font-weight:600; white-space:normal;">${a.text}</div>
         </div>
-        <div class="accise-actions">
-            <button class="btn ghost small accise-remove" title="Удалить">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>`;
-    // Удаление акциза
+
+        <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
+            <small class="muted">${new Date(a.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+        </div>
+    `;
+
+    // Delete handler
     el.querySelector('.accise-remove').addEventListener('click', () => {
         appData.accises = appData.accises.filter(x => x.id !== a.id);
         el.remove();
         updateAcciseStats();
         saveDebounced();
     });
+
     list.prepend(el);
 }
-        function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
+function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
         /* ===== ROOMS & MODAL (unchanged) ===== */
         function initSroki() {
@@ -1682,6 +1692,14 @@ function fallbackCopy(text) {
         function formatHHMM(d) { const hh = String(d.getHours()).padStart(2, '0'); const mm = String(d.getMinutes()).padStart(2, '0'); return `${hh}:${mm}`; }
 
         /* Render single record card */
+        
+        /* Render single record card (updated view when saved) */
+        
+        /* Render single record card (updated view when saved) */
+        
+        /* Render single record card (updated view when saved) */
+        
+        /* Render single record card (updated view when saved) */
         function renderGIHRecord(record) {
             const container = $('#gih-records');
             normalizeRecordProducts(record);
@@ -1690,39 +1708,151 @@ function fallbackCopy(text) {
             card.className = 'gih-card';
             card.setAttribute('data-id', record.id);
 
-            const headerHtml = `<div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;color:var(--primary-strong)">${record.room}</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn ghost small edit-btn" title="Редактировать"><i class="fas fa-edit"></i></button>
-          <button class="btn ghost small delete-btn" title="Удалить"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>`;
+            // Header: room on left, actions on the right (delete / saved time)
+            let rightActionsHtml = '';
+            if (record.savedAt) {
+                rightActionsHtml = `<div style="display:flex;gap:8px;align-items:center">
+                    <div class="muted" style="font-weight:600">${record.savedAt}</div>
+                    <button class="btn ghost small delete-btn" title="Удалить"><i class="fas fa-trash"></i></button>
+                </div>`;
+            } else {
+                rightActionsHtml = `<div style="display:flex;gap:8px">
+                    <button class="btn ghost small edit-btn" title="Редактировать"><i class="fas fa-edit"></i></button>
+                    <button class="btn ghost small delete-btn" title="Удалить"><i class="fas fa-trash"></i></button>
+                </div>`;
+            }
 
+            const headerHtml = `<div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:700;color:var(--primary-strong)">${record.room}</div>
+                ${rightActionsHtml}
+            </div>`;
+
+            // If record is saved -> show simplified saved view
+            if (record.savedAt) {
+                const allNonNeutral = (record.products || []).length > 0 && (record.products || []).every(p => Number(p.status || 0) !== 0);
+                let contentHtml = '';
+
+                if (record.statusMode) {
+                    const groups = {};
+                    (record.products || []).forEach(p => groups[p.name] = (groups[p.name] || 0) + 1);
+                    const parts = Object.entries(groups).map(([k, cnt]) => {
+                        const name = appData.products[k] || k;
+                        return cnt > 1 ? `${name} x${cnt}` : `${name}`;
+                    });
+                    const productsDisplay = `<div class="muted" style="margin-top:10px">${parts.join(', ') || '&nbsp;'}</div>`;
+                    const modeLabelMap = { dnd: 'DND', allInPlace: 'Всё на месте', putOut: 'Всё выложили' };
+                    const modeLabel = modeLabelMap[record.statusMode] || record.statusMode || '';
+                    const modeHtml = modeLabel ? `<div style="margin-top:8px; font-weight:600">${modeLabel}</div>` : '';
+                    const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
+                    contentHtml = productsDisplay + modeHtml + commentHtml;
+                    card.innerHTML = headerHtml + contentHtml;
+                    container.appendChild(card);
+
+                    const delBtnSaved = card.querySelector('.delete-btn');
+                    if (delBtnSaved) {
+                        delBtnSaved.addEventListener('click', () => {
+                            if (confirm('Удалить запись?')) {
+                                appData.gihRecords = appData.gihRecords.filter(r => r.id !== record.id);
+                                card.remove();
+                                saveDebounced();
+                                renderAllGIHRecords();
+                            }
+                        });
+                    }
+                    return;
+                } else if (allNonNeutral) {
+                    const statusOrder = [1, 2, 3, 4];
+                    const statusClass = {1: 't-added', 2: 't-here', 3: 't-out', 4: 't-miss'};
+                    const statusLabel = {1: 'Пополнено', 2: 'На месте', 3: 'Выложили', 4: 'Не пополнено'};
+
+                    const groups = {};
+                    (record.products || []).forEach(p => {
+                        const st = Number(p.status || 0);
+                        const nm = p.name;
+                        groups[st] = groups[st] || {};
+                        groups[st][nm] = (groups[st][nm] || 0) + 1;
+                    });
+
+                    const lines = [];
+                    statusOrder.forEach(st => {
+                        if (!groups[st]) return;
+                        const names = Object.entries(groups[st]).map(([k, cnt]) => {
+                            const name = appData.products[k] || k;
+                            return cnt > 1 ? `${name} x${cnt}` : `${name}`;
+                        });
+                        if (names.length) {
+                            const line = `<div style="margin-top:8px;">
+                                <div class="${statusClass[st]}" style="font-weight:700; font-size:13px">${statusLabel[st]}:</div>
+                                <div class="muted" style="margin-top:4px">${names.join(', ')}</div>
+                            </div>`;
+                            lines.push(line);
+                        }
+                    });
+
+                    const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
+                    contentHtml = lines.join('') + commentHtml;
+
+                    card.innerHTML = headerHtml + contentHtml;
+                    container.appendChild(card);
+
+                    const delBtnSaved = card.querySelector('.delete-btn');
+                    if (delBtnSaved) {
+                        delBtnSaved.addEventListener('click', () => {
+                            if (confirm('Удалить запись?')) {
+                                appData.gihRecords = appData.gihRecords.filter(r => r.id !== record.id);
+                                card.remove();
+                                saveDebounced();
+                                renderAllGIHRecords();
+                            }
+                        });
+                    }
+                    return;
+                } else {
+                    const parts = (record.products || []).map(p => appData.products[p.name] || p.name);
+                    const productsHtml = `<div class="muted" style="margin-top:10px">${parts.join(', ') || '&nbsp;'}</div>`;
+                    const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
+                    card.innerHTML = headerHtml + productsHtml + commentHtml;
+                    container.appendChild(card);
+                    const delBtnSaved = card.querySelector('.delete-btn');
+                    if (delBtnSaved) {
+                        delBtnSaved.addEventListener('click', () => {
+                            if (confirm('Удалить запись?')) {
+                                appData.gihRecords = appData.gihRecords.filter(r => r.id !== record.id);
+                                card.remove();
+                                saveDebounced();
+                                renderAllGIHRecords();
+                            }
+                        });
+                    }
+                    return;
+                }
+            }
+
+            // Normal (editable) view for not-yet-saved records
             const productsHtml = `<div class="gih-products"></div>`;
             const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
             const footerHtml = `<div class="gih-footer">
-        <button class="mode-btn" data-mode="dnd">DND</button>
-        <button class="mode-btn" data-mode="allInPlace">Всё на месте</button>
-        <button class="mode-btn" data-mode="putOut">Всё выложили</button>
-        <button class="btn ghost small" data-action="comment">Комментарий</button>
-      </div>`;
+                <button class="mode-btn" data-mode="dnd">DND</button>
+                <button class="mode-btn" data-mode="allInPlace">Всё на месте</button>
+                <button class="mode-btn" data-mode="putOut">Всё выложили</button>
+                <button class="btn ghost small" data-action="comment">Комментарий</button>
+            </div>`;
             const legendHtml = `<div class="legend">
-        <div class="item"><span class="color t-added"></span>Пополнено</div>
-        <div class="item"><span class="color t-here"></span>На месте</div>
-        <div class="item"><span class="color t-out"></span>Выложили</div>
-        <div class="item"><span class="color t-miss"></span>Не пополнено</div>
-      </div>`;
+                <div class="item"><span class="color t-added"></span>Пополнено</div>
+                <div class="item"><span class="color t-here"></span>На месте</div>
+                <div class="item"><span class="color t-out"></span>Выложили</div>
+                <div class="item"><span class="color t-miss"></span>Не пополнено</div>
+            </div>`;
             const saveRowHtml = `<div class="card-footer-row">
-        <div style="flex:1"></div>
-        <div class="card-save-wrap">
-          <button class="card-save"${canSaveCard(record) ? '' : ' disabled'}>Сохранить</button>
-          <div class="saved-at">${record.savedAt ? `Сохранено в ${record.savedAt}` : ''}</div>
-        </div>
-      </div>`;
+                <div style="flex:1"></div>
+                <div class="card-save-wrap">
+                    <button class="card-save"${canSaveCard(record) ? '' : ' disabled'}>Сохранить</button>
+                    <div class="saved-at">${record.savedAt ? `Сохранено в ${record.savedAt}` : ''}</div>
+                </div>
+            </div>`;
 
             card.innerHTML = headerHtml + productsHtml + commentHtml + footerHtml + legendHtml + saveRowHtml;
 
-            // products
             const prodWrap = card.querySelector('.gih-products'); prodWrap.innerHTML = '';
             (record.products || []).forEach((entry, idx) => {
                 const key = entry.name;
@@ -1737,7 +1867,6 @@ function fallbackCopy(text) {
                 p.addEventListener('click', () => {
                     const rec = appData.gihRecords.find(r => r.id === record.id);
                     if (!rec) return;
-                    // if mode selected -> cannot change statuses
                     if (rec.statusMode) return;
                     const el = rec.products[parseInt(p.dataset.index, 10)];
                     el.status = (Number(el.status || 0) + 1) % 5;
@@ -1751,23 +1880,19 @@ function fallbackCopy(text) {
 
             container.appendChild(card);
 
-            // mode buttons
             card.querySelectorAll('.mode-btn').forEach(btn => {
                 const mode = btn.dataset.mode;
                 btn.classList.toggle('active', record.statusMode === mode);
                 btn.addEventListener('click', () => {
-                    // if button disabled via anyNonNeutral, ignore
                     if (btn.disabled) return;
                     const rec = appData.gihRecords.find(r => r.id === record.id);
                     if (!rec) return;
                     rec.statusMode = (rec.statusMode === mode) ? null : mode;
-                    // when mode selected -> products disabled in UI; when cleared -> products enabled
                     saveDebounced();
                     updateCardSaveUI(rec, card);
                 });
             });
 
-            // comment
             const commentBtn = card.querySelector('[data-action="comment"]');
             if (commentBtn) {
                 commentBtn.addEventListener('click', () => {
@@ -1776,23 +1901,19 @@ function fallbackCopy(text) {
                 });
             }
 
-            // edit
             const editBtn = card.querySelector('.edit-btn');
             if (editBtn) {
                 editBtn.addEventListener('click', () => {
                     editingGIHId = record.id;
                     $('#gih-form').style.display = 'block';
                     $('#gih-room').value = record.room;
-                    // focus on room input
                     setTimeout(() => { try { $('#gih-room').focus(); $('#gih-room').select(); } catch (e) { } }, 50);
-                    // prepare counts preserving quantities
                     gihTempProducts = {};
                     (record.products || []).forEach(p => { gihTempProducts[p.name] = (gihTempProducts[p.name] || 0) + 1; });
                     renderProductButtons($('#gih-products-area'), Object.keys(appData.products), gihTempProducts, () => { }, { allowMaxTwo: true });
                 });
             }
 
-            // delete
             const delBtn = card.querySelector('.delete-btn');
             if (delBtn) {
                 delBtn.addEventListener('click', () => {
@@ -1805,7 +1926,6 @@ function fallbackCopy(text) {
                 });
             }
 
-            // save button
             const saveBtn = card.querySelector('.card-save');
             const savedAtEl = card.querySelector('.saved-at');
 
@@ -1818,14 +1938,13 @@ function fallbackCopy(text) {
                 savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
                 saveDebounced();
                 updateCardSaveUI(rec, card);
+                card.remove();
+                renderGIHRecord(rec);
             });
 
-            // initial UI sync: disable/enable mode buttons & products & save
             updateCardSaveUI(record, card);
         }
-
-        /* Update UI elements inside a card based on record state */
-        function updateCardSaveUI(rec, cardEl) {
+function updateCardSaveUI(rec, cardEl) {
             const record = rec;
             const card = cardEl || document.querySelector(`.gih-card[data-id="${record.id}"]`);
             if (!card) return;
