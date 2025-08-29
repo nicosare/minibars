@@ -8,9 +8,83 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&amp;display=swap" rel="stylesheet"/>
 <!-- Firebase App (обязательный скрипт для Firebase) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
+</script>
 <!-- Firebase Realtime Database -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
+</script>
 <style>
         :root {
             --bg: #f6f7fb;
@@ -1160,6 +1234,7 @@
 </div>
 </div>
 <div class="gih-records" id="gih-records"></div>
+<div class="card" id="gih-summary" style="margin-top:16px; padding:14px; display:none;"><div style="font-weight:700; font-size:16px; margin-bottom:8px;">Итог по продуктам</div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div></div>
 </div>
 <!-- ADDED: new page sections -->
 <div class="card page-section" id="settings-section">
@@ -1363,6 +1438,7 @@ let isRendering = false;
             appData.rooms = appData.rooms || [];
             renderRooms();
             renderAllGIHRecords();
+    updateGIHSummary();
     isRendering = false;
 }
 
@@ -1606,6 +1682,7 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
             sortGIHRecords();
             (appData.gihRecords || []).forEach(rec => renderGIHRecord(rec));
         }
+    updateGIHSummary();
 
         /* build form area */
         function buildGIHProductsArea() { gihTempProducts = {}; renderProductButtons($('#gih-products-area'), Object.keys(appData.products), gihTempProducts, () => { }, { allowMaxTwo: true }); }
@@ -1643,6 +1720,7 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
                 // ensure consistent statusMode: if products non-neutral, clear mode
                 if ((rec.products || []).some(p => Number(p.status || 0) !== 0)) rec.statusMode = null;
                 sortGIHRecords(); renderAllGIHRecords(); saveDebounced();
+    updateGIHSummary();
             } else {
                 const productsArr = [];
                 Object.entries(selectedCounts).forEach(([k, cnt]) => { for (let i = 0; i < cnt; i++) productsArr.push({ name: k, status: 0 }); });
@@ -1940,7 +2018,8 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
                 updateCardSaveUI(rec, card);
                 card.remove();
                 renderGIHRecord(rec);
-            });
+            })
+updateGIHSummary();;
 
             updateCardSaveUI(record, card);
         }
@@ -2198,6 +2277,43 @@ function updateCardSaveUI(rec, cardEl) {
     try { moveIndicatorIfNeeded(); } catch(e){}
 })();
 
+
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
 </script>
 <script>
 // === Обновление заголовка активной страницы в мобильной шапке ===
@@ -2224,6 +2340,43 @@ function updateCardSaveUI(rec, cardEl) {
         }
     };
 })();
+
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
 </script>
 <script>
 // === Фикс перекрытия верхнего блока шапкой ===
@@ -2243,6 +2396,43 @@ function updateCardSaveUI(rec, cardEl) {
         }, 50);
     };
 })();
+
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
 </script>
 <script>
 // === Переопределение showTab без автопрокрутки ===
@@ -2260,6 +2450,43 @@ function updateCardSaveUI(rec, cardEl) {
         // Не скроллим страницу
     };
 })();
+
+/* ====== GIH SUMMARY ====== */
+function updateGIHSummary() {
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    // Считаем все продукты
+    const counts = {};
+    (appData.gihRecords || []).forEach(rec => {
+        (rec.products || []).forEach(p => {
+            if (!p || !p.name) return;
+            counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+    });
+
+    // Если нет данных, скрываем блок
+    const entries = Object.entries(counts);
+    if (entries.length === 0) {
+        container.style.display = "none";
+        listEl.innerHTML = "";
+        return;
+    }
+
+    // Сортируем по убыванию
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Формируем HTML-список
+    const htmlParts = entries.map(([key, count]) => {
+        const name = appData.products[key] || key;
+        return `<div><strong>${name}</strong> — ${count}</div>`;
+    });
+
+    listEl.innerHTML = htmlParts.join("");
+    container.style.display = "block";
+}
+
 </script>
 </body>
 </html>
