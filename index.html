@@ -1579,6 +1579,17 @@ function updateGIHRoomsSummary() {
   animation: gihCardFlash 0.8s ease-out;
 }
 
+
+#gih-sort-btn {
+  padding: 4px 6px;
+  min-width: auto;
+  width: 28px;
+  height: 28px;
+}
+#gih-sort-btn i {
+  margin: 0;
+}
+
 </style>
 </head>
 <body>
@@ -1640,6 +1651,7 @@ function updateGIHRoomsSummary() {
 <div style="display:flex; justify-content:space-between; align-items:center;">
 <div style="font-weight:700; font-size:16px">GIH 30.08.25</div>
 <div class="row">
+<button class="btn ghost small" id="gih-sort-btn" title="Сортировать"><i class="fas fa-sort-numeric-down"></i></button>
 <button class="btn secondary small" id="add-gih-btn"><i class="fas fa-plus"></i> Новая запись</button>
 </div>
 </div>
@@ -2104,7 +2116,7 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
         }
 
         /* ===== GIH logic ===== */
-        let gihTempProducts = {}; let editingGIHId = null;
+        let gihTempProducts = {}; let editingGIHId = null; let gihSortAsc = true;
 
         /* sort */
         function sortGIHRecords() {
@@ -2113,7 +2125,7 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
                 if (!isFinite(na) && !isFinite(nb)) return 0;
                 if (!isFinite(na)) return 1;
                 if (!isFinite(nb)) return -1;
-                return na - nb;
+                return gihSortAsc ? (na - nb) : (nb - na);
             });
         }
 
@@ -2629,6 +2641,19 @@ function updateCardSaveUI(rec, cardEl) {
             });
             $('#cancel-gih').addEventListener('click', () => { $('#gih-form').style.display = 'none'; editingGIHId = null; clearGIHForm(); });
             $('#save-gih').addEventListener('click', handleGIHSave);
+            // Sort toggle button
+            try {
+                const sortBtn = $('#gih-sort-btn');
+                if (sortBtn) {
+                    sortBtn.addEventListener('click', () => {
+                        gihSortAsc = !gihSortAsc;
+                        sortBtn.innerHTML = gihSortAsc ? '<i class="fas fa-sort-numeric-down"></i>' 
+                                                        : '<i class="fas fa-sort-numeric-up"></i>';
+                        renderAllGIHRecords();
+                    });
+                }
+            } catch(e) {}
+    
         }
 
         /* Escape closes modal */
