@@ -1605,6 +1605,8 @@ function updateGIHRoomsSummary() {
 <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
 <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+<div class="nav-item extra" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
+
 <div class="nav-separator"></div>
 <!-- Desktop connection status -->
 <div class="connection-status disconnected" id="connectionStatus">
@@ -1623,6 +1625,8 @@ function updateGIHRoomsSummary() {
 <div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
 <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
+<div class="mb-burger-item" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
+
 </div>
 </div>
 <div class="card" id="accises-section">
@@ -1703,6 +1707,13 @@ function updateGIHRoomsSummary() {
 <div class="muted">Раздел находится в разработке.</div>
 </div>
 <div class="card page-section" id="practice-section">
+<div class="card page-section" id="history-section">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700;font-size:16px">История</div>
+    </div>
+    <div class="muted">Раздел в разработке...</div>
+</div>
+
 <div style="display:flex;justify-content:space-between;align-items:center;">
 <div style="font-weight:700;font-size:16px">Практика</div>
 </div>
@@ -3305,3 +3316,46 @@ function updateGIHRoomsSummary() {
 </script>
 </body>
 </html>
+
+<script>
+// Save function (to be triggered by the "Save" button on the GIH page)
+function saveToHistory() {
+    const gihRecord = {
+        room: document.getElementById("gih-room").value,
+        products: selectedProducts, // Assuming this is an array of selected products
+        date: new Date().toLocaleDateString('en-GB') // Format as DD/MM/YY or any preferred format
+    };
+
+    // Save to GIH history
+    appData.gihHistory = appData.gihHistory || [];
+    appData.gihHistory.push(gihRecord);
+
+    // Update the history UI section
+    updateHistoryUI();
+
+    // Save to Firebase (optional)
+    saveToFirebase();
+}
+
+// Function to update the UI of the History Tab
+function updateHistoryUI() {
+    const historySection = document.getElementById("history-section");
+    historySection.innerHTML = ''; // Clear previous content
+
+    appData.gihHistory.forEach(record => {
+        const recordEl = document.createElement('div');
+        recordEl.classList.add('history-record');
+        recordEl.innerHTML = `
+            <div><strong>Room ${record.room}</strong> - ${record.date}</div>
+            <div>Products: ${record.products.join(', ')}</div>
+        `;
+        historySection.appendChild(recordEl);
+    });
+}
+
+// Function to handle the history dropdown for selecting records by date
+function handleHistoryDateChange(date) {
+    const filteredRecords = appData.gihHistory.filter(record => record.date === date);
+    updateHistoryUI(filteredRecords); // Update UI based on selected date
+}
+</script>
