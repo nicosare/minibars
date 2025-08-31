@@ -1606,7 +1606,6 @@ function updateGIHRoomsSummary() {
 <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
 <div class="nav-item extra" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
-
 <div class="nav-separator"></div>
 <!-- Desktop connection status -->
 <div class="connection-status disconnected" id="connectionStatus">
@@ -1626,7 +1625,6 @@ function updateGIHRoomsSummary() {
 <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
 <div class="mb-burger-item" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
-
 </div>
 </div>
 <div class="card" id="accises-section">
@@ -1653,7 +1651,7 @@ function updateGIHRoomsSummary() {
 </div>
 <div class="card hidden" id="gih-section">
 <div style="display:flex; justify-content:space-between; align-items:center;">
-<div style="font-weight:700; font-size:16px">GIH 30.08.25</div>
+  <div id="gih-title-date" style="font-weight:700; font-size:16px">GIH</div>
 <div class="row">
 <button class="btn ghost small" id="gih-sort-btn" title="Сортировать"><i class="fas fa-sort-numeric-down"></i></button>
 <button class="btn secondary small" id="add-gih-btn"><i class="fas fa-plus"></i> Новая запись</button>
@@ -1694,31 +1692,81 @@ function updateGIHRoomsSummary() {
 <div class="gih-records" id="gih-records"></div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div></div>
 </div>
 <!-- ADDED: new page sections -->
+<!-- Секция Настройки -->
 <div class="card page-section" id="settings-section">
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<div style="font-weight:700;font-size:16px">Настройки</div>
-</div>
-<div class="muted">Раздел находится в разработке.</div>
-</div>
-<div class="card page-section" id="learning-section">
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<div style="font-weight:700;font-size:16px">Обучение</div>
-</div>
-<div class="muted">Раздел находится в разработке.</div>
-</div>
-<div class="card page-section" id="practice-section">
-<div class="card page-section" id="history-section">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-weight:700;font-size:16px">История</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:16px">Настройки приложения</div>
     </div>
-    <div class="muted">Раздел в разработке...</div>
+    <div style="margin-top:15px;">
+        <p>В этом разделе вы сможете настроить работу приложения под свои потребности.</p>
+        <ul style="margin-left:20px;margin-top:10px;">
+            <li>Настройки синхронизации данных</li>
+            <li>Внешний вид интерфейса</li>
+            <li>Управление данными</li>
+            <li>Резервное копирование</li>
+        </ul>
+    </div>
 </div>
 
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<div style="font-weight:700;font-size:16px">Практика</div>
+<!-- Секция Обучение -->
+<div class="card page-section" id="learning-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:16px">Обучение работе с Minibar</div>
+    </div>
+    <div style="margin-top:15px;">
+        <p>Здесь вы найдете всю необходимую информацию для эффективной работы с приложением.</p>
+        <div style="margin-top:10px;">
+            <button class="btn small" style="margin-right:10px;"><i class="fas fa-play"></i> Видеоуроки</button>
+            <button class="btn small" style="margin-right:10px;"><i class="fas fa-file-pdf"></i> Инструкция PDF</button>
+            <button class="btn small"><i class="fas fa-question-circle"></i> Частые вопросы</button>
+        </div>
+    </div>
 </div>
-<div class="muted">Раздел находится в разработке.</div>
+
+<!-- Секция Практика -->
+<div class="card page-section" id="practice-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:16px">Практические задания</div>
+    </div>
+    <div style="margin-top:15px;">
+        <p>Оттачивайте свои навыки работы с минибаром с помощью практических заданий.</p>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+            <div class="product-btn">Тренировка акцизов</div>
+            <div class="product-btn">Симуляция инвентаризации</div>
+            <div class="product-btn">Тест на знание продуктов</div>
+        </div>
+    </div>
 </div>
+
+<!-- Секция История -->
+<div class="card page-section" id="history-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:16px">История действий</div>
+    </div>
+    <div style="margin-top:15px;">
+        <p>В этом разделе отображается история всех выполненных операций.</p>
+        <div style="margin-top:10px;background:#f8f9fa;padding:15px;border-radius:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span>Сегодня</span>
+                <span>15:30</span>
+            </div>
+            <div style="margin-top:5px;">Добавлено 5 акцизов</div>
+            
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:15px;">
+                <span>Сегодня</span>
+                <span>14:15</span>
+            </div>
+            <div style="margin-top:5px;">Проверена комната 204 (GIH)</div>
+            
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:15px;">
+                <span>Вчера</span>
+                <span>16:40</span>
+            </div>
+            <div style="margin-top:5px;">Обновлены сроки годности</div>
+        </div>
+    </div>
+</div>
+</div>    
 </main>
 </div>
 <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
@@ -2581,24 +2629,46 @@ function updateCardSaveUI(rec, cardEl) {
                 });
             });
         }
+function syncBottomNav(tab) {
+    const bottom = $$('#bottomNav .b-item');
+    bottom.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+}
+// === ОБНОВЛЕННАЯ ФУНКЦИЯ showTab ДЛЯ ВСЕХ ВКЛАДОК ===
+function showTab(tab) {
+    // Скрываем все основные секции
+    $('#accises-section').classList.add('hidden');
+    $('#sroki-section').classList.add('hidden');
+    $('#gih-section').classList.add('hidden');
+    
+    // Скрываем все дополнительные секции
+    $('#settings-section').classList.add('hidden');
+    $('#learning-section').classList.add('hidden');
+    $('#practice-section').classList.add('hidden');
+    $('#history-section').classList.add('hidden');
+    
+    // Показываем выбранную секцию
+    if (tab === 'accises') $('#accises-section').classList.remove('hidden');
+    if (tab === 'sroki') $('#sroki-section').classList.remove('hidden');
+    if (tab === 'gih') $('#gih-section').classList.remove('hidden');
+    if (tab === 'settings') $('#settings-section').classList.remove('hidden');
+    if (tab === 'learning') $('#learning-section').classList.remove('hidden');
+    if (tab === 'practice') $('#practice-section').classList.remove('hidden');
+    if (tab === 'history') $('#history-section').classList.remove('hidden');
+    
+    // Синхронизируем навигацию
+    syncBottomNav(tab);
+    syncTopNav(tab);
+}
 
-        function showTab(tab) {
-            $('#accises-section').classList.add('hidden'); $('#sroki-section').classList.add('hidden'); $('#gih-section').classList.add('hidden');
-            if (tab === 'accises') $('#accises-section').classList.remove('hidden');
-            if (tab === 'sroki') $('#sroki-section').classList.remove('hidden');
-            if (tab === 'gih') $('#gih-section').classList.remove('hidden');
-            // scroll to top of main content on mobile for better UX
-            try { document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
-        }
-
-        function syncBottomNav(tab) {
-            const bottom = $$('#bottomNav .b-item');
-            bottom.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-        }
-        function syncTopNav(tab) {
-            const top = $$('.nav-item');
-            top.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-        }
+// === ОБНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ СИНХРОНИЗАЦИИ ВЕРХНЕЙ НАВИГАЦИИ ===
+function syncTopNav(tab) {
+    const top = $$('.nav-item');
+    top.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    
+    // Также активируем элементы бургер-меню
+    const burgerItems = $$('.mb-burger-item');
+    burgerItems.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+}
 
         /* MOBILE: hide bottom nav on scroll down, show on scroll up */
         (function bottomNavAutoHide() {
@@ -2687,7 +2757,7 @@ function updateCardSaveUI(rec, cardEl) {
     window.showTab = function(tab){
         try {
             // hide new sections
-            ['settings','learning','practice'].forEach(t => {
+            ['settings','learning','practice', 'history'].forEach(t => {
                 const el = $('#' + t + '-section');
                 if (el) el.classList.remove('show'), el.classList.add('hidden');
             });
@@ -2885,7 +2955,8 @@ function updateGIHRoomsSummary() {
         gih: 'GIH',
         settings: 'Настройки',
         learning: 'Обучение',
-        practice: 'Практика'
+        practice: 'Практика',
+        history: 'История'
     };
 
     const origShowTab = window.showTab;
@@ -3314,48 +3385,68 @@ function updateGIHRoomsSummary() {
 })();
 
 </script>
+<script>
+/* === Расширенное переключение вкладок (включая extra) === */
+(function () {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  /* Карта имён вкладок -> секций */
+  const tabMap = {
+    accises:  $('#accises-section'),
+    sroki:    $('#sroki-section'),
+    gih:      $('#gih-section'),
+    settings: $('#settings-section'),
+    learning: $('#learning-section'),
+    practice: $('#practice-section'),
+    history:  $('#history-section')
+  };
+
+  /* Скрыть все секции */
+  function hideAll() {
+    Object.values(tabMap).forEach(el => el && el.classList.add('hidden'));
+  }
+
+  /* Показать нужную секцию */
+  function showTab(tab) {
+    hideAll();
+    const target = tabMap[tab];
+    if (target) target.classList.remove('hidden');
+
+    /* синхронизируем навигацию */
+    $$('.nav-item, .b-item, .mb-burger-item').forEach(n =>
+      n.classList.toggle('active', n.dataset.tab === tab)
+    );
+
+    /* закрываем бургер-меню */
+    $('#mbBurgerMenu')?.classList.remove('show');
+  }
+
+  /* Вешаем клики на все переключатели */
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('[data-tab]')?.dataset.tab;
+    if (tab) {
+      e.preventDefault();
+      showTab(tab);
+    }
+  });
+
+  /* При старте показываем акцизы */
+  document.addEventListener('DOMContentLoaded', () => showTab('accises'));
+})();
+</script>
+<script>
+  // Auto-set current date in GIH header
+  (function () {
+    const el = document.getElementById('gih-title-date');
+    if (!el) return;
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yy = String(today.getFullYear()).slice(-2);
+    el.textContent = `GIH ${dd}.${mm}.${yy}`;
+  })();
+</script>
+
 </body>
 </html>
-
-<script>
-// Save function (to be triggered by the "Save" button on the GIH page)
-function saveToHistory() {
-    const gihRecord = {
-        room: document.getElementById("gih-room").value,
-        products: selectedProducts, // Assuming this is an array of selected products
-        date: new Date().toLocaleDateString('en-GB') // Format as DD/MM/YY or any preferred format
-    };
-
-    // Save to GIH history
-    appData.gihHistory = appData.gihHistory || [];
-    appData.gihHistory.push(gihRecord);
-
-    // Update the history UI section
-    updateHistoryUI();
-
-    // Save to Firebase (optional)
-    saveToFirebase();
-}
-
-// Function to update the UI of the History Tab
-function updateHistoryUI() {
-    const historySection = document.getElementById("history-section");
-    historySection.innerHTML = ''; // Clear previous content
-
-    appData.gihHistory.forEach(record => {
-        const recordEl = document.createElement('div');
-        recordEl.classList.add('history-record');
-        recordEl.innerHTML = `
-            <div><strong>Room ${record.room}</strong> - ${record.date}</div>
-            <div>Products: ${record.products.join(', ')}</div>
-        `;
-        historySection.appendChild(recordEl);
-    });
-}
-
-// Function to handle the history dropdown for selecting records by date
-function handleHistoryDateChange(date) {
-    const filteredRecords = appData.gihHistory.filter(record => record.date === date);
-    updateHistoryUI(filteredRecords); // Update UI based on selected date
-}
-</script>
