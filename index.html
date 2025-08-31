@@ -3447,6 +3447,29 @@ function updateGIHRoomsSummary() {
     el.textContent = `GIH ${dd}.${mm}.${yy}`;
   })();
 </script>
+<script>
+// --- Persist active tab across reloads ---
+(function () {
+  const STORAGE_KEY = 'minibar-active-tab';
+
+  // 1. Запоминаем вкладку при каждом её переключении
+  const originalShowTab = window.showTab;
+  window.showTab = function (tab) {
+    if (typeof originalShowTab === 'function') originalShowTab(tab);
+    localStorage.setItem(STORAGE_KEY, tab);
+  };
+
+  // 2. Читаем сохранённое значение и показываем нужную вкладку при загрузке
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = localStorage.getItem(STORAGE_KEY) || 'accises'; // fallback
+    window.showTab(savedTab);
+
+    // синхронизируем состояние навигаций
+    if (typeof syncTopNav === 'function') syncTopNav(savedTab);
+    if (typeof syncBottomNav === 'function') syncBottomNav(savedTab);
+  });
+})();
+</script>
 
 </body>
 </html>
