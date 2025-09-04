@@ -1945,6 +1945,28 @@ let isRendering = false;
         
         // Update UI when data changes
         function updateUIFromData() {
+    // Сортируем продукты по исходному порядку из appData.products
+    if (appData.products && typeof appData.products === 'object') {
+        const originalOrder = [
+            "twix", "jager", "gin", "rum", "cognac", "whiskey", "vodka", "pepper",
+            "redbull", "cola", "baikal", "borjomi", "white_wine", "red_wine", "apple",
+            "tomato", "corona", "stella", "gancha", "martini", "orange", "cherry",
+            "loriot", "whiskey02"
+        ];
+
+        appData.products = Object.fromEntries(
+            Object.entries(appData.products).sort((a, b) => {
+                const ia = originalOrder.indexOf(a[0]);
+                const ib = originalOrder.indexOf(b[0]);
+                // Если ключ есть в оригинале — сортируем по позиции, иначе в конец
+                if (ia === -1 && ib === -1) return a[1].localeCompare(b[1], 'ru');
+                if (ia === -1) return 1;
+                if (ib === -1) return -1;
+                return ia - ib;
+            })
+        );
+    }
+
     if (isRendering) return;
     isRendering = true;
             appData.gihRecords.forEach(r => normalizeRecordProducts(r));
