@@ -1589,6 +1589,20 @@ function updateGIHRoomsSummary() {
 #gih-sort-btn i {
   margin: 0;
 }
+/* ---------- Сброс лишних отступов ---------- */
+@media (max-width: 920px) {
+  /* На мобилке вообще никаких левых отступов */
+  main, .content, .extra-section, .page-container, #main-content {
+    margin-left: 0 !important;
+  }
+}
+
+@media (min-width: 921px) {
+  /* На десктопе — ровно один отступ справа от фикс-меню */
+  main, .content, .extra-section, .page-container, #main-content {
+    margin-left: calc(220px + 24px) !important;
+  }
+}
 
 </style>
 </head>
@@ -1689,86 +1703,76 @@ function updateGIHRoomsSummary() {
   <div id="gih-rooms-summary-list" class="muted" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; font-size:12px; line-height:1.35;"></div>
 </div>
 
-<div class="gih-records" id="gih-records"></div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div></div>
+<div class="gih-records" id="gih-records"></div><div id="gih-summary-list" class="muted" style="font-size:14px; line-height:1.6;"></div>
+<hr id="gih-divider" style="display:none; margin:20px 0; border:none; border-top:1px solid rgba(0,0,0,0.1);" />
+<div class="gih-records" id="gih-saved-records"></div>
 </div>
-<!-- ADDED: new page sections -->
-<!-- Секция Настройки -->
-<div class="card page-section" id="settings-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;font-size:16px">Настройки приложения</div>
-    </div>
-    <div style="margin-top:15px;">
-        <p>В этом разделе вы сможете настроить работу приложения под свои потребности.</p>
-        <ul style="margin-left:20px;margin-top:10px;">
-            <li>Настройки синхронизации данных</li>
-            <li>Внешний вид интерфейса</li>
-            <li>Управление данными</li>
-            <li>Резервное копирование</li>
-        </ul>
-    </div>
-</div>
-
-<!-- Секция Обучение -->
-<div class="card page-section" id="learning-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;font-size:16px">Обучение работе с Minibar</div>
-    </div>
-    <div style="margin-top:15px;">
-        <p>Здесь вы найдете всю необходимую информацию для эффективной работы с приложением.</p>
-        <div style="margin-top:10px;">
-            <button class="btn small" style="margin-right:10px;"><i class="fas fa-play"></i> Видеоуроки</button>
-            <button class="btn small" style="margin-right:10px;"><i class="fas fa-file-pdf"></i> Инструкция PDF</button>
-            <button class="btn small"><i class="fas fa-question-circle"></i> Частые вопросы</button>
-        </div>
-    </div>
+<!-- ==== Настройки ==== -->
+<div id="settings-section" class="card hidden">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="font-weight:700; font-size:16px">Настройки приложения</div>
+  </div>
+  <div style="margin-top:15px;">
+    <p>Здесь появятся настройки:</p>
+    <ul style="margin:10px 0 0 20px">
+      <li>Синхронизация</li>
+      <li>Внешний вид</li>
+      <li>Управление данными</li>
+      <li>Резервное копирование</li>
+    </ul>
+  </div>
 </div>
 
-<!-- Секция Практика -->
-<div class="card page-section" id="practice-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;font-size:16px">Практические задания</div>
+<!-- ==== Обучение ==== -->
+<div id="learning-section" class="card hidden">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="font-weight:700; font-size:16px">Обучение</div>
+  </div>
+  <div style="margin-top:15px;">
+    <p>Выберите формат обучения:</p>
+    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+      <button class="btn small"><i class="fas fa-play"></i> Видеоуроки</button>
+      <button class="btn small"><i class="fas fa-file-pdf"></i> PDF-инструкция</button>
+      <button class="btn small"><i class="fas fa-question-circle"></i> FAQ</button>
     </div>
-    <div style="margin-top:15px;">
-        <p>Оттачивайте свои навыки работы с минибаром с помощью практических заданий.</p>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
-            <div class="product-btn">Тренировка акцизов</div>
-            <div class="product-btn">Симуляция инвентаризации</div>
-            <div class="product-btn">Тест на знание продуктов</div>
-        </div>
-    </div>
+  </div>
 </div>
 
-<!-- Секция История -->
-<div class="card page-section" id="history-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;font-size:16px">История действий</div>
+<!-- ==== Практика ==== -->
+<div id="practice-section" class="card hidden">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="font-weight:700; font-size:16px">Практика</div>
+  </div>
+  <div style="margin-top:15px;">
+    <p>Практические задания:</p>
+    <div class="rooms-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-top:10px">
+      <div class="room-item">Тренировка акцизов</div>
+      <div class="room-item">Инвентаризация</div>
+      <div class="room-item">Тест по продуктам</div>
     </div>
-    <div style="margin-top:15px;">
-        <p>В этом разделе отображается история всех выполненных операций.</p>
-        <div style="margin-top:10px;background:#f8f9fa;padding:15px;border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-                <span>Сегодня</span>
-                <span>15:30</span>
-            </div>
-            <div style="margin-top:5px;">Добавлено 5 акцизов</div>
-            
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:15px;">
-                <span>Сегодня</span>
-                <span>14:15</span>
-            </div>
-            <div style="margin-top:5px;">Проверена комната 204 (GIH)</div>
-            
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:15px;">
-                <span>Вчера</span>
-                <span>16:40</span>
-            </div>
-            <div style="margin-top:5px;">Обновлены сроки годности</div>
-        </div>
+  </div>
+</div>
+
+<!-- ==== История ==== -->
+<div id="history-section" class="card hidden">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="font-weight:700; font-size:16px">История действий</div>
+  </div>
+  <div style="margin-top:15px;">
+    <div style="background:#f8f9fa; padding:15px; border-radius:10px; font-size:14px; line-height:1.5">
+      <div style="display:flex; justify-content:space-between"><span>Сегодня</span><span>15:30</span></div>
+      <div>Добавлено 5 акцизов</div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:10px"><span>Сегодня</span><span>14:15</span></div>
+      <div>Проверена комната 204 (GIH)</div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:10px"><span>Вчера</span><span>16:40</span></div>
+      <div>Обновлены сроки годности</div>
     </div>
+  </div>
 </div>
-</div>    
-</main>
 </div>
+
 <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
 <div aria-hidden="true" class="bottom-nav" id="bottomNav">
 <!-- Mobile connection indicator -->
@@ -3469,7 +3473,301 @@ function updateGIHRoomsSummary() {
     if (typeof syncBottomNav === 'function') syncBottomNav(savedTab);
   });
 })();
+/* ---------- Unified tab switcher ---------- */
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  const sections = [
+    'accises-section', 'sroki-section', 'gih-section',
+    'settings-section', 'learning-section', 'practice-section', 'history-section'
+  ];
+
+  function hideAll() {
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('show');
+    });
+  }
+
+  function showTab(tab) {
+    hideAll();
+    document.getElementById(tab + '-section')?.classList.add('show');
+
+    // sync top / bottom / burger
+    $$('.nav-item, .b-item, .mb-burger-item').forEach(n =>
+      n.classList.toggle('active', n.dataset.tab === tab)
+    );
+    $('#mbBurgerMenu')?.classList.remove('show');
+  }
+
+  // initial tab
+  document.addEventListener('DOMContentLoaded', () => {
+    const active = localStorage.getItem('minibar-active-tab') || 'accises';
+    showTab(active);
+  });
+
+  // clicks
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('[data-tab]')?.dataset.tab;
+    if (tab) {
+      e.preventDefault();
+      showTab(tab);
+      localStorage.setItem('minibar-active-tab', tab);
+    }
+  });
+})();
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const dateInput = document.getElementById("history-date");
+  if (dateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.setAttribute("max", today);
+    dateInput.value = today;
+  }
+
+  dateInput?.addEventListener("change", (e) => {
+    const selectedDate = e.target.value;
+    const historyList = document.getElementById("history-list");
+    historyList.innerHTML = `<div style="background:#f8f9fa; padding:15px; border-radius:10px; font-size:14px;">Записи за ${selectedDate}</div>`;
+  });
+});
+
 </script>
+
+
+
+<!-- GIH Saved Patch BEGIN -->
+<script>
+
+(function(){'use strict';
+  var db = (window.firebase && firebase.database) ? firebase.database() : null;
+  var savedIds = new Set();
+
+  function q(sel, root){ return (root||document).querySelector(sel); }
+  function qa(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+
+  function selectById(id){
+    return '.gih-card[data-id="'+id+'"], .gih-card[data-key="'+id+'"]';
+  }
+
+  function getCardId(card){ 
+    if(!card) return '';
+    return card.dataset.id || card.getAttribute('data-id') || card.getAttribute('data-key') || '';
+  }
+
+  function ui(){ 
+    return {
+      main: q('#gih-records'),
+      saved: q('#gih-saved-records'),
+      divider: q('#gih-divider')
+    }; 
+  }
+
+  function updateDivider(){ 
+    var U = ui(); 
+    if (U.divider) U.divider.style.display = (U.saved && U.saved.querySelector('.gih-card')) ? 'block' : 'none';
+  }
+
+  function moveToSaved(card){ 
+    var U = ui();
+    if (!U.saved || !card) return;
+    var id = getCardId(card);
+    if (!id) return;
+
+    // 1) Удаляем любые другие копии этой карточки (и в сохранённых, и в основном списке), кроме текущей
+    qa(selectById(id)).forEach(function(node){
+      if (node !== card && node.parentElement) node.parentElement.removeChild(node);
+    });
+
+    // 2) Если текущая карточка уже в сохранённых — просто обновим состояние, без повторного перемещения
+    if (!U.saved.contains(card)) {
+      U.saved.appendChild(card);
+    }
+
+    // 3) Отмечаем как сохранённую локально, чтобы наблюдатель не трогал её
+    savedIds.add(id);
+
+    // 4) Деактивируем кнопку "Сохранить"
+    var btn = card.querySelector('.card-save');
+    if (btn) btn.disabled = true;
+
+    updateDivider();
+  }
+
+  function markSavedInDb(id, onDone){ 
+    if (!db || !id) { onDone && onDone(); return; }
+    db.ref('gihRecords/'+id).update({ saved: true }).then(function(){
+      savedIds.add(id);
+      onDone && onDone();
+    }).catch(function(){ onDone && onDone(); });
+  }
+
+  function handleSaveClick(e){ 
+    var btn = e.target.closest('.card-save');
+    if (!btn) return;
+    var card = btn.closest('.gih-card');
+    if (!card) return;
+    var id = getCardId(card);
+    if (!id) return;
+
+    // Локально помечаем и переносим (без дублей), параллельно обновляем Firebase
+    savedIds.add(id);
+    moveToSaved(card);
+    markSavedInDb(id);
+  }
+
+  function bindClicks(){ 
+    document.removeEventListener('click', handleSaveClick);
+    document.addEventListener('click', handleSaveClick);
+  }
+
+  // Наблюдаем за новым контентом в основном списке
+  function watchMainList(){
+    var U = ui();
+    if (!U.main) return;
+    var mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        (m.addedNodes||[]).forEach(function(node){
+          if (!(node instanceof HTMLElement)) return;
+          var card = node.matches && node.matches('.gih-card') ? node : (node.querySelector && node.querySelector('.gih-card'));
+          if (!card) return;
+          var id = getCardId(card);
+          if (!id) return;
+
+          // Если карточка уже отмечена как сохранённая — переносим, а другие копии с тем же id удаляем
+          if (savedIds.has(id)) { moveToSaved(card); return; }
+
+          // Проверяем Firebase на случай внешнего сохранения
+          if (db) {
+            db.ref('gihRecords/'+id+'/saved').once('value').then(function(snap){
+              if (snap.val()) { savedIds.add(id); moveToSaved(card); }
+            });
+          }
+        });
+      });
+      updateDivider();
+    });
+    mo.observe(U.main, { childList: true, subtree: true });
+  }
+
+  // Слушаем изменения Firebase и переносим только если карточка ещё не перенесена
+  function listenDbChanges(){
+    if (!db) return;
+    db.ref('gihRecords').on('child_added', function(snap){
+      var val = snap.val()||{};
+      var id = snap.key;
+      if (val.saved) {
+        savedIds.add(id);
+        var card = q(selectById(id));
+        if (card) moveToSaved(card);
+      }
+    });
+    db.ref('gihRecords').on('child_changed', function(snap){
+      var val = snap.val()||{};
+      var id = snap.key;
+      if (val.saved) {
+        savedIds.add(id);
+        var card = q(selectById(id));
+        if (card) moveToSaved(card);
+      }
+    });
+  }
+
+  function init(){
+    bindClicks();
+    watchMainList();
+    listenDbChanges();
+    updateDivider();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+</script>
+<!-- GIH Saved Patch END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- GIH Products Summary Filter (exclude saved) BEGIN -->
+<script>
+(function(){
+  function updateGIHSummary(){
+    const container = document.getElementById("gih-summary");
+    const listEl = document.getElementById("gih-summary-list");
+    if (!container || !listEl) return;
+
+    const main = document.getElementById("gih-records");
+    if (!main) return;
+
+    // Собираем продукты только из несохранённых карточек
+    const counts = {};
+    const cards = main.querySelectorAll(".gih-card");
+    cards.forEach(card => {
+      const products = card.querySelectorAll(".gih-product");
+      products.forEach(p => {
+        const name = p.textContent.trim();
+        if (!name) return;
+        counts[name] = (counts[name] || 0) + 1;
+      });
+    });
+
+    // Сортируем по количеству по убыванию
+    const entries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+
+    if (entries.length === 0) {
+      container.style.display = 'none';
+      listEl.innerHTML = '';
+      return;
+    }
+
+    listEl.innerHTML = entries
+      .map(([name, count]) => `<div><strong>${name}</strong> — ${count}</div>`)
+      .join("");
+
+    container.style.display = 'block';
+  }
+
+  // Следим за изменениями в карточках
+  function observeChanges(){
+    const main = document.getElementById("gih-records");
+    const saved = document.getElementById("gih-saved-records");
+    const opts = { childList: true, subtree: true };
+
+    if (main) new MutationObserver(updateGIHSummary).observe(main, opts);
+    if (saved) new MutationObserver(updateGIHSummary).observe(saved, opts);
+
+    document.addEventListener("click", e => {
+      if (e.target.closest(".card-save") || e.target.closest(".delete-btn")) {
+        setTimeout(updateGIHSummary, 50);
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      observeChanges();
+      updateGIHSummary();
+    });
+  } else {
+    observeChanges();
+    updateGIHSummary();
+  }
+})();
+</script>
+<!-- GIH Products Summary Filter (exclude saved) END -->
 
 </body>
 </html>
