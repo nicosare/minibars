@@ -1975,6 +1975,26 @@ let isRendering = false;
             updateAcciseStats();
             appData.rooms = appData.rooms || [];
             renderRooms();
+            // restore GIH sort direction from localStorage before first render
+            try {
+                const savedDir = localStorage.getItem('gihSortDirection') ?? localStorage.getItem('gihSortAsc');
+                if (savedDir !== null) {
+                    let dir = savedDir;
+                    try { dir = JSON.parse(savedDir); } catch(e) {}
+                    if (dir === 'asc' || dir === 'desc') {
+                        gihSortAsc = (dir === 'asc');
+                    } else if (typeof dir === 'boolean') {
+                        gihSortAsc = dir;
+                    } else if (savedDir === '1' || savedDir === '0' || savedDir === 'true' || savedDir === 'false') {
+                        gihSortAsc = (savedDir === '1' || savedDir === 'true');
+                    }
+                }
+                const sortBtnInit = document.querySelector('#gih-sort-btn');
+                if (sortBtnInit) {
+                    sortBtnInit.innerHTML = gihSortAsc ? '<i class="fas fa-sort-numeric-down"></i>'
+                                                      : '<i class="fas fa-sort-numeric-up"></i>';
+                }
+            } catch(e) {}
             renderAllGIHRecords();
     updateGIHSummary();
     
@@ -2753,12 +2773,18 @@ function syncTopNav(tab) {
                 const sortBtn = $('#gih-sort-btn');
                 if (sortBtn) {
                     sortBtn.addEventListener('click', () => {
-                        gihSortAsc = !gihSortAsc;
-                        sortBtn.innerHTML = gihSortAsc ? '<i class="fas fa-sort-numeric-down"></i>' 
-                                                        : '<i class="fas fa-sort-numeric-up"></i>';
-                        renderAllGIHRecords();
-                    });
-                }
+    gihSortAsc = !gihSortAsc;
+    // update icon
+    sortBtn.innerHTML = gihSortAsc ? '<i class="fas fa-sort-numeric-down"></i>' 
+                                    : '<i class="fas fa-sort-numeric-up"></i>';
+    // persist choice
+    try {
+        localStorage.setItem('gihSortDirection', gihSortAsc ? 'asc' : 'desc');
+        localStorage.setItem('gihSortAsc', JSON.stringify(gihSortAsc));
+    } catch(e) {}
+    renderAllGIHRecords();
+});
+}
             } catch(e) {}
     
         }
