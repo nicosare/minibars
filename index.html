@@ -1295,6 +1295,7 @@ function updateGIHRoomsSummary() {
     /* Контент под шапкой */
     body {
         padding-top: 82px !important;
+        padding-down: 82px !important;
     }
 
     /* Нижний таб тоже ограничиваем по ширине и центруем */
@@ -1306,7 +1307,6 @@ function updateGIHRoomsSummary() {
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     }
 }
-
 
 /* === Левое меню с симметричными отступами === */
 @media (min-width: 921px) {
@@ -1604,6 +1604,102 @@ function updateGIHRoomsSummary() {
   }
 }
 
+.t-added { color: #064e17; }
+.t-here { color: #044a6a; }
+.t-out { color: #333; }
+.t-miss { color: #6b0b0b; }
+
+.gih-card {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+}
+
+.history-date-header {
+    font-weight: 700;
+    margin: 15px 0 8px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+/* Стили для элементов управления датой в истории */
+#history-current-date:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+#history-date-picker {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+/* Стили для элементов управления датой в истории */
+#history-prev-day, 
+#history-next-day {
+    min-width: 32px !important;
+    width: 32px;
+    height: 32px;
+    padding: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#history-prev-day i, 
+#history-next-day i {
+    font-size: 12px;
+    margin: 0;
+}
+
+#history-current-date {
+    flex: 1;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease;
+    min-width: 0; /* Важно для правильной работы flex */
+}
+
+#history-current-date:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 480px) {
+    #history-current-date {
+        font-size: 13px;
+        padding: 6px;
+    }
+    
+    #history-prev-day, 
+    #history-next-day {
+        min-width: 28px !important;
+        width: 28px;
+        height: 28px;
+    }
+}
+#history-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+#history-list .gih-card {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
 </style>
 </head>
 <body>
@@ -1755,22 +1851,23 @@ function updateGIHRoomsSummary() {
 
 <!-- ==== История ==== -->
 <div id="history-section" class="card hidden">
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <div style="font-weight:700; font-size:16px">История действий</div>
-  </div>
-  <div style="margin-top:15px;">
-    <div style="background:#f8f9fa; padding:15px; border-radius:10px; font-size:14px; line-height:1.5">
-      <div style="display:flex; justify-content:space-between"><span>Сегодня</span><span>15:30</span></div>
-      <div>Добавлено 5 акцизов</div>
-
-      <div style="display:flex; justify-content:space-between; margin-top:10px"><span>Сегодня</span><span>14:15</span></div>
-      <div>Проверена комната 204 (GIH)</div>
-
-      <div style="display:flex; justify-content:space-between; margin-top:10px"><span>Вчера</span><span>16:40</span></div>
-      <div>Обновлены сроки годности</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; gap:8px;">
+        <button id="history-prev-day" class="btn ghost small" style="min-width:32px; padding:6px;">
+            <i class="fas fa-chevron-left" style="font-size:12px;"></i>
+        </button>
+        
+        <div id="history-current-date" style="flex:1; text-align:center; font-weight:600; font-size:14px; cursor:pointer; padding:8px; border-radius:8px; background:rgba(0,0,0,0.03); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <!-- Здесь будет отображаться текущая дата -->
+        </div>
+        
+        <button id="history-next-day" class="btn ghost small" style="min-width:32px; padding:6px;" disabled>
+            <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+        </button>
     </div>
-  </div>
-</div>
+    
+    <input type="date" id="history-date-picker" style="display:none;">
+    
+    <div id="history-list"></div>
 </div>
 
 <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
@@ -1861,6 +1958,7 @@ function updateGIHRoomsSummary() {
                 lux: ['twix', 'redbull', 'orange', 'cherry', 'apple', 'tomato', 'borjomi', 'cola', 'stella', 'corona']
             },
             gihRecords: [],
+            gihHistory: [],
             products: {
                 twix: 'Твикс', jager: 'Ягер', gin: 'Джин', rum: 'Ром', cognac: 'Коньяк',
                 whiskey: 'Виски', vodka: 'Водка', pepper: 'Пеппер', redbull: 'Ред Булл',
@@ -1966,7 +2064,7 @@ let isRendering = false;
             })
         );
     }
-
+    renderHistory();
     if (isRendering) return;
     isRendering = true;
             appData.gihRecords.forEach(r => normalizeRecordProducts(r));
@@ -2030,7 +2128,7 @@ let isRendering = false;
                     t = setTimeout(() => { 
                         addAccise(el.value); 
                         el.value = ''; 
-                    }, 1000); 
+                    }, 350); 
                 });
                 el.addEventListener('keydown', e => { 
                     if (e.key === 'Enter') { 
@@ -2566,18 +2664,36 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
             const saveBtn = card.querySelector('.card-save');
             const savedAtEl = card.querySelector('.saved-at');
 
-            saveBtn.addEventListener('click', () => {
-                const rec = appData.gihRecords.find(r => r.id === record.id);
-                if (!rec) return;
-                if (!canSaveCard(rec)) return;
-                rec.savedAt = formatHHMM(new Date());
-                rec.updatedAt = new Date().toISOString();
-                savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
-                saveDebounced();
-                updateCardSaveUI(rec, card);
-                card.remove();
-                renderGIHRecord(rec);
-            })
+// В функции renderGIHRecord, в обработчике кнопки "Сохранить":
+saveBtn.addEventListener('click', () => {
+    const rec = appData.gihRecords.find(r => r.id === record.id);
+    if (!rec) return;
+    if (!canSaveCard(rec)) return;
+    rec.savedAt = formatHHMM(new Date());
+    rec.updatedAt = new Date().toISOString();
+    savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
+    
+    // Добавляем запись в историю
+    const historyEntry = {
+        id: rec.id,
+        room: rec.room,
+        products: JSON.parse(JSON.stringify(rec.products)), // Глубокая копия продуктов
+        statusMode: rec.statusMode,
+        comment: rec.comment,
+        savedAt: rec.savedAt,
+        createdAt: rec.createdAt || new Date().toISOString()
+    };
+    
+    // Инициализируем gihHistory если его нет
+    appData.gihHistory = appData.gihHistory || [];
+    appData.gihHistory.unshift(historyEntry);
+    
+    saveDebounced();
+    updateCardSaveUI(rec, card);
+    card.remove();
+    renderGIHRecord(rec);
+    renderHistory(); // Рендерим историю
+});
 updateGIHSummary();;
 
             updateCardSaveUI(record, card);
@@ -2645,6 +2761,7 @@ function updateCardSaveUI(rec, cardEl) {
             }
             
             appData.gihRecords = appData.gihRecords || [];
+            renderHistory();
             appData.gihRecords.forEach(r => normalizeRecordProducts(r));
             (appData.accises || []).forEach(renderAcciseItem); 
             updateAcciseStats();
@@ -2743,7 +2860,7 @@ function syncTopNav(tab) {
             initAccises(); 
             initSroki(); 
             initGIH(); 
-            
+            initHistoryDateControls();
             // Setup Firebase listener
             setupFirebaseListener();
             
@@ -2993,6 +3110,364 @@ function updateGIHRoomsSummary() {
   });
   apply();
 })();
+
+</script>
+<script>
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+
+    historyList.innerHTML = '';
+
+    if (appData.gihHistory.length === 0) {
+        historyList.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">История пуста</div>';
+        return;
+    }
+
+    // Сортируем по дате (новые сверху)
+    const sortedHistory = [...appData.gihHistory].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    // Группируем по дате
+    const grouped = {};
+    sortedHistory.forEach(entry => {
+        const date = new Date(entry.createdAt).toLocaleDateString('ru-RU');
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(entry);
+    });
+
+    // Отрисовываем
+    Object.keys(grouped).forEach(date => {
+        const dateHeader = document.createElement('div');
+        dateHeader.style = 'font-weight:bold; margin-top:20px; margin-bottom:10px; padding-left:10px; border-left:3px solid var(--primary);';
+        dateHeader.textContent = date;
+        historyList.appendChild(dateHeader);
+
+        grouped[date].forEach(entry => {
+            const card = document.createElement('div');
+            card.className = 'gih-card';
+            card.style.marginBottom = '10px';
+            
+            // Заголовок с номером комнаты и временем
+            const headerHtml = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-weight:700;color:var(--primary-strong)">${entry.room}</div>
+                    <div class="muted">${entry.savedAt}</div>
+                </div>
+            `;
+
+            let contentHtml = '';
+
+            if (entry.statusMode) {
+                // Режим выбран (DND, Всё на месте, Всё выложили)
+                const modeLabels = {
+                    dnd: 'DND',
+                    allInPlace: 'Всё на месте',
+                    putOut: 'Всё выложили'
+                };
+                
+                // Группируем продукты по имени и считаем количество
+                const productGroups = {};
+                entry.products.forEach(p => {
+                    const name = appData.products[p.name] || p.name;
+                    productGroups[name] = (productGroups[name] || 0) + 1;
+                });
+                
+                // Форматируем продукты: "Название xКоличество"
+                const productList = Object.entries(productGroups)
+                    .map(([name, count]) => count > 1 ? `${name} x${count}` : name)
+                    .join(', ');
+                
+                contentHtml = `
+                    <div class="muted" style="margin-bottom:8px;">${productList}</div>
+                    <div style="font-weight:600;margin-bottom:8px;">${modeLabels[entry.statusMode]}</div>
+                `;
+            } else {
+                // Без режима - группируем по статусам
+                const byStatus = {};
+                entry.products.forEach(p => {
+                    const status = p.status;
+                    if (!byStatus[status]) byStatus[status] = {};
+                    const name = appData.products[p.name] || p.name;
+                    byStatus[status][name] = (byStatus[status][name] || 0) + 1;
+                });
+
+                // Статусы в порядке отображения
+                const statusOrder = [1, 2, 3, 4];
+                const statusLabels = {
+                    1: 'Пополнено',
+                    2: 'На месте', 
+                    3: 'Выложили',
+                    4: 'Не пополнено'
+                };
+                const statusClasses = {
+                    1: 't-added',
+                    2: 't-here',
+                    3: 't-out', 
+                    4: 't-miss'
+                };
+
+                statusOrder.forEach(status => {
+                    if (byStatus[status]) {
+                        const products = Object.entries(byStatus[status])
+                            .map(([name, count]) => count > 1 ? `${name} x${count}` : name)
+                            .join(', ');
+                        
+                        if (products) {
+                            contentHtml += `
+                                <div style="margin-bottom:4px;">
+                                    <span class="${statusClasses[status]}" style="font-weight:700;font-size:13px;">
+                                        ${statusLabels[status]}:
+                                    </span>
+                                    <span class="muted">${products}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            }
+
+            // Добавляем комментарий если есть
+            if (entry.comment) {
+                contentHtml += `
+                    <div style="margin-top:8px;">
+                        <strong>Комментарий:</strong> 
+                        <span class="muted">${entry.comment}</span>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = headerHtml + contentHtml;
+            historyList.appendChild(card);
+        });
+    });
+}
+// Переменные для управления датой в истории
+let historyCurrentDate = new Date();
+let historyDatePicker = null;
+
+// Инициализация управления датой в истории
+function initHistoryDateControls() {
+    const prevBtn = document.getElementById('history-prev-day');
+    const nextBtn = document.getElementById('history-next-day');
+    const dateDisplay = document.getElementById('history-current-date');
+    const datePicker = document.getElementById('history-date-picker');
+    
+    if (!prevBtn || !nextBtn || !dateDisplay || !datePicker) return;
+    
+    // Устанавливаем максимальную дату как сегодня
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0];
+    datePicker.setAttribute('max', todayFormatted);
+    
+    // Обновляем отображение даты
+    // Обновляем отображение даты
+function updateDateDisplay() {
+    const dateDisplay = document.getElementById('history-current-date');
+    if (!dateDisplay) return;
+    
+    // Форматируем дату для отображения (день месяц год)
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
+    
+    // Заменяем точки на пробелы для лучшего отображения
+    dateText = dateText.replace(/\./g, ' ');
+    
+    dateDisplay.textContent = dateText;
+    dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    // Отключаем кнопку "вперед", если достигнут сегодняшний день
+    const today = new Date();
+    const isToday = historyCurrentDate.toDateString() === today.toDateString();
+    document.getElementById('history-next-day').disabled = isToday;
+}
+    
+    // Обработчик для перехода на предыдущий день
+    prevBtn.addEventListener('click', () => {
+        const newDate = new Date(historyCurrentDate);
+        newDate.setDate(newDate.getDate() - 1);
+        historyCurrentDate = newDate;
+        updateDateDisplay();
+        renderHistory();
+    });
+    
+    // Обработчик для перехода на следующий день
+    nextBtn.addEventListener('click', () => {
+        const newDate = new Date(historyCurrentDate);
+        newDate.setDate(newDate.getDate() + 1);
+        
+        // Не позволяем перейти дальше сегодняшнего дня
+        if (newDate <= today) {
+            historyCurrentDate = newDate;
+            updateDateDisplay();
+            renderHistory();
+        }
+    });
+    
+    // Обработчик для открытия календаря
+    dateDisplay.addEventListener('click', () => {
+        datePicker.showPicker();
+    });
+    
+    // Обработчик выбора даты в календаре
+    datePicker.addEventListener('change', (e) => {
+        const selectedDate = new Date(e.target.value);
+        historyCurrentDate = selectedDate;
+        updateDateDisplay();
+        renderHistory();
+    });
+    
+    // Инициализация начальной даты
+    updateDateDisplay();
+    historyDatePicker = datePicker;
+}
+
+// Модифицируем функцию renderHistory для фильтрации по выбранной дате
+
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+
+    historyList.innerHTML = '';
+
+    // Фильтруем записи по выбранной дате
+    const selectedDateStr = historyCurrentDate.toLocaleDateString('ru-RU');
+    const filteredHistory = (appData.gihHistory || []).filter(entry => {
+        const entryDate = new Date(entry.createdAt).toLocaleDateString('ru-RU');
+        return entryDate === selectedDateStr;
+    });
+
+    if (filteredHistory.length === 0) {
+        historyList.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">За выбранный день записей нет</div>';
+        return;
+    }
+
+    // Сортируем по номеру комнаты (если есть цифры) — численно, иначе по строке
+    function roomToNum(e) {
+        if (!e) return Number.POSITIVE_INFINITY;
+        const r = (e.room || e.number || '');
+        if (typeof r === 'number') return r;
+        const m = String(r).match(/-?\d+/);
+        if (m) return parseInt(m[0], 10);
+        return Number.POSITIVE_INFINITY;
+    }
+    filteredHistory.sort((a, b) => {
+        const na = roomToNum(a);
+        const nb = roomToNum(b);
+        if (isFinite(na) && isFinite(nb)) return na - nb;
+        if (isFinite(na)) return -1;
+        if (isFinite(nb)) return 1;
+        // fallback to locale string compare (natural sort)
+        return String((a.room || a.number || '')).localeCompare(String((b.room || b.number || '')), 'ru-RU', {numeric: true});
+    });
+
+    // Отрисовываем записи за выбранную дату
+    filteredHistory.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'gih-card';
+        card.style.marginBottom = '10px';
+
+        // Заголовок с номером комнаты и временем
+        const headerHtml = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-weight:700;color:var(--primary-strong)">${entry.room}</div>
+                <div class="muted">${entry.savedAt}</div>
+            </div>
+        `;
+
+        let contentHtml = '';
+
+        if (entry.statusMode) {
+            // Режим выбран (DND, Всё на месте, Всё выложили)
+            const modeLabels = {
+                dnd: 'DND',
+                allInPlace: 'Всё на месте',
+                putOut: 'Всё выложили'
+            };
+
+            // Группируем продукты по имени и считаем количество
+            const productGroups = {};
+            (entry.products || []).forEach(p => {
+                const name = appData.products[p.name] || p.name;
+                productGroups[name] = (productGroups[name] || 0) + 1;
+            });
+
+            // Форматируем продукты: "Название xКоличество"
+            const productList = Object.entries(productGroups)
+                .map(([name, count]) => count > 1 ? `${name} x${count}` : name)
+                .join(', ');
+
+            contentHtml += `
+                <div style="margin-bottom:6px;">
+                    <strong>${modeLabels[entry.statusMode] || entry.statusMode}</strong>
+                    <div class="muted">${productList}</div>
+                </div>
+            `;
+        } else {
+            // Если нет режима — группируем по статусам
+            const byStatus = {};
+            (entry.products || []).forEach(p => {
+                const st = Number(p.status || 0);
+                const name = appData.products[p.name] || p.name;
+                byStatus[st] = byStatus[st] || {};
+                byStatus[st][name] = (byStatus[st][name] || 0) + 1;
+            });
+
+            // Статусы в порядке отображения
+            const statusOrder = [1, 2, 3, 4];
+            const statusLabels = {
+                1: 'Пополнено',
+                2: 'На месте', 
+                3: 'Выложили',
+                4: 'Не пополнено'
+            };
+            const statusClasses = {
+                1: 't-added',
+                2: 't-here',
+                3: 't-out', 
+                4: 't-miss'
+            };
+
+            statusOrder.forEach(status => {
+                if (byStatus[status]) {
+                    const products = Object.entries(byStatus[status])
+                        .map(([name, count]) => count > 1 ? `${name} x${count}` : name)
+                        .join(', ');
+
+                    if (products) {
+                        contentHtml += `
+                            <div style="margin-bottom:4px;">
+                                <span class="${statusClasses[status]}" style="font-weight:700;font-size:13px;">
+                                    ${statusLabels[status]}:
+                                </span>
+                                <span class="muted">${products}</span>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        }
+
+        // Добавляем комментарий если есть
+        if (entry.comment) {
+            contentHtml += `
+                <div style="margin-top:8px;">
+                    <strong>Комментарий:</strong> 
+                    <span class="muted">${entry.comment}</span>
+                </div>
+            `;
+        }
+
+        card.innerHTML = headerHtml + contentHtml;
+        historyList.appendChild(card);
+    });
+}
 
 </script>
 <script>
