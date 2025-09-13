@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
-<title>Minibar — мобильная версия</title>
+<title>Минибары</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&amp;display=swap" rel="stylesheet"/>
 <!-- Firebase App (обязательный скрипт для Firebase) -->
@@ -604,7 +604,20 @@ function updateGIHRoomsSummary() {
             gap: 10px;
             margin-top: 12px;
         }
-
+@media (min-width: 921px) {
+        .gih-products-area {
+            padding: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-radius: 10px;
+            border: 1px solid rgba(15,23,36,0.04);
+            max-height: 500px;
+            overflow: auto;
+            background: transparent;
+        }
+}
+@media (max-width: 920px) {
         .gih-products-area {
             padding: 8px;
             display: flex;
@@ -616,7 +629,7 @@ function updateGIHRoomsSummary() {
             overflow: auto;
             background: transparent;
         }
-
+}
         .gih-records {
             display: grid;
             grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
@@ -1700,6 +1713,104 @@ function updateGIHRoomsSummary() {
     overflow: hidden;
 }
 
+
+
+
+/* GIH products rows layout */
+.gih-products-columns { display:block; } /* kept for compatibility when referenced elsewhere */
+.gih-column { display:block; }
+.gih-column-title { font-weight:600; margin:6px 0; }
+
+/* Desktop: rows with section title + buttons */
+.gih-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.gih-row-title {
+    min-width: 120px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-right: 8px;
+}
+.gih-row-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* On small screens revert to column-like stacking */
+@media (max-width:900px) {
+  .gih-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .gih-row-title { margin-bottom: 6px; min-width: 0; }
+}
+
+/* --- Compact product buttons on desktop --- */
+@media (min-width: 921px) {
+  .product-btn {
+    min-width: 80px !important;
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+  }
+  .gih-column-title {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .gih-row {
+    gap: 6px;
+  }
+}
+
+</style>
+
+<style id="gih-inline-buttons-override-strong">
+@media (min-width: 921px) {
+  #gih-products-area .gih-row,
+  .gih-products-area .gih-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+  }
+  #gih-products-area .gih-row-title,
+  .gih-products-area .gih-row-title {
+    flex: 0 0 auto !important;
+    min-width: 80px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    margin-right: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #gih-products-area .gih-row-buttons,
+  .gih-products-area .gih-row-buttons {
+    display: flex !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  #gih-products-area .product-btn,
+  .gih-products-area .product-btn {
+    min-width: 48px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #gih-products-area .product-count,
+  .gih-products-area .product-count {
+    padding: 2px 5px !important;
+    font-size: 11px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1970,6 +2081,36 @@ function updateGIHRoomsSummary() {
             roomsList: [500, 502, 504, 506, 508, 509, 510, 512, 514, 516, 518, 520, 522, 524, 526, 528, 530, 532, 534, 600, 602, 604, 606, 608, 609, 610, 612, 614, 616, 618, 620, 622, 624, 626, 628, 630, 632, 634, 700, 702, 704, 706, 708, 709, 710, 712, 714, 716, 717, 718, 720, 722, 724, 725, 726, 728, 730, 732, 734, 800, 802, 804, 806, 808, 809, 810, 812, 814, 816, 817, 818, 820, 822, 824, 825, 826, 828, 830, 832, 834, 900, 902, 904, 906, 908, 909, 910, 912, 914, 916, 917, 918, 920, 922, 924, 925, 926, 928, 930, 932, 934, 1000, 1002, 1004, 1006, 1008, 1009, 1010, 1012, 1014, 1016, 1017, 1018, 1020, 1022, 1024, 1025, 1026, 1028, 1030, 1032, 1034, 1100, 1102, 1104, 1106, 1108, 1109, 1110, 1112, 1114, 1116, 1117, 1118, 1120, 1122, 1124, 1125, 1126, 1128, 1130, 1132, 1134, 1200, 1202, 1204, 1206, 1208, 1209, 1210, 1212, 1214, 1216, 1217, 1218, 1220, 1222, 1224, 1225, 1226, 1228, 1230, 1232, 1234, 1300, 1302, 1304, 1306, 1308, 1309, 1310, 1312, 1314, 1316, 1317, 1318, 1320, 1322, 1324, 1325, 1326, 1328, 1330, 1332, 1334, 1400, 1402, 1404, 1406, 1408, 1409, 1410, 1412, 1414, 1416, 1417, 1418, 1420, 1422, 1424, 1425, 1426, 1428, 1430, 1432, 1434, 1500, 1502, 1504, 1506, 1508, 1509, 1510, 1512, 1514, 1516, 1517, 1518, 1520, 1522, 1524, 1525, 1526, 1528, 1530, 1532, 1534, 1600, 1602, 1604, 1606, 1608, 1609, 1610, 1612, 1614, 1616, 1617, 1618, 1620, 1622, 1624, 1625, 1626, 1628, 1630, 1632, 1634, 1700, 1702, 1704, 1706, 1708, 1709, 1710, 1712, 1714, 1716, 1717, 1718, 1720, 1722, 1724, 1725, 1726, 1728, 1730, 1732, 1734, 1800, 1802, 1804, 1806, 1807, 1808, 1810, 1811, 1812, 1814, 1816, 1818, 1902, 1904, 1906, 1908, 1910, 1911, 1912, 1914, 1916, 1918, 1919, 1920]
         };
 
+// Emoji map for product buttons
+const PRODUCT_EMOJIS = {
+  twix: "🍫",
+  jager: "🦌",
+  gin: "🍸",
+  rum: "🏴‍☠️",
+  cognac: "🥃",
+  whiskey: "🥃",
+  whiskey02: "🥃",
+  vodka: "🍶",
+  pepper: "🌶️",
+  redbull: "⚡",
+  cola: "🥤",
+  baikal: "💧",
+  borjomi: "🫧",
+  white_wine: "🥂",
+  red_wine: "🍷",
+  corona: "🍺",
+  stella: "🍺",
+  gancha: "🍹",
+  martini: "🍸",
+  loriot: "🍾",
+  apple: "🍏",
+  tomato: "🍅",
+  orange: "🍊",
+  cherry: "🍒"
+};
+
+
+
 // Флаг для предотвращения повторной отрисовки
 let isRendering = false;
 
@@ -2118,7 +2259,59 @@ let isRendering = false;
             switch (Number(s)) { case 1: return 'Пополнено'; case 2: return 'На месте'; case 3: return 'Выложили'; case 4: return 'Не пополнено'; default: return 'Нейтральный'; }
         }
 
-        /* ===== ACCISES (same) ===== */
+        
+// ====== Авто-очистка старых GIH-карточек (удаление также из Firebase) ======
+
+// Проверка, совпадает ли дата с сегодняшней (локальная)
+function _gih_isSameLocalDay(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return false;
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() &&
+         d.getMonth() === now.getMonth() &&
+         d.getDate() === now.getDate();
+}
+
+// Удаление старых карточек из массива и Firebase
+function cleanupOldGIHRecords() {
+  if (!Array.isArray(appData.gihRecords) || appData.gihRecords.length === 0) return 0;
+  const before = appData.gihRecords.length;
+  const keep = [];
+  appData.gihRecords.forEach(rec => {
+    if (!rec) return;
+    const ts = rec.createdAt || rec.updatedAt || rec.savedAt;
+    if (!ts || _gih_isSameLocalDay(ts)) {
+      keep.push(rec);
+    } else {
+      try { firebase.database().ref("gihRecords/" + rec.id).remove(); } catch(e) { console.warn(e); }
+    }
+  });
+  appData.gihRecords = keep;
+  const removed = before - keep.length;
+  if (removed > 0) {
+    try { saveDebounced(); } catch(e){}
+    try { renderAllGIHRecords(); } catch(e){}
+    console.info("[GIH cleanup] removed", removed, "old records");
+  }
+  return removed;
+}
+
+// Планировщик на ежедневную очистку
+function scheduleGIHDailyCleanup() {
+  try {
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
+    const ms = next - now;
+    setTimeout(function tick() {
+      cleanupOldGIHRecords();
+      setInterval(cleanupOldGIHRecords, 24*60*60*1000);
+    }, Math.max(0, ms));
+  } catch (e) {
+    console.warn('scheduleGIHDailyCleanup failed', e);
+  }
+}
+/* ===== ACCISES (same) ===== */
         function initAccises() {
             const bindAcciseInput = (el) => {
                 if (!el) return;
@@ -2142,18 +2335,43 @@ let isRendering = false;
             bindAcciseInput($('#new-accise'));
             bindAcciseInput($('#new-accise-mobile'));
             $('#copy-accises').addEventListener('click', () => {
-    const v = appData.accises.filter(a => a.isValid).map(a => a.text);
-    if (!v.length) return alert('Нет валидных акциз');
+    const v = (appData.accises || []).filter(a => a.isValid).map(a => a.text);
+    if (v.length === 0) {
+        alert("Список пуст");
+        return;
+    }
+
     const textToCopy = v.join('\n');
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(textToCopy)
-            .then(() => alert('Скопировано'))
-            .catch(() => fallbackCopy(textToCopy));
+    function doCopy(callback) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert('Скопировано');
+                    if (callback) callback();
+                })
+                .catch(() => {
+                    fallbackCopy(textToCopy);
+                    if (callback) callback();
+                });
+        } else {
+            fallbackCopy(textToCopy);
+            if (callback) callback();
+        }
+    }
+
+    if (confirm("Очистить список акциз после копирования?")) {
+        doCopy(() => {
+            appData.accises = [];
+            document.querySelector('#accises-list').innerHTML = '';
+            updateAcciseStats();
+            saveDebounced();
+        });
     } else {
-        fallbackCopy(textToCopy);
+        doCopy();
     }
 });
+
 
 function fallbackCopy(text) {
     const textarea = document.createElement('textarea');
@@ -2246,7 +2464,7 @@ function fallbackCopy(text) {
         saveDebounced();
     });
 
-    list.prepend(el);
+    list.appendChild(el);
 }
 function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
@@ -2301,7 +2519,11 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
             container.innerHTML = '';
             keys.forEach(k => {
                 const name = appData.products[k] || k;
-                const btn = document.createElement('button'); btn.className = 'product-btn'; btn.dataset.product = k; btn.textContent = name;
+                const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] + ' ' : '';
+                const btn = document.createElement('button');
+                btn.className = 'product-btn';
+                btn.dataset.product = k;
+                btn.innerHTML = emoji + name;
                 const maxQ = MULTI_LIMITS[k] || 1;
                 const cur = targetObj[k] || 0;
                 if (cur > 0) { btn.classList.add('active'); const span = document.createElement('span'); span.className = 'product-count'; span.textContent = cur; btn.appendChild(span); }
@@ -2342,8 +2564,65 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
     updateGIHSummary();
 
         /* build form area */
-        function buildGIHProductsArea() { gihTempProducts = {}; renderProductButtons($('#gih-products-area'), Object.keys(appData.products), gihTempProducts, () => { }, { allowMaxTwo: true }); }
-        function clearGIHForm() { $('#gih-room').value = ''; gihTempProducts = {}; buildGIHProductsArea(); editingGIHId = null; }
+        
+
+
+
+
+function buildGIHProductsArea() {
+    // временный объект для хранения выбранных количеств при создании/редактирования записи
+    gihTempProducts = {};
+    const area = document.getElementById('gih-products-area');
+    if (!area) return;
+    area.innerHTML = '';
+
+    const rows = [
+        { title: 'Дверца', items: ['twix','jager','gin','rum','cognac','whiskey','vodka'] },
+        { title: 'Напитки', items: ['pepper','redbull','cola','baikal','borjomi'] },
+        { title: 'Алкоголь', items: ['white_wine','red_wine','corona','stella','gancha','martini','loriot','whiskey02'] },
+        { title: 'Соки', items: ['apple','tomato','orange','cherry'] }
+    ];
+
+    rows.forEach(rowDef => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'gih-row';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'gih-row-title';
+        titleEl.textContent = rowDef.title;
+        rowEl.appendChild(titleEl);
+
+        const btnsWrap = document.createElement('div');
+        btnsWrap.className = 'gih-row-buttons';
+
+        // renderProductButtons handles dataset/product counts and click logic elsewhere in the codebase
+        if (typeof renderProductButtons === 'function') {
+            renderProductButtons(btnsWrap, rowDef.items, gihTempProducts, () => {});
+        } else {
+            // fallback: create simple buttons
+            rowDef.items.forEach(p => {
+                const b = document.createElement('button');
+                b.className = 'product-btn';
+                b.textContent = p;
+                b.dataset.product = p;
+                b.addEventListener('click', () => {
+                    // toggle visual state
+                    const cur = gihTempProducts[p] || 0;
+                    const maxQ = 1;
+                    const next = (cur + 1) % (maxQ + 1);
+                    if (next === 0) delete gihTempProducts[p];
+                    else gihTempProducts[p] = next;
+                    b.classList.toggle('active', next>0);
+                });
+                btnsWrap.appendChild(b);
+            });
+        }
+
+        rowEl.appendChild(btnsWrap);
+        area.appendChild(rowEl);
+    });
+}
+function clearGIHForm() { $('#gih-room').value = ''; gihTempProducts = {}; buildGIHProductsArea(); editingGIHId = null; }
 
         /* handle form save (create/edit) */
         function handleGIHSave() {
@@ -2866,6 +3145,8 @@ function syncTopNav(tab) {
             
             // Load data
             await loadData();
+            cleanupOldGIHRecords();
+            scheduleGIHDailyCleanup();
             
             // ensure bottom nav reflects initial active top nav
             const activeTop = document.querySelector('.nav-item.active')?.dataset?.tab || 'accises';
@@ -3153,7 +3434,7 @@ function renderHistory() {
             const headerHtml = `
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                     <div style="font-weight:700;color:var(--primary-strong)">${entry.room}</div>
-                    <div class="muted">${entry.savedAt}</div>
+                    <div class="muted" style="font-weight:700">${entry.savedAt}</div>
                 </div>
             `;
 
@@ -3217,10 +3498,10 @@ function renderHistory() {
                         if (products) {
                             contentHtml += `
                                 <div style="margin-bottom:4px;">
-                                    <span class="${statusClasses[status]}" style="font-weight:700;font-size:13px;">
-                                        ${statusLabels[status]}:
-                                    </span>
-                                    <span class="muted">${products}</span>
+                                    <div style="margin-bottom:4px;">
+                                    <div class="${statusClasses[status]}" style="font-weight:700;font-size:13px">${statusLabels[status]}</div>
+                                    <div class="muted" style="margin-top:4px">${products}</div>
+                                </div>
                                 </div>
                             `;
                         }
@@ -3232,9 +3513,9 @@ function renderHistory() {
             if (entry.comment) {
                 contentHtml += `
                     <div style="margin-top:8px;">
-                        <strong>Комментарий:</strong> 
-                        <span class="muted">${entry.comment}</span>
-                    </div>
+                    <div style="font-weight:700;font-size:13px">Комментарий</div>
+                    <div class="muted" style="margin-top:4px">${entry.comment}</div>
+                </div>
                 `;
             }
 
@@ -3377,7 +3658,7 @@ function renderHistory() {
         const headerHtml = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <div style="font-weight:700;color:var(--primary-strong)">${entry.room}</div>
-                <div class="muted">${entry.savedAt}</div>
+                <div class="muted" style="font-weight:700">${entry.savedAt}</div>
             </div>
         `;
 
@@ -3405,8 +3686,8 @@ function renderHistory() {
 
             contentHtml += `
                 <div style="margin-bottom:6px;">
-                    <strong>${modeLabels[entry.statusMode] || entry.statusMode}</strong>
                     <div class="muted">${productList}</div>
+                    <div style="font-weight:600;margin-top:8px;">${modeLabels[entry.statusMode] || entry.statusMode}</div>
                 </div>
             `;
         } else {
@@ -3442,11 +3723,11 @@ function renderHistory() {
 
                     if (products) {
                         contentHtml += `
-                            <div style="margin-bottom:4px;">
-                                <span class="${statusClasses[status]}" style="font-weight:700;font-size:13px;">
-                                    ${statusLabels[status]}:
-                                </span>
-                                <span class="muted">${products}</span>
+                            <div style="margin-bottom:8px;">
+                                <div style="margin-bottom:4px;">
+                                    <div class="${statusClasses[status]}" style="font-weight:700;font-size:13px">${statusLabels[status]}:</div>
+                                    <div class="muted" style="margin-top:4px">${products}</div>
+                                </div>
                             </div>
                         `;
                     }
@@ -3458,8 +3739,7 @@ function renderHistory() {
         if (entry.comment) {
             contentHtml += `
                 <div style="margin-top:8px;">
-                    <strong>Комментарий:</strong> 
-                    <span class="muted">${entry.comment}</span>
+                    <div class="muted" style="font-weight:700;font-size:13px">Комментарий: <span class="muted" style="font-weight:400">${entry.comment}</span></div>                 
                 </div>
             `;
         }
@@ -4002,8 +4282,7 @@ function updateGIHRoomsSummary() {
   const $$ = s => Array.from(document.querySelectorAll(s));
 
   const sections = [
-    'accises-section', 'sroki-section', 'gih-section',
-    'settings-section', 'learning-section', 'practice-section', 'history-section'
+    'accises-section', 'sroki-section', 'gih-section','settings-section', 'learning-section', 'practice-section', 'history-section'
   ];
 
   function hideAll() {
@@ -4291,6 +4570,53 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 </script>
 <!-- GIH Products Summary Filter (exclude saved) END -->
+
+
+<script>
+(function () {
+  const STORAGE_KEY = 'minibar-active-tab';
+  const sections = [
+    'accises', 'sroki', 'gih',
+    'settings', 'learning', 'practice', 'history'
+  ];
+
+  function hideAll() {
+    sections.forEach(name => {
+      const el = document.getElementById(name + '-section');
+      if (el) el.classList.add('hidden');
+    });
+  }
+
+  window.showTab = function (tab) {
+    hideAll();
+    const target = document.getElementById(tab + '-section');
+    if (target) target.classList.remove('hidden');
+
+    // синхронизация активных кнопок
+    document.querySelectorAll('.nav-item, .b-item, .mb-burger-item')
+      .forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+
+    // закрыть бургер-меню
+    document.getElementById('mbBurgerMenu')?.classList.remove('show');
+
+    // сохранить
+    localStorage.setItem(STORAGE_KEY, tab);
+  };
+
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('[data-tab]')?.dataset.tab;
+    if (tab) {
+      e.preventDefault();
+      showTab(tab);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(STORAGE_KEY) || 'accises';
+    showTab(saved);
+  });
+})();
+</script>
 
 </body>
 </html>
