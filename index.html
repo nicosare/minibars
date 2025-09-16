@@ -604,20 +604,7 @@ function updateGIHRoomsSummary() {
             gap: 10px;
             margin-top: 12px;
         }
-@media (min-width: 921px) {
-        .gih-products-area {
-            padding: 8px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            border-radius: 10px;
-            border: 1px solid rgba(15,23,36,0.04);
-            max-height: 500px;
-            overflow: auto;
-            background: transparent;
-        }
-}
-@media (max-width: 920px) {
+
         .gih-products-area {
             padding: 8px;
             display: flex;
@@ -629,7 +616,7 @@ function updateGIHRoomsSummary() {
             overflow: auto;
             background: transparent;
         }
-}
+
         .gih-records {
             display: grid;
             grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
@@ -1715,38 +1702,15 @@ function updateGIHRoomsSummary() {
 
 
 
-
-/* GIH products rows layout */
-.gih-products-columns { display:block; } /* kept for compatibility when referenced elsewhere */
-.gih-column { display:block; }
+/* GIH products columns layout */
+.gih-products-columns { display:flex; gap:16px; align-items:flex-start; margin-bottom:8px; }
+.gih-column { flex:1; min-width:0; }
 .gih-column-title { font-weight:600; margin:6px 0; }
-
-/* Desktop: rows with section title + buttons */
-.gih-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-}
-.gih-row-title {
-    min-width: 120px;
-    font-weight: 600;
-    font-size: 14px;
-    margin-right: 8px;
-}
-.gih-row-buttons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-/* On small screens revert to column-like stacking */
+.gih-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
 @media (max-width:900px) {
-  .gih-row { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .gih-row-title { margin-bottom: 6px; min-width: 0; }
+  .gih-products-columns { flex-direction:column; }
+  .gih-row { justify-content:flex-start; }
 }
-
 /* --- Compact product buttons on desktop --- */
 @media (min-width: 921px) {
   .product-btn {
@@ -1763,54 +1727,6 @@ function updateGIHRoomsSummary() {
   }
 }
 
-</style>
-
-<style id="gih-inline-buttons-override-strong">
-@media (min-width: 921px) {
-  #gih-products-area .gih-row,
-  .gih-products-area .gih-row {
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    flex-wrap: nowrap !important;
-    width: 100% !important;
-  }
-  #gih-products-area .gih-row-title,
-  .gih-products-area .gih-row-title {
-    flex: 0 0 auto !important;
-    min-width: 80px !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    margin-right: 0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-  #gih-products-area .gih-row-buttons,
-  .gih-products-area .gih-row-buttons {
-    display: flex !important;
-    gap: 6px !important;
-    flex: 1 1 auto !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-  }
-  #gih-products-area .product-btn,
-  .gih-products-area .product-btn {
-    min-width: 48px !important;
-    padding: 0 8px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-  #gih-products-area .product-count,
-  .gih-products-area .product-count {
-    padding: 2px 5px !important;
-    font-size: 11px !important;
-  }
-}
 </style>
 </head>
 <body>
@@ -1851,7 +1767,7 @@ function updateGIHRoomsSummary() {
 <div class="card" id="accises-section">
 <div style="display:flex; justify-content:space-between; align-items:center;">
 <div>
-<div style="font-weight:700; font-size:16px">Управление акцизами</div>
+<div style="font-weight:700; font-size:16px">Акцизы</div>
 </div>
 <div class="row">
 <div class="muted">Всего: <strong id="total-accises">0</strong></div>
@@ -1866,7 +1782,7 @@ function updateGIHRoomsSummary() {
 </div>
 <div class="card hidden" id="sroki-section">
 <div style="display:flex; justify-content:space-between; align-items:center;">
-<div style="font-weight:700; font-size:16px">Контроль сроки</div>
+<div style="font-weight:700; font-size:16px">Сроки</div>
 </div>
 <div class="rooms-grid" id="rooms-grid"></div>
 </div>
@@ -1962,23 +1878,47 @@ function updateGIHRoomsSummary() {
 
 <!-- ==== История ==== -->
 <div id="history-section" class="card hidden">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; gap:8px;">
-        <button id="history-prev-day" class="btn ghost small" style="min-width:32px; padding:6px;">
-            <i class="fas fa-chevron-left" style="font-size:12px;"></i>
-        </button>
-        
-        <div id="history-current-date" style="flex:1; text-align:center; font-weight:600; font-size:14px; cursor:pointer; padding:8px; border-radius:8px; background:rgba(0,0,0,0.03); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            <!-- Здесь будет отображаться текущая дата -->
-        </div>
-        
-        <button id="history-next-day" class="btn ghost small" style="min-width:32px; padding:6px;" disabled>
-            <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-        </button>
+  <!-- Заголовок + поиск -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="font-weight:700; font-size:16px">История</div>
+
+    <!-- Блок поиска -->
+    <div id="history-search-wrapper" style="display:flex; align-items:center; gap:6px;">
+        <button id="history-search-clear" class="btn ghost small" style="display:none; min-width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+    <i class="fas fa-times"></i>
+  </button>
+      <input id="history-search-input"
+             type="text"
+             placeholder="Номер"
+             style="width:0; opacity:0; transition:width .25s, opacity .25s; border:1px solid rgba(0,0,0,.1); border-radius:8px; padding:0 8px; height:32px; font-size:14px;">
+      <button id="history-search-btn"
+              class="btn ghost small"
+              title="Поиск"
+              style="min-width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+        <i class="fas fa-search"></i>
+      </button>
     </div>
-    
+  </div>
+
+  <!-- Контроллер даты -->
+  <div id="history-date-row" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; gap:8px; width: 100%;">
+    <button id="history-prev-day" class="btn ghost small" style="min-width:32px; padding:6px;">
+      <i class="fas fa-chevron-left" style="font-size:12px;"></i>
+    </button>
+
+    <div id="history-current-date" style="flex:1; text-align:center; font-weight:600; font-size:14px; cursor:pointer; padding:8px; border-radius:8px; background:rgba(0,0,0,0.03); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+      <!-- текст даты вставится скриптом -->
+    </div>
+
+    <button id="history-next-day" class="btn ghost small" style="min-width:32px; padding:6px;" disabled>
+      <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+    </button>
+
     <input type="date" id="history-date-picker" style="display:none;">
-    
-    <div id="history-list"></div>
+  </div>
+
+  <!-- Список записей -->
+  <div id="history-list"></div>
 </div>
 
 <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
@@ -2568,61 +2508,46 @@ function updateAcciseStats() { $('#total-accises').textContent = appData.accises
 
 
 
-
 function buildGIHProductsArea() {
-    // временный объект для хранения выбранных количеств при создании/редактирования записи
+    // временный объект для хранения выбранных количеств при создании/редактировании записи
     gihTempProducts = {};
     const area = document.getElementById('gih-products-area');
     if (!area) return;
     area.innerHTML = '';
 
-    const rows = [
+    const columnsWrap = document.createElement('div');
+    columnsWrap.className = 'gih-products-columns';
+
+    const cols = [
         { title: 'Дверца', items: ['twix','jager','gin','rum','cognac','whiskey','vodka'] },
         { title: 'Напитки', items: ['pepper','redbull','cola','baikal','borjomi'] },
         { title: 'Алкоголь', items: ['white_wine','red_wine','corona','stella','gancha','martini','loriot','whiskey02'] },
         { title: 'Соки', items: ['apple','tomato','orange','cherry'] }
     ];
 
-    rows.forEach(rowDef => {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'gih-row';
-
+    cols.forEach(col => {
+        const colEl = document.createElement('div');
+        colEl.className = 'gih-column';
         const titleEl = document.createElement('div');
-        titleEl.className = 'gih-row-title';
-        titleEl.textContent = rowDef.title;
-        rowEl.appendChild(titleEl);
+        titleEl.className = 'gih-column-title';
+        titleEl.textContent = col.title;
+        colEl.appendChild(titleEl);
 
-        const btnsWrap = document.createElement('div');
-        btnsWrap.className = 'gih-row-buttons';
-
-        // renderProductButtons handles dataset/product counts and click logic elsewhere in the codebase
-        if (typeof renderProductButtons === 'function') {
-            renderProductButtons(btnsWrap, rowDef.items, gihTempProducts, () => {});
-        } else {
-            // fallback: create simple buttons
-            rowDef.items.forEach(p => {
-                const b = document.createElement('button');
-                b.className = 'product-btn';
-                b.textContent = p;
-                b.dataset.product = p;
-                b.addEventListener('click', () => {
-                    // toggle visual state
-                    const cur = gihTempProducts[p] || 0;
-                    const maxQ = 1;
-                    const next = (cur + 1) % (maxQ + 1);
-                    if (next === 0) delete gihTempProducts[p];
-                    else gihTempProducts[p] = next;
-                    b.classList.toggle('active', next>0);
-                });
-                btnsWrap.appendChild(b);
-            });
-        }
-
-        rowEl.appendChild(btnsWrap);
-        area.appendChild(rowEl);
+        const row = document.createElement('div');
+        row.className = 'gih-row';
+        // Используем существующую функцию renderProductButtons — она добавит кнопки с нужной логикой (счётчики, ограничения и клики)
+        renderProductButtons(row, col.items, gihTempProducts, () => {});
+        colEl.appendChild(row);
+        columnsWrap.appendChild(colEl);
     });
+
+    area.appendChild(columnsWrap);
 }
-function clearGIHForm() { $('#gih-room').value = ''; gihTempProducts = {}; buildGIHProductsArea(); editingGIHId = null; }
+
+
+
+
+        function clearGIHForm() { $('#gih-room').value = ''; gihTempProducts = {}; buildGIHProductsArea(); editingGIHId = null; }
 
         /* handle form save (create/edit) */
         function handleGIHSave() {
@@ -4617,6 +4542,201 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 })();
 </script>
+<script>
+/* === Полноценный поиск по номеру в Истории === */
+(function(){
+  const btnSearch       = document.getElementById('history-search-btn');
+  const btnClear        = document.getElementById('history-search-clear');
+  btnClear.style.display = 'none';
+  const inp             = document.getElementById('history-search-input');
+  const dateRow         = document.getElementById('history-date-row');
+  const list            = document.getElementById('history-list');
+
+  if (!btnSearch || !btnClear || !inp || !dateRow || !list) return;
+
+  let searchMode = false;
+
+  /* ----- UI helpers ----- */
+  function enterSearchMode(){
+    inp.style.width   = '120px';
+    inp.style.opacity = '1';
+    dateRow.style.display = 'none';
+    inp.focus();
+    btnClear.style.display = 'inline'; // Показываем кнопку-крутик только после того, как поле поиска стало видимым
+  }
+  
+  function exitSearchMode(){
+    inp.style.width   = '0';
+    inp.style.opacity = '0';
+    inp.value         = '';
+    dateRow.style.display = 'flex';
+    btnClear.style.display = 'none'; // Скрываем кнопку-крутик
+    renderHistory();
+  }
+  
+  function clearSearch(){
+    exitSearchMode(); // Выходим из режима поиска
+  }
+
+  /* ----- Поиск и рендер ----- */
+  function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|\[$$ \\]/g, '\\$&');
+}
+
+  function renderSearchResults(query){
+    const cleanQuery = query.trim();
+    if (!cleanQuery){ renderHistory(); return; }
+
+    const regex = new RegExp('\\b' + escapeRegExp(cleanQuery) + '\\b', 'i');
+
+    /* фильтруем по всей истории */
+    const matched = (appData.gihHistory || []).filter(entry =>
+      regex.test(entry.room || entry.number || '')
+    );
+
+    if (matched.length === 0){
+      list.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">Ничего не найдено</div>';
+      return;
+    }
+
+    /* группируем по дате создания (createdAt) */
+    const byDate = {};
+    matched.forEach(entry => {
+      const date = new Date(entry.createdAt).toLocaleDateString('ru-RU');
+      (byDate[date] = byDate[date] || []).push(entry);
+    });
+
+    /* рендерим аналогично renderHistory, но за все даты */
+    list.innerHTML = '';
+    Object.keys(byDate).sort((a,b)=>new Date(b.split('.').reverse().join('-')) - new Date(a.split('.').reverse().join('-')))
+      .forEach(date => {
+        const header = document.createElement('div');
+        header.className = 'history-date-header';
+        header.textContent = date;
+        list.appendChild(header);
+
+        byDate[date].forEach(entry => list.appendChild(buildHistoryCard(entry)));
+      });
+  }
+
+  /* ----- строим карточку найденной записи (копия renderHistory) ----- */
+  function buildHistoryCard(entry){
+    const card = document.createElement('div');
+    card.className = 'gih-card';
+    card.style.marginBottom = '10px';
+
+    const headerHtml = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:700;color:var(--primary-strong)">${entry.room}</div>
+        <div class="muted" style="font-weight:700">${entry.savedAt}</div>
+      </div>`;
+
+    let contentHtml = '';
+
+    if (entry.statusMode){
+      const modeLabels = { dnd:'DND', allInPlace:'Всё на месте', putOut:'Всё выложили' };
+      const groups = {};
+      (entry.products||[]).forEach(p=>{ groups[p.name] = (groups[p.name]||0)+1; });
+      const list = Object.entries(groups).map(([k,c])=>`${appData.products[k]||k}${c>1?` x${c}`:''}`).join(', ');
+      contentHtml = `<div class="muted" style="margin-bottom:6px;">${list}</div>
+                     <div style="font-weight:600;margin-top:8px;">${modeLabels[entry.statusMode]||entry.statusMode}</div>`;
+    } else {
+      const byStatus = {1:{},2:{},3:{},4:{}};
+      (entry.products||[]).forEach(p=>{
+        const st = Number(p.status||0);
+        const nm = appData.products[p.name]||p.name;
+        byStatus[st][nm] = (byStatus[st][nm]||0)+1;
+      });
+      const labels = {1:'Пополнено',2:'На месте',3:'Выложили',4:'Не пополнено'};
+      const cls    = {1:'t-added',2:'t-here',3:'t-out',4:'t-miss'};
+      [1,2,3,4].forEach(st=>{
+        const items = Object.entries(byStatus[st]).map(([n,c])=>c>1?`${n} x${c}`:n).join(', ');
+        if (items) contentHtml += `
+          <div style="margin-bottom:8px;">
+            <div class="${cls[st]}" style="font-weight:700;font-size:13px">${labels[st]}:</div>
+            <div class="muted" style="margin-top:4px">${items}</div>
+          </div>`;
+      });
+    }
+    if (entry.comment){
+      contentHtml += `<div style="margin-top:8px;">
+        <div class="muted" style="font-weight:700;font-size:13px">Комментарий: <span class="muted" style="font-weight:400">${entry.comment}</span></div>
+      </div>`;
+    }
+
+    card.innerHTML = headerHtml + contentHtml;
+    return card;
+  }
+
+  /* ----- события ----- */
+  btnSearch.addEventListener('click', enterSearchMode);
+  btnClear.addEventListener('click', clearSearch);
+  inp.addEventListener('input', () => renderSearchResults(inp.value));
+  inp.addEventListener('blur',  () => {
+    if (!inp.value.trim()) exitSearchMode();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { exitSearchMode(); }
+  });
+})();
+</script>
+<script>
+/* Делаем номера комнат в карточках GIH и Истории кликабельными */
+(function () {
+  /* Выполняем поиск по номеру */
+  function searchByRoom(room) {
+    window.showTab('history');                       // переходим в Историю
+    const inp = document.getElementById('history-search-input');
+    if (!inp) return;
+    inp.value = room;                                // вставляем номер
+    inp.dispatchEvent(new Event('input', {bubbles: true})); // запускаем поиск
+
+    // показываем поле поиска, если было свернуто
+    inp.style.width = '120px';
+    inp.style.opacity = '1';
+    document.getElementById('history-search-clear').style.display = 'inline-flex';
+    document.getElementById('history-date-row').style.display = 'none';
+  }
+
+  /* Превращаем текстовый номер в <a> без подчёркивания */
+  function convertCard(card) {
+    const roomEl = card.querySelector('.room-number, .gih-card > div > div');
+    if (!roomEl || roomEl.querySelector('a.room-link')) return; // уже обработано
+
+    const room = roomEl.textContent.trim();
+    if (!room) return;
+
+    roomEl.innerHTML = '';                 // очищаем текст
+    const a = document.createElement('a');
+    a.href = '#';
+    a.className = 'room-link';
+    a.textContent = room;
+    a.style.color = 'var(--primary-strong)';
+    a.style.cursor = 'pointer';
+    a.style.textDecoration = 'none';      // убираем подчёркивание
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      searchByRoom(room);
+    });
+    roomEl.appendChild(a);
+  }
+
+  /* Отслеживаем появление новых карточек */
+  const lists = ['#gih-records', '#gih-saved-records', '#history-list'];
+  lists.forEach(selector => {
+    const root = document.querySelector(selector);
+    if (!root) return;
+
+    new MutationObserver(() => {
+      root.querySelectorAll('.gih-card').forEach(convertCard);
+    }).observe(root, { childList: true, subtree: true });
+
+    // первичная обработка уже существующих карточек
+    root.querySelectorAll('.gih-card').forEach(convertCard);
+  });
+})();
+</script>
+
 
 </body>
 </html>
