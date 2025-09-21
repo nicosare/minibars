@@ -1743,6 +1743,22 @@ function updateGIHRoomsSummary() {
 .accordion-content.open { max-height: 1000px; padding-bottom: 8px; }
 .accordion-subitem { padding: 8px 0 8px 16px; font-size: 14px; color: #444; }
 
+    @media print {
+  nav, .nav, .sidebar, .left-menu, .left-nav {
+    display: none !important; /* полностью скрываем левое меню */
+  }
+
+  main, .content, .page-container, #main-content {
+    margin: 0 !important;   /* убираем отступы */
+    padding: 0 !important;  /* убираем внутренние отступы */
+    width: 100% !important; /* растягиваем на всю ширину */
+  }
+
+  body {
+    background: #fff !important; /* белый фон для печати */
+    padding: 0 !important;
+  }
+}
 </style>
 </head>
 <body>
