@@ -1686,15 +1686,10 @@ function updateGIHRoomsSummary() {
     }
 }
 #history-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     margin-top: 12px;
-}
-    #history-list.search-mode {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px;
 }
 #history-list .gih-card {
     padding: 14px;
@@ -4309,16 +4304,8 @@ document.addEventListener("DOMContentLoaded", () => {
   dateInput?.addEventListener("change", (e) => {
     const selectedDate = e.target.value;
     const historyList = document.getElementById("history-list");
-    const searchInput = document.getElementById("history-search-input");
     historyList.innerHTML = `<div style="background:#f8f9fa; padding:15px; border-radius:10px; font-size:14px;">Записи за ${selectedDate}</div>`;
   });
-});
-searchInput.addEventListener("input", () => {
-    if (searchInput.value.trim() !== "") {
-        historyList.classList.add("search-mode");
-    } else {
-        historyList.classList.remove("search-mode");
-    }
 });
 </script>
 
