@@ -3026,7 +3026,7 @@ function updateGIHRoomsSummary() {
                                 return cnt > 1 ? `${name} x${cnt}` : `${name}`;
                             });
                             const productsDisplay = `<div class="muted" style="margin-top:10px">${parts.join(', ') || '&nbsp;'}</div>`;
-                            const modeLabelMap = { dnd: 'DND', allInPlace: 'Всё на месте', putOut: 'Всё выложили' };
+                            const modeLabelMap = { dnd: 'DND', allInPlace: 'Всё на месте', putOut: 'Всё выложили', emptied: 'Опустошён' };
                             const modeLabel = modeLabelMap[record.statusMode] || record.statusMode || '';
                             const modeHtml = modeLabel ? `<div style="margin-top:8px; font-weight:600">${modeLabel}</div>` : '';
                             const commentHtml = record.comment ? `<div class="muted" style="margin-top:8px"><strong>Комментарий:</strong> ${record.comment}</div>` : '';
@@ -3121,6 +3121,8 @@ function updateGIHRoomsSummary() {
                                                     <button class="mode-btn" data-mode="dnd">DND</button>
                                                     <button class="mode-btn" data-mode="allInPlace">Всё на месте</button>
                                                     <button class="mode-btn" data-mode="putOut">Всё выложили</button>
+  
+<button class="mode-btn" data-mode="emptied">Опустошён</button>                                                  
                                                     <button class="btn ghost small" data-action="comment">Комментарий</button>
                                                 </div>`;
                     const legendHtml = `<div class="legend">
@@ -3713,11 +3715,12 @@ function updateGIHRoomsSummary() {
                             let contentHtml = '';
 
                             if (entry.statusMode) {
-                                // Режим выбран (DND, Всё на месте, Всё выложили)
+                                // Режим выбран (DND, Всё на месте, Всё выложили, Опустошён)
                                 const modeLabels = {
                                     dnd: 'DND',
                                     allInPlace: 'Всё на месте',
-                                    putOut: 'Всё выложили'
+                                    putOut: 'Всё выложили',
+                                    emptied: 'Опустошён'
                                 };
 
                                 // Группируем продукты по имени и считаем количество
@@ -3941,7 +3944,8 @@ function updateGIHRoomsSummary() {
                             const modeLabels = {
                                 dnd: 'DND',
                                 allInPlace: 'Всё на месте',
-                                putOut: 'Всё выложили'
+                                putOut: 'Всё выложили',
+                                emptied: 'Опустошён'
                             };
 
                             // Группируем продукты по имени и считаем количество
@@ -4975,7 +4979,7 @@ function updateGIHRoomsSummary() {
                         let contentHtml = '';
 
                         if (entry.statusMode) {
-                            const modeLabels = { dnd: 'DND', allInPlace: 'Всё на месте', putOut: 'Всё выложили' };
+                            const modeLabels = { dnd: 'DND', allInPlace: 'Всё на месте', putOut: 'Всё выложили', emptied: 'Опустошён' };
                             const groups = {};
                             (entry.products || []).forEach(p => { groups[p.name] = (groups[p.name] || 0) + 1; });
                             const list = Object.entries(groups).map(([k, c]) => `${appData.products[k] || k}${c > 1 ? ` x${c}` : ''}`).join(', ');
