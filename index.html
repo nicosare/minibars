@@ -503,10 +503,6 @@ function updateGIHRoomsSummary() {
         box-shadow: var(--shadow-sm);
     }
 
-    .card:hover {
-        box-shadow: 0 8px 20px rgba(12,18,24,0.08);
-    }
-
     .muted {
         color: var(--muted);
         font-size: 13px;
@@ -705,10 +701,6 @@ function updateGIHRoomsSummary() {
         box-shadow: var(--shadow-sm);
         position: relative;
         overflow: hidden;
-    }
-
-    .gih-card:hover {
-        box-shadow: 0 8px 20px rgba(12,18,24,0.1);
     }
 
     .gih-products {
@@ -1020,6 +1012,70 @@ function updateGIHRoomsSummary() {
     .bottom-nav .b-item:hover {
         background: rgba(39,103,73,0.05);
     }
+    /* Полное отключение всех эффектов для GIH продуктов */
+.gih-product {
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    transition: none !important;
+    pointer-events: auto !important;
+}
+
+/* Убираем ВСЕ эффекты при наведении */
+.gih-product:hover {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+    transform: none !important;
+    cursor: pointer !important;
+}
+
+/* Убираем ВСЕ эффекты при клике/активном состоянии */
+.gih-product:active,
+.gih-product:focus,
+.gih-product:focus-visible,
+.gih-product:focus-within {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+    transform: none !important;
+    outline: none !important;
+}
+
+/* Убираем псевдоэлементы и их эффекты */
+.gih-product::before,
+.gih-product::after,
+.gih-product:hover::before,
+.gih-product:hover::after,
+.gih-product:active::before,
+.gih-product:active::after {
+    content: none !important;
+    opacity: 0 !important;
+    display: none !important;
+}
+
+
+/* Принудительно применяем стили статуса всегда */
+.gih-product.status-0 { background: #fff !important; color: var(--text) !important; border-color: rgba(15,23,36,0.06) !important; }
+.gih-product.status-1 { background: #bfeec0 !important; color: #064e17 !important; border-color: rgba(39,103,73,0.12) !important; }
+.gih-product.status-2 { background: #bfe0f6 !important; color: #044a6a !important; border-color: rgba(11,111,176,0.12) !important; }
+.gih-product.status-3 { background: #e0e0e0 !important; color: #333 !important; border-color: rgba(120,120,120,0.12) !important; }
+.gih-product.status-4 { background: #f7bdbd !important; color: #6b0b0b !important; border-color: rgba(229,62,62,0.12) !important; }
+
+/* Убираем любые дополнительные классы, которые могут добавляться */
+.gih-product.disabled {
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+/* Отключаем любые анимации для этих элементов */
+.gih-product {
+    animation: none !important;
+}
 
     /* MOBILE: modal full screen */
     @media (max-width:920px) {
