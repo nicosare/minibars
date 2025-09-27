@@ -55,8 +55,6 @@ function updateGIHSummary() {
                 toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
             }
         }
-    }
-});
 
 
 
@@ -71,8 +69,6 @@ function updateGIHSummary() {
                 icon.classList.add("fa-chevron-up");
             }
         }
-    }
-});
 
 
   mo.observe(list, { childList: true, subtree: true, characterData: true });
@@ -95,7 +91,6 @@ function updateGIHSummary() {
 
   // Kick off
   apply();
-});
 
 
   mo.observe(list, { childList: true, subtree: true, characterData: true });
@@ -116,7 +111,6 @@ function updateGIHSummary() {
 
   // Стартовое состояние
   applyState();
-});
 
 
 mo.observe(list, { childList: true, subtree: true, characterData: true });
@@ -138,7 +132,6 @@ mo.observe(list, { childList: true, subtree: true, characterData: true });
 
   // Применяем стартовое состояние
   applyState();
-});
 
 
 /* ====== GIH ROOMS SUMMARY (numbers) ====== */
@@ -336,1709 +329,1568 @@ function updateGIHRoomsSummary() {
   apply();
 })();</script>
     <style>
-        :root {
-            --bg: #f6f7fb;
-            --card: #fff;
-            --muted: #8b95a3;
-            --text: #0f1724;
-            --primary: #276749;
-            --primary-strong: #1b5e20;
-            --accent: #ff8a00;
-            --radius: 14px;
-            --shadow-sm: 0 6px 18px rgba(12,18,24,0.06);
-            --transition: 260ms cubic-bezier(.2,.9,.3,1);
-            --bottom-nav-height: 70px; /* MOBILE */
-            --safe-bottom: env(safe-area-inset-bottom, 12px); /* MOBILE */
-        }
-
-        * {
-            box-sizing: border-box;
-            font-family: 'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    @media (min-width: 921px) {
+        nav, .nav {
+            position: fixed !important;
+            top: 18px;
+            left: 18px;
+            width: 220px;
+            height: auto;
+            max-height: calc(100vh - 36px);
+            overflow-y: auto;
+            z-index: 999;
             margin: 0;
-            padding: 0
         }
 
-        html, body {
-            height: 100%;
+        .content {
+            margin-left: 250px !important; /* 220px + 30px отступ */
+            width: calc(100% - 250px);
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-            display: flex;
-            align-items: stretch;
             padding: 18px;
         }
+    }
 
-        .app {
-            display: flex;
-            gap: 20px;
-            width: 100%;
+    /* === МОБИЛЬНАЯ ШАПКА С ОТСТУПАМИ === */
+    @media (max-width: 920px) {
+        .mb-header {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            width: auto;
+            margin: 0;
+            z-index: 1000;
+            border-radius: 0 !important;
         }
 
-        /* LEFT NAV (desktop) */
-        .nav {
-            width: 220px;
-            background: var(--card);
-            border-radius: 12px;
-            padding: 14px;
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            height: fit-content;
-            position: relative;
+        body {
+            margin-top: 18px !important; /* Отступ для шапки */
+            padding-left: 12px;
+            padding-right: 12px;
         }
-
-        .logo {
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 16px;
-            padding: 8px 6px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border-radius: 10px;
-            color: var(--muted);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-            .nav-item.active {
-                background: rgba(39,103,73,0.09);
-                color: var(--primary-strong);
-                box-shadow: 0 6px 14px rgba(39,103,73,0.06);
-            }
 
         .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            padding-bottom: 18px;
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 14px;
-            box-shadow: var(--shadow-sm);
-            transition: transform var(--transition),box-shadow var(--transition);
-        }
-
-            .card:hover {
-                transform: translateY(-3px);
-            }
-
-        .muted {
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .input {
+            margin-left: 0 !important;
             width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(15,23,36,0.06);
-            background: transparent;
-            color: var(--text);
         }
+    }
 
-        .rooms-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .room-item {
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: transform var(--transition),box-shadow var(--transition),background var(--transition),border var(--transition);
-            border: 1px solid rgba(15,23,36,0.04);
-            background: linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.46));
-            min-height: 82px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .room-number {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--primary-strong);
-        }
-
-        .room-products {
-            color: var(--muted);
-            font-size: 13px;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        .room-item.completed {
-            background: linear-gradient(180deg, rgba(39,103,73,0.08), rgba(39,103,73,0.02));
-            border-color: rgba(39,103,73,0.12);
-        }
-
-        .room-item.has-products {
-            background: linear-gradient(180deg, rgba(255,138,0,0.06), rgba(255,138,0,0.02));
-            border-color: rgba(255,138,0,0.12);
-        }
-
-        /* Overlay modal */
-        .overlay {
+    /* === НИЖНЯЯ НАВИГАЦИЯ НА МОБИЛЬНЫХ === */
+    @media (max-width: 920px) {
+        .bottom-nav {
             position: fixed;
-            inset: 0;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            width: auto;
+            margin: 0;
+            border-radius: 12px;
+        }
+    }
+
+    /* === ОСНОВНЫЕ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ === */
+    :root {
+        --bg: #f6f7fb;
+        --card: #fff;
+        --muted: #8b95a3;
+        --text: #0f1724;
+        --primary: #276749;
+        --primary-strong: #1b5e20;
+        --accent: #ff8a00;
+        --radius: 14px;
+        --shadow-sm: 0 6px 18px rgba(12,18,24,0.06);
+        --transition: 200ms ease;
+        --bottom-nav-height: 70px;
+        --safe-bottom: env(safe-area-inset-bottom, 12px);
+    }
+
+    * {
+        box-sizing: border-box;
+        font-family: 'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+        margin: 0;
+        padding: 0;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        display: flex;
+        align-items: stretch;
+    }
+
+    .app {
+        display: flex;
+        gap: 20px;
+        width: 100%;
+    }
+
+    /* Упрощенные переходы без конфликтов */
+    .btn, .product-btn, .room-item, .gih-product, .nav-item, 
+    .b-item, .mb-burger-item, .accordion-header, .room-chip,
+    .mode-btn, .card, .gih-card, .input {
+        transition: 
+            background-color var(--transition),
+            border-color var(--transition),
+            box-shadow var(--transition),
+            color var(--transition),
+            opacity var(--transition) !important;
+    }
+
+    /* Убираем все трансформации */
+    .btn, .product-btn, .room-item, .gih-product, .card {
+        transform: none !important;
+    }
+
+    /* LEFT NAV (desktop) */
+    .nav {
+        width: 220px;
+        background: var(--card);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        height: fit-content;
+    }
+
+    .logo {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 16px;
+        padding: 8px 6px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border-radius: 10px;
+        color: var(--muted);
+        cursor: pointer;
+    }
+
+    .nav-item.active {
+        background: rgba(39,103,73,0.09);
+        color: var(--primary-strong);
+        box-shadow: 0 6px 14px rgba(39,103,73,0.06);
+    }
+
+    .nav-item:hover:not(.active) {
+        background: rgba(39,103,73,0.05);
+    }
+
+    .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 14px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 20px rgba(12,18,24,0.08);
+    }
+
+    .muted {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(15,23,36,0.06);
+        background: transparent;
+        color: var(--text);
+    }
+
+    .input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(39,103,73,0.1);
+    }
+
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .room-item {
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        border: 1px solid rgba(15,23,36,0.04);
+        background: linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.46));
+        min-height: 82px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .room-item:hover {
+        box-shadow: 0 6px 15px rgba(12,18,24,0.08);
+        background: linear-gradient(180deg,rgba(255,255,255,0.8),rgba(255,255,255,0.6));
+    }
+
+    .room-number {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--primary-strong);
+    }
+
+    .room-products {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 8px;
+        text-align: center;
+    }
+
+    .room-item.completed {
+        background: linear-gradient(180deg, rgba(39,103,73,0.08), rgba(39,103,73,0.02));
+        border-color: rgba(39,103,73,0.12);
+    }
+
+    .room-item.has-products {
+        background: linear-gradient(180deg, rgba(255,138,0,0.06), rgba(255,138,0,0.02));
+        border-color: rgba(255,138,0,0.12);
+    }
+
+    /* Overlay modal */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10,12,18,0.36);
+        z-index: 1400;
+        padding: 22px;
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 920px;
+        border-radius: 14px;
+        padding: 18px;
+        background: linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.98));
+        box-shadow: 0 30px 80px rgba(6,10,15,0.3);
+        transform: translateY(18px);
+        opacity: 0;
+        transition: transform 300ms ease,opacity 300ms ease;
+        max-height: 90vh;
+        overflow: auto;
+    }
+
+    .overlay.show {
+        display: flex;
+    }
+
+    .modal.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .modal-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .products-wrap {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px;
+        max-height: 48vh;
+        overflow: auto;
+        border-radius: 10px;
+        background: transparent;
+    }
+
+    .product-btn {
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(15,23,36,0.06);
+        background: transparent;
+        cursor: pointer;
+        min-width: 110px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .product-btn:hover {
+        box-shadow: 0 4px 12px rgba(12,18,24,0.08);
+        background: rgba(39,103,73,0.02);
+    }
+
+    .product-btn.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary-strong);
+    }
+
+    .product-count {
+        background: var(--accent);
+        color: #fff;
+        padding: 3px 7px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 12px;
+        margin-left: 8px;
+    }
+
+    .gih-form {
+        display: none;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .gih-products-area {
+        padding: 8px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-radius: 10px;
+        border: 1px solid rgba(15,23,36,0.04);
+        max-height: 260px;
+        overflow: auto;
+        background: transparent;
+    }
+
+    .gih-records {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .gih-card {
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .gih-card:hover {
+        box-shadow: 0 8px 20px rgba(12,18,24,0.1);
+    }
+
+    .gih-products {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .gih-product {
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: var(--card);
+        font-size: 13px;
+        border: 1px solid rgba(15,23,36,0.04);
+        cursor: pointer;
+    }
+
+    .gih-product:hover {
+        background: rgba(39,103,73,0.05);
+    }
+
+    .gih-product.disabled {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .status-0 {
+        background: #fff;
+        color: var(--text);
+        border-color: rgba(15,23,36,0.06);
+        text-decoration: none;
+    }
+
+    .status-1 {
+        background: #bfeec0;
+        color: #064e17;
+        border-color: rgba(39,103,73,0.12);
+    }
+
+    .status-2 {
+        background: #bfe0f6;
+        color: #044a6a;
+        border-color: rgba(11,111,176,0.12);
+        text-decoration: line-through;
+    }
+
+    .status-3 {
+        background: #e0e0e0;
+        color: #333;
+        border-color: rgba(120,120,120,0.12);
+    }
+
+    .status-4 {
+        background: #f7bdbd;
+        color: #6b0b0b;
+        border-color: rgba(229,62,62,0.12);
+    }
+
+    .legend {
+        margin-top: 8px;
+        font-size: 13px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .legend .item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 8px;
+    }
+
+    .legend .color {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        display: inline-block;
+        border: 1px solid rgba(15,23,36,0.04);
+    }
+
+    .legend .t-added {
+        background: #bfeec0;
+    }
+
+    .legend .t-here {
+        background: #bfe0f6;
+    }
+
+    .legend .t-out {
+        background: #e0e0e0;
+    }
+
+    .legend .t-miss {
+        background: #f7bdbd;
+    }
+
+    .gih-footer {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .gih-footer .mode-btn {
+        border: 1px solid rgba(15,23,36,0.08);
+        background: #fff;
+        color: var(--primary-strong);
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .gih-footer .mode-btn.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary-strong);
+        box-shadow: 0 4px 10px rgba(39,103,73,0.1);
+    }
+
+    .gih-footer .mode-btn:hover:not(.active) {
+        border-color: var(--primary);
+        background: rgba(39,103,73,0.05);
+    }
+
+    .gih-footer .mode-btn[disabled] {
+        opacity: 0.55;
+        pointer-events: none;
+    }
+
+    .muted-note {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #fff;
+        background: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        min-height: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn:hover {
+        background: var(--primary-strong);
+        box-shadow: 0 4px 12px rgba(39,103,73,0.2);
+    }
+
+    .btn.ghost {
+        background: transparent;
+        color: var(--primary-strong);
+        border: 1px solid rgba(15,23,36,0.04);
+    }
+
+    .btn.ghost:hover {
+        background: rgba(39,103,73,0.05);
+    }
+
+    .btn.small {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .btn.secondary {
+        background: var(--card);
+        color: var(--primary-strong);
+        border: 1px solid rgba(15,23,36,0.06);
+    }
+
+    .btn.secondary:hover {
+        border-color: var(--primary);
+    }
+
+    .card-save {
+        background: #2f9d3a;
+        color: #fff;
+        border: none;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .card-save:hover:not([disabled]) {
+        background: #278c32;
+        box-shadow: 0 4px 10px rgba(39,103,73,0.2);
+    }
+
+    .card-save[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .card-save-wrap {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-direction: column;
+        min-width: 160px;
+    }
+
+    .saved-at {
+        font-size: 13px;
+        color: #1b7a2b;
+        margin-top: 6px;
+    }
+
+    .card-footer-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    /* Убираем анимации при нажатии для всех элементов */
+    .btn:active, .product-btn:active, .room-item:active, 
+    .gih-product:active, .nav-item:active, .b-item:active,
+    .mb-burger-item:active, .mode-btn:active {
+        transform: none !important;
+        transition: none !important;
+    }
+
+    /* MOBILE: touch-friendly tweaks */
+    .btn {
+        min-height: 44px;
+        padding: 12px 14px;
+    }
+
+    .product-btn {
+        min-height: 44px;
+        padding: 10px 12px;
+    }
+
+    .room-item {
+        min-height: 90px;
+        padding: 14px;
+    }
+
+    /* MOBILE: bottom navigation */
+    .bottom-nav {
+        display: none;
+        height: var(--bottom-nav-height);
+        background: var(--card);
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(6,10,15,0.12);
+        align-items: center;
+        justify-content: space-around;
+        z-index: 1600;
+        padding: 8px;
+        transition: transform 300ms ease, opacity 300ms ease;
+    }
+
+    .bottom-nav.hide {
+        transform: translateY(120%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .bottom-nav .b-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 8px;
+    }
+
+    .bottom-nav .b-item.active {
+        color: var(--primary-strong);
+        background: rgba(39,103,73,0.08);
+    }
+
+    .bottom-nav .b-item:hover {
+        background: rgba(39,103,73,0.05);
+    }
+
+    /* MOBILE: modal full screen */
+    @media (max-width:920px) {
+        .nav {
             display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(10,12,18,0.36);
-            z-index: 1400;
-            padding: 22px;
+        }
+        
+        .rooms-grid {
+            grid-template-columns: repeat(2,1fr);
+        }
+
+        .gih-records {
+            grid-template-columns: 1fr;
         }
 
         .modal {
             width: 100%;
-            max-width: 920px;
-            border-radius: 14px;
-            padding: 18px;
-            background: linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.98));
-            box-shadow: 0 30px 80px rgba(6,10,15,0.3);
-            transform: translateY(18px);
-            opacity: 0;
-            transition: transform var(--transition),opacity var(--transition);
-            max-height: 90vh;
-            overflow: auto;
+            max-width: 100%;
+            height: calc(100vh - 24px);
+            max-height: none;
+            border-radius: 12px;
+            padding: 14px;
         }
 
-        .overlay.show {
-            display: flex;
-        }
-
-        .modal.show {
-            transform: translateY(0);
-            opacity: 1;
+        .overlay {
+            align-items: flex-end;
+            padding: 0;
         }
 
         .modal-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .products-wrap {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            padding: 8px;
-            max-height: 48vh;
-            overflow: auto;
-            border-radius: 10px;
-            background: transparent;
-        }
-
-        .product-btn {
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(15,23,36,0.06);
-            background: transparent;
-            cursor: pointer;
-            min-width: 110px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform var(--transition),box-shadow var(--transition),background var(--transition),color var(--transition);
-        }
-
-            .product-btn:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 18px rgba(12,18,24,0.06);
-            }
-
-            .product-btn.active {
-                background: var(--primary);
-                color: #fff;
-                border-color: var(--primary-strong);
-            }
-
-        .product-count {
-            background: var(--accent);
-            color: #fff;
-            padding: 3px 7px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
-        .gih-form {
-            display: none;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .gih-products-area {
-            padding: 8px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            border-radius: 10px;
-            border: 1px solid rgba(15,23,36,0.04);
-            max-height: 260px;
-            overflow: auto;
-            background: transparent;
-        }
-
-        .gih-records {
-            display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .gih-card {
-            padding: 14px;
-            border-radius: 12px;
-            background: var(--card);
-            box-shadow: var(--shadow-sm);
-            position: relative;
-            overflow: hidden;
+            max-height: 36vh;
         }
 
         .gih-products {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .gih-product {
-            padding: 8px 10px;
-            border-radius: 10px;
-            background: var(--card);
-            font-size: 13px;
-            border: 1px solid rgba(15,23,36,0.04);
-            cursor: pointer;
-            transition: transform 140ms ease;
-        }
-
-            .gih-product:hover {
-                transform: translateY(-2px);
-            }
-
-            .gih-product.disabled {
-                opacity: 0.6;
-                pointer-events: none;
-            }
-
-        .status-0 {
-            background: #fff;
-            color: var(--text);
-            border-color: rgba(15,23,36,0.06);
-            text-decoration: none;
-        }
-
-        .status-1 {
-            background: #bfeec0;
-            color: #064e17;
-            border-color: rgba(39,103,73,0.12);
-        }
-
-        .status-2 {
-            background: #bfe0f6;
-            color: #044a6a;
-            border-color: rgba(11,111,176,0.12);
-            text-decoration: line-through;
-        }
-
-        .status-3 {
-            background: #e0e0e0;
-            color: #333;
-            border-color: rgba(120,120,120,0.12);
-        }
-
-        .status-4 {
-            background: #f7bdbd;
-            color: #6b0b0b;
-            border-color: rgba(229,62,62,0.12);
-        }
-
-        .legend {
-            margin-top: 8px;
-            font-size: 13px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-            .legend .item {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 6px 8px;
-                border-radius: 8px;
-            }
-
-            .legend .color {
-                width: 14px;
-                height: 14px;
-                border-radius: 4px;
-                display: inline-block;
-                border: 1px solid rgba(15,23,36,0.04);
-            }
-
-            .legend .t-added {
-                background: #bfeec0;
-            }
-
-            .legend .t-here {
-                background: #bfe0f6;
-            }
-
-            .legend .t-out {
-                background: #e0e0e0;
-            }
-
-            .legend .t-miss {
-                background: #f7bdbd;
-            }
-
-        .gih-footer {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
-            .gih-footer .mode-btn {
-                border: 1px solid rgba(15,23,36,0.08);
-                background: #fff;
-                color: var(--primary-strong);
-                padding: 6px 10px;
-                border-radius: 999px;
-                cursor: pointer;
-                font-weight: 600;
-                transition: all 150ms ease;
-            }
-
-                .gih-footer .mode-btn.active {
-                    background: var(--primary);
-                    color: #fff;
-                    border-color: var(--primary-strong);
-                    box-shadow: 0 6px 14px rgba(39,103,73,0.06);
-                }
-
-                .gih-footer .mode-btn[disabled] {
-                    opacity: 0.55;
-                    pointer-events: none;
-                }
-
-        .muted-note {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 8px;
-        }
-
-        .btn {
-            border: none;
-            border-radius: 999px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: all 180ms ease;
-            font-weight: 600;
-            color: #fff;
-            background: var(--primary);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            min-height: 40px; /* touch-friendly baseline */
-        }
-
-            .btn.ghost {
-                background: transparent;
-                color: var(--primary-strong);
-                border: 1px solid rgba(15,23,36,0.04);
-            }
-
-            .btn.small {
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-
-            .btn.secondary {
-                background: var(--card);
-                color: var(--primary-strong);
-                border: 1px solid rgba(15,23,36,0.06);
-            }
-
-        .card-save {
-            background: #2f9d3a;
-            color: #fff;
-            border: none;
-            padding: 8px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-        }
-
-            .card-save[disabled] {
-                opacity: 0.45;
-                cursor: not-allowed;
-            }
-
-        .card-save-wrap {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            justify-content: flex-end;
-            flex-direction: column;
-            min-width: 160px;
-        }
-
-        .saved-at {
-            font-size: 13px;
-            color: #1b7a2b;
-            margin-top: 6px;
-        }
-
-        .card-footer-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-end;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        /* MOBILE: touch-friendly tweaks */
-        .btn {
-            min-height: 44px;
-            padding: 12px 14px;
+            gap: 6px;
         }
 
         .product-btn {
-            min-height: 44px;
-            padding: 10px 12px;
+            min-width: 90px;
         }
 
-        .room-item {
-            min-height: 90px;
-            padding: 14px;
+        .card {
+            padding: 12px;
+            border-radius: 12px;
         }
 
-        /* MOBILE: bottom navigation (hidden on desktop, visible on small screens) */
         .bottom-nav {
-            display: none; /* shown at small sizes */
-            position: fixed;
-            left: 12px;
-            right: 12px;
-            bottom: calc(12px + var(--safe-bottom));
-            height: var(--bottom-nav-height);
-            background: var(--card);
-            border-radius: 14px;
-            box-shadow: 0 12px 30px rgba(6,10,15,0.12);
-            align-items: center;
-            justify-content: space-around;
-            z-index: 1600;
-            padding: 8px;
-            transition: transform 260ms ease, opacity 260ms ease;
-        }
-
-            .bottom-nav.hide {
-                transform: translateY(120%);
-                opacity: 0;
-                pointer-events: none;
-            }
-
-            .bottom-nav .b-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 6px;
-                color: var(--muted);
-                font-size: 12px;
-                cursor: pointer;
-                padding: 6px 8px;
-                border-radius: 8px;
-            }
-
-                .bottom-nav .b-item.active {
-                    color: var(--primary-strong);
-                }
-
-        /* MOBILE: modal full screen */
-        @media (max-width:920px) {
-            body {
-                padding: 12px 12px calc(var(--bottom-nav-height) + 32px);
-            }
-            /* reserve space for bottom nav */
-            .nav {
-                display: none;
-            }
-            /* hide left nav */
-            .rooms-grid {
-                grid-template-columns: repeat(2,1fr);
-            }
-
-            .gih-records {
-                grid-template-columns: 1fr;
-            }
-
-            .modal {
-                width: 100%;
-                max-width: 100%;
-                height: calc(100vh - 24px);
-                max-height: none;
-                border-radius: 12px;
-                padding: 14px;
-            }
-
-            .overlay {
-                align-items: flex-end; /* bring modal from bottom */
-                padding: 0;
-            }
-
-            .modal-head {
-                margin-bottom: 8px;
-            }
-
-            .products-wrap {
-                max-height: 36vh;
-            }
-
-            .gih-products {
-                gap: 6px;
-            }
-
-            .product-btn {
-                min-width: 90px;
-            }
-
-            .card {
-                padding: 12px;
-                border-radius: 12px;
-            }
-
-            .bottom-nav {
-                display: flex;
-            }
-        }
-
-        /* MOBILE: very small screens */
-        @media (max-width:480px) {
-            .rooms-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .product-btn {
-                min-width: 88px;
-                font-size: 13px;
-                padding: 10px;
-            }
-
-            .modal {
-                padding-bottom: calc(var(--safe-bottom) + 18px);
-                border-radius: 12px 12px 0 0;
-            }
-
-            .card-save-wrap {
-                min-width: 140px;
-            }
-
-            .input {
-                padding: 12px;
-                font-size: 16px;
-            }
-
-            .btn.small {
-                padding: 12px;
-                width: 100%;
-                border-radius: 10px;
-            }
-
-            .gih-form > div {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .gih-form .input[style] {
-                width: 100% !important;
-            }
-
-            .card-footer-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        /* small visual polish for bottom nav icons */
-        .bottom-nav i {
-            font-size: 18px;
-        }
-
-        .bottom-nav .b-label {
-            font-size: 11px;
-        }
-
-        /* Firebase connection status */
-        .connection-status {
             display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            background: var(--card);
-            box-shadow: var(--shadow-sm);
-            margin-top: 8px;
+        }
+    }
+
+    /* MOBILE: very small screens */
+    @media (max-width:480px) {
+        .rooms-grid {
+            grid-template-columns: 1fr;
         }
 
-            .connection-status.connected {
-                color: var(--primary-strong);
-            }
-
-            .connection-status.disconnected {
-                color: #e53e3e;
-            }
-
-            .connection-status .dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                display: inline-block;
-            }
-
-            .connection-status.connected .dot {
-                background: var(--primary-strong);
-            }
-
-            .connection-status.disconnected .dot {
-                background: #e53e3e;
-            }
-
-        /* Mobile-only connection indicator */
-        .mobile-connection-indicator {
-            display: none;
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            z-index: 10;
-        }
-
-            .mobile-connection-indicator.connected {
-                background: var(--primary-strong);
-                box-shadow: 0 0 0 2px rgba(39,103,73,0.2);
-            }
-
-            .mobile-connection-indicator.disconnected {
-                background: #e53e3e;
-                box-shadow: 0 0 0 2px rgba(229,62,62,0.2);
-            }
-
-        @media (max-width:920px) {
-            .connection-status {
-                display: none;
-            }
-
-            .mobile-connection-indicator {
-                display: block;
-            }
-
-            .bottom-nav {
-                padding-top: 20px; /* add space for the indicator */
-            }
-        }
-
-        /* Валидация акцизов */
-        .accise-item.valid {
-            border: 2px solid #2f9d3a; /* зелёная рамка */
-        }
-
-        .accise-item.invalid {
-            border: 2px solid #e53e3e; /* красная рамка */
-        }
-
-
-        /* ==== ADDED: Mobile top header and burger menu ==== */
-        .mb-header {
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            background: var(--card);
-            box-shadow: var(--shadow-sm);
-            border-radius: 12px;
-            margin-bottom: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 3000;
-            width: 100%;
-        }
-
-        .mb-burger-btn {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text);
-            line-height: 1;
-        }
-
-        .mb-burger-menu {
-            display: none;
-            position: absolute;
-            top: 60px;
-            left: 12px;
-            background: var(--card);
-            border-radius: 12px;
-            box-shadow: var(--shadow-sm);
+        .product-btn {
+            min-width: 88px;
+            font-size: 13px;
             padding: 10px;
-            width: 190px;
+        }
+
+        .modal {
+            padding-bottom: calc(var(--safe-bottom) + 18px);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .card-save-wrap {
+            min-width: 140px;
+        }
+
+        .input {
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .btn.small {
+            padding: 12px;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .gih-form > div {
             flex-direction: column;
-            gap: 8px;
-            z-index: 3500;
-        }
-
-            .mb-burger-menu.show {
-                display: flex;
-            }
-
-        .mb-burger-item {
-            display: flex;
-            align-items: center;
             gap: 10px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--muted);
-            transition: background var(--transition);
         }
 
-            .mb-burger-item:hover {
-                background: rgba(39,103,73,0.08);
-                color: var(--primary-strong);
-            }
+        .gih-form .input[style] {
+            width: 100% !important;
+        }
 
-        .mb-header .right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .card-footer-row {
+            flex-direction: column;
+            align-items: stretch;
         }
-        /* Only show header on mobile (nav hidden there already) */
-        @media (max-width:920px) {
-            .mb-header {
-                display: flex;
-            }
-        }
-        /* extra desktop nav items look like native nav items */
-        .nav .nav-item.extra {
-            opacity: 0.9
-        }
-        /* New sections base */
-        .page-section {
+    }
+
+    /* small visual polish for bottom nav icons */
+    .bottom-nav i {
+        font-size: 18px;
+    }
+
+    .bottom-nav .b-label {
+        font-size: 11px;
+    }
+
+    /* Firebase connection status */
+    .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+        margin-top: 8px;
+        transition: var(--transition);
+    }
+
+    .connection-status.connected {
+        color: var(--primary-strong);
+    }
+
+    .connection-status.disconnected {
+        color: #e53e3e;
+    }
+
+    .connection-status .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        transition: var(--transition);
+    }
+
+    .connection-status.connected .dot {
+        background: var(--primary-strong);
+        box-shadow: 0 0 0 2px rgba(39,103,73,0.2);
+    }
+
+    .connection-status.disconnected .dot {
+        background: #e53e3e;
+        box-shadow: 0 0 0 2px rgba(229,62,62,0.2);
+    }
+
+    /* Mobile-only connection indicator */
+    .mobile-connection-indicator {
+        display: none;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        z-index: 10;
+        transition: var(--transition);
+    }
+
+    .mobile-connection-indicator.connected {
+        background: var(--primary-strong);
+        box-shadow: 0 0 0 2px rgba(39,103,73,0.2);
+    }
+
+    .mobile-connection-indicator.disconnected {
+        background: #e53e3e;
+        box-shadow: 0 0 0 2px rgba(229,62,62,0.2);
+    }
+
+    @media (max-width:920px) {
+        .connection-status {
             display: none;
         }
 
-            .page-section.show {
-                display: block;
-            }
-
-
-        /* ==== Separators between nav sections on desktop ==== */
-        .nav-separator {
-            height: 1px;
-            margin: 6px 0;
-            background: rgba(15, 23, 36, 0.06);
-            width: 100%;
+        .mobile-connection-indicator {
+            display: block;
         }
 
-
-        /* ==== Mobile burger button improved ==== */
-        .mb-burger-btn {
-            font-size: 24px;
-            padding: 6px 10px;
-            border-radius: 8px;
-            transition: background var(--transition);
-            background-color: transparent;
+        .bottom-nav {
+            padding-top: 20px;
         }
+    }
 
-            .mb-burger-btn:hover {
-                background: rgba(39,103,73,0.08);
-            }
-        /* Sync indicator align right in header */
-        .mb-header .right {
-            margin-left: auto;
-        }
+    /* Валидация акцизов */
+    .accise-item.valid {
+        border: 2px solid #2f9d3a;
+    }
 
+    .accise-item.invalid {
+        border: 2px solid #e53e3e;
+    }
 
-        /* ==== Fix bottom nav tab alignment on mobile ==== */
-        #bottomNav {
+    /* === ADDED: Mobile top header and burger menu === */
+    .mb-header {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 3000;
+        width: 100%;
+    }
+
+    .mb-burger-btn {
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: var(--text);
+        line-height: 1;
+        padding: 8px;
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .mb-burger-btn:hover {
+        background: rgba(39,103,73,0.08);
+    }
+
+    .mb-burger-menu {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 12px;
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        padding: 10px;
+        width: 190px;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 3500;
+    }
+
+    .mb-burger-menu.show {
+        display: flex;
+    }
+
+    .mb-burger-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--muted);
+        transition: background var(--transition);
+    }
+
+    .mb-burger-item:hover {
+        background: rgba(39,103,73,0.08);
+        color: var(--primary-strong);
+    }
+
+    .mb-header .right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    @media (max-width:920px) {
+        .mb-header {
             display: flex;
-            justify-content: space-around !important;
-            align-items: center;
-            padding: 0 4px;
+        }
+    }
+
+    .nav .nav-item.extra {
+        opacity: 0.9;
+    }
+
+    .page-section {
+        display: none;
+    }
+
+    .page-section.show {
+        display: block;
+    }
+
+    /* === Separators between nav sections on desktop === */
+    .nav-separator {
+        height: 1px;
+        margin: 6px 0;
+        background: rgba(15, 23, 36, 0.06);
+        width: 100%;
+    }
+
+    /* === Mobile fixes === */
+    @media (max-width: 920px) {
+        #mbHeaderRight .mobile-connection-indicator {
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            margin-right: 8px;
+            display: inline-block;
+        }
+        
+        .bottom-nav {
+            padding-top: 8px !important;
+            justify-content: space-between !important;
         }
 
-            #bottomNav .nav-item {
-                flex: 1;
-                text-align: center;
-            }
-
-
-        /* === Mobile fixes (requested) === */
-        @media (max-width: 920px) {
-            /* Move the green connection dot to the RIGHT inside the mobile header */
-            #mbHeaderRight .mobile-connection-indicator {
-                position: static !important;
-                top: auto !important;
-                left: auto !important;
-                margin-left: 8px;
-                display: inline-block;
-            }
-            /* Bottom tab: make items perfectly even and centered */
-            .bottom-nav {
-                padding-top: 8px !important; /* remove extra space that was reserved for the dot */
-                justify-content: space-between !important;
-            }
-
-                .bottom-nav .b-item {
-                    flex: 1 1 0;
-                    text-align: center;
-                }
+        .bottom-nav .b-item {
+            flex: 1 1 0;
+            text-align: center;
         }
+    }
 
-
-        /* Скрываем нижний таб на десктопах */
-        @media (min-width: 921px) {
-            #bottomNav {
-                display: none !important;
-            }
+    @media (min-width: 921px) {
+        #bottomNav {
+            display: none !important;
         }
+    }
 
-
-        /* Заголовок активной страницы в центре мобильной шапки */
-        @media (max-width: 920px) {
-            #pageTitle {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: 16px;
-                font-weight: 600;
-                color: var(--text);
-                white-space: nowrap;
-                pointer-events: none;
-            }
-        }
-
-
-        /* === Фиксированная мобильная шапка === */
-        @media (max-width: 920px) {
-            header, .mb-header, .mobile-header {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-            }
-
-            body {
-                padding-top: 60px !important;
-            }
-        }
-
-
-        /* === Фиксированное левое меню на десктопе === */
-        @media (min-width: 921px) {
-            nav, .sidebar, .tabs-left, .left-menu, .left-nav {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                overflow-y: auto;
-                background-color: var(--bg, #fff);
-                z-index: 999;
-            }
-        }
-
-
-        /* === Мобильная шапка как нижний таб === */
-        @media (max-width: 920px) {
-            .mb-header, header, .mobile-header {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                background-color: #fff;
-                border-radius: 16px;
-                margin: 8px 12px;
-                padding: 10px 14px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            }
-
-            /* Контент под шапкой */
-            body {
-                padding-top: 82px !important; /* учитываем margin + padding шапки */
-            }
-        }
-
-
-        /* === Фиксированное аккуратное левое меню === */
-        @media (min-width: 921px) {
-            nav, .sidebar, .tabs-left, .left-menu, .left-nav {
-                position: fixed !important;
-                top: 16px;
-                left: 16px;
-                width: 220px;
-                height: calc(100vh - 32px);
-                overflow-y: auto;
-                background-color: #fff;
-                border-radius: 16px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-                padding: 10px 0;
-                z-index: 999;
-            }
-
-            /* Контент сдвигаем на ширину меню + отступы */
-
-        }
-
-
-        /* === Нижний таб в едином стиле с шапкой === */
-        @media (max-width: 920px) {
-            #bottomNav {
-                background-color: #fff;
-                border-radius: 16px;
-                margin: 8px 12px;
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-            }
-        }
-
-
-        /* === Фиксированная мобильная шапка без вылезания за границы === */
-        @media (max-width: 920px) {
-            .mb-header, header, .mobile-header {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                background-color: #fff;
-                border-radius: 16px;
-                padding: 10px 14px;
-                margin: 8px auto 0 auto;
-                max-width: calc(100% - 24px); /* предотвращает вылезание за границы */
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            }
-
-            /* Контент под шапкой */
-            body {
-                padding-top: 82px !important;
-                padding-down: 82px !important;
-            }
-
-            /* Нижний таб тоже ограничиваем по ширине и центруем */
-            #bottomNav {
-                background-color: #fff;
-                border-radius: 16px;
-                margin: 0 auto 8px auto;
-                max-width: calc(100% - 24px);
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-            }
-        }
-
-        /* === Левое меню с симметричными отступами === */
-        @media (min-width: 921px) {
-            nav, .sidebar, .tabs-left, .left-menu, .left-nav {
-                position: fixed !important;
-                top: 24px;
-                left: 24px;
-                width: 220px;
-                height: calc(100vh - 48px);
-                overflow-y: auto;
-                background-color: #fff;
-                border-radius: 16px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-                padding: 10px 0;
-                z-index: 999;
-            }
-
-            /* Основной контент отступает на ширину меню + одинаковый зазор */
-            main, .main-content, .content, .page-container {
-                margin-left: calc(220px + 24px) !important;
-                padding: 6px;
-            }
-        }
-
-
-        /* Красивое поле для ввода акцизов */
-        #new-accise,
-        #new-accise-mobile {
-            padding: 12px 16px;
-            border: 1px solid rgba(15, 23, 36, 0.08);
-            border-radius: 14px;
-            background-color: #fff;
+    @media (max-width: 920px) {
+        #pageTitle {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: 600;
             color: var(--text);
-            font-size: 15px;
-            font-weight: 500;
-            box-shadow: 0 2px 6px rgba(12, 18, 24, 0.06);
-            transition: all 0.25s ease;
-            outline: none;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+    }
+
+    @media (max-width: 920px) {
+        header, .mb-header, .mobile-header {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
         }
 
-            /* Ховер эффект */
-            #new-accise:hover,
-            #new-accise-mobile:hover {
-                border-color: rgba(39, 103, 73, 0.2);
-                box-shadow: 0 3px 10px rgba(12, 18, 24, 0.08);
-            }
-
-            /* Фокус эффект */
-            #new-accise:focus,
-            #new-accise-mobile:focus {
-                border-color: var(--primary);
-                box-shadow: 0 4px 14px rgba(39, 103, 73, 0.16);
-            }
-
-        /* Мобильная адаптация */
-        @media (max-width: 920px) {
-            #new-accise-mobile {
-                flex: 1;
-                min-width: 0;
-                padding: 12px;
-                font-size: 16px;
-            }
+        body {
+            padding-top: 60px !important;
         }
+    }
 
-
-        /* === Центрирование поля ввода в мобильной шапке === */
-        @media (max-width: 920px) {
-            /* Убедимся, что header - flex с равными полями по краям */
-            .mb-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                padding: 10px 14px;
-                width: 100%;
-            }
-
-            /* Бургер и индикатор остаются по краям */
-            .mb-burger-btn {
-                flex: 0 0 auto;
-            }
-
-            .mb-header .right {
-                flex: 0 0 auto;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-            /* Поле ввода расположено по центру и занимает доступную ширину
-            с аккуратными отступами по сторонам. Перекрываем возможный inline-style. */
-            #new-accise-mobile {
-                flex: 1 1 auto !important;
-                max-width: none !important;
-                margin: 0 12px !important;
-                padding: 12px 16px;
-                border-radius: 14px;
-                border: 1px solid rgba(15, 23, 36, 0.08);
-                background-color: #fff;
-                box-shadow: 0 2px 6px rgba(12, 18, 24, 0.06);
-                transition: all 0.20s ease;
-                outline: none;
-                text-align: left; /* текст вводим слева, но поле визуально по центру */
-                min-width: 0; /* важно для корректного сжатия в flex */
-            }
-
-                /* Если нужно — можно сделать placeholder по центру, но обычно это хуже для UX */
-                /* #new-accise-mobile::placeholder { text-align: center; } */
-
-                /* Hover / focus эффекты (мобильные) */
-                #new-accise-mobile:hover {
-                    border-color: rgba(39, 103, 73, 0.18);
-                    box-shadow: 0 3px 10px rgba(12,18,24,0.08);
-                }
-
-                #new-accise-mobile:focus {
-                    border-color: var(--primary);
-                    box-shadow: 0 4px 14px rgba(39,103,73,0.16);
-                }
+    @media (min-width: 921px) {
+        nav, .sidebar, .tabs-left, .left-menu, .left-nav {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: var(--bg, #fff);
+            z-index: 999;
         }
+    }
 
+    /* Красивое поле для ввода акцизов */
+    #new-accise,
+    #new-accise-mobile {
+        padding: 12px 16px;
+        border: 1px solid rgba(15, 23, 36, 0.08);
+        border-radius: 14px;
+        background-color: #fff;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 500;
+        box-shadow: 0 2px 6px rgba(12, 18, 24, 0.06);
+        transition: all 0.25s ease;
+        outline: none;
+    }
 
+    #new-accise:hover,
+    #new-accise-mobile:hover {
+        border-color: rgba(39, 103, 73, 0.2);
+        box-shadow: 0 3px 10px rgba(12, 18, 24, 0.08);
+    }
 
+    #new-accise:focus,
+    #new-accise-mobile:focus {
+        border-color: var(--primary);
+        box-shadow: 0 4px 14px rgba(39, 103, 73, 0.16);
+    }
 
-
-
-
-        /* GIH summary compact styles */
-        #gih-summary {
-            margin: 8px 0;
-            padding: 10px;
-            cursor: pointer;
+    @media (max-width: 920px) {
+        #new-accise-mobile {
+            flex: 1;
+            min-width: 0;
+            padding: 12px;
+            font-size: 16px;
         }
-
-            #gih-summary .title {
-                font-weight: 600;
-                font-size: 13px;
-            }
-
-        #gih-summary-list {
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            overflow: hidden;
-            transition: max-height 0.25s ease, opacity 0.2s ease;
-            will-change: max-height, opacity;
+        
+        .mb-header {
+            gap: 12px;
         }
-
-        #toggle-summary {
-            background: none;
-            border: none;
-            padding: 2px;
-            cursor: pointer;
-            line-height: 1;
+        
+        #new-accise-mobile {
+            flex: 1 1 auto !important;
+            max-width: none !important;
+            margin: 0 12px !important;
         }
+    }
 
-            #toggle-summary svg {
-                width: 14px;
-                height: 14px;
-            }
+    /* GIH summary styles */
+    #gih-summary {
+        margin: 8px 0;
+        padding: 10px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
 
+    #gih-summary:hover {
+        background: rgba(0,0,0,0.03);
+    }
 
-        /* GIH summary compact styles */
-        #gih-summary {
-            margin: 8px 0;
-            padding: 10px;
-            cursor: pointer;
+    #gih-summary-title {
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    #gih-summary-list {
+        transition: max-height 0.3s ease, opacity 0.2s ease;
+        overflow: hidden;
+    }
+
+    #gih-summary.collapsed #gih-summary-list {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    #gih-summary.expanded #gih-summary-list {
+        max-height: 2000px;
+        opacity: 1;
+    }
+
+    #gih-summary-arrow {
+        transition: transform 0.25s ease;
+    }
+
+    #gih-summary.collapsed #gih-summary-arrow {
+        transform: rotate(-90deg);
+    }
+
+    /* GIH Rooms Summary */
+    #gih-rooms-summary {
+        margin: 8px 0;
+        padding: 10px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    #gih-rooms-summary:hover {
+        background: rgba(0,0,0,0.03);
+    }
+
+    #gih-rooms-summary-title {
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    #gih-rooms-summary-list {
+        transition: max-height 0.3s ease, opacity 0.2s ease;
+        overflow: hidden;
+    }
+
+    #gih-rooms-summary.collapsed #gih-rooms-summary-list {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    #gih-rooms-summary.expanded #gih-rooms-summary-list {
+        max-height: 2000px;
+        opacity: 1;
+    }
+
+    #gih-rooms-summary-arrow {
+        transition: transform 0.25s ease;
+    }
+
+    #gih-rooms-summary.collapsed #gih-rooms-summary-arrow {
+        transform: rotate(-90deg);
+    }
+
+    .room-chip {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(15,23,36,0.08);
+        background: var(--card);
+        font-size: 13px;
+        cursor: pointer;
+        transition: box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .room-chip:hover {
+        background: rgba(39,103,73,0.08);
+    }
+
+    .room-chip.saved {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary-strong);
+    }
+
+    @keyframes gihCardFlash {
+        0% { box-shadow: 0 0 0 3px var(--primary); }
+        100% { box-shadow: none; }
+    }
+
+    .gih-card.highlighted {
+        animation: gihCardFlash 0.8s ease-out;
+    }
+
+    #gih-sort-btn {
+        padding: 4px 6px;
+        min-width: auto;
+        width: 28px;
+        height: 28px;
+    }
+
+    #gih-sort-btn i {
+        margin: 0;
+    }
+
+    /* Сброс лишних отступов */
+    @media (max-width: 920px) {
+        main, .content, .extra-section, .page-container, #main-content {
+            margin-left: 0 !important;
         }
+    }
 
-            #gih-summary:hover {
-                background: rgba(0,0,0,0.03);
-            }
+    @media (min-width: 921px) {
+        main, .content, .extra-section, .page-container, #main-content {
+            margin-left: calc(220px + 24px) !important;
+        }
+    }
 
-        #gih-summary-title {
-            font-weight: 600;
+    .t-added { color: #064e17; }
+    .t-here { color: #044a6a; }
+    .t-out { color: #333; }
+    .t-miss { color: #6b0b0b; }
+
+    .gih-card {
+        margin-bottom: 12px;
+    }
+
+    .history-date-header {
+        font-weight: 700;
+        margin: 15px 0 8px 0;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    #history-current-date:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    #history-date-picker {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #history-prev-day,
+    #history-next-day {
+        min-width: 32px !important;
+        width: 32px;
+        height: 32px;
+        padding: 6px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #history-prev-day i,
+    #history-next-day i {
+        font-size: 12px;
+        margin: 0;
+    }
+
+    #history-current-date {
+        flex: 1;
+        text-align: center;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.03);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background-color 0.2s ease;
+        min-width: 0;
+    }
+
+    #history-current-date:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 480px) {
+        #history-current-date {
             font-size: 13px;
+            padding: 6px;
         }
 
-        #gih-summary-list {
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            will-change: max-height, opacity;
-            max-height: 600px;
-            opacity: 1;
-        }
-
-
-        /* GIH summary compact styles */
-        #gih-summary {
-            margin: 8px 0;
-            padding: 10px;
-            cursor: pointer;
-        }
-
-            #gih-summary:hover {
-                background: rgba(0,0,0,0.03);
-            }
-
-        #gih-summary-title {
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        #gih-summary-list {
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            will-change: max-height, opacity;
-            max-height: 600px;
-            opacity: 1;
-        }
-
-
-        /* GIH summary toggle (fixed) */
-        #gih-summary {
-            margin: 8px 0;
-            padding: 10px;
-            cursor: pointer;
-        }
-
-            #gih-summary .gih-summary-header {
-                transition: transform 0.25s ease;
-                user-select: none;
-            }
-
-        #gih-summary-title {
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        #gih-summary-arrow {
-            transition: transform 0.25s ease;
-        }
-
-        /* Base: collapsed */
-        #gih-summary #gih-summary-list {
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.28s ease, opacity 0.2s ease;
-            will-change: max-height, opacity;
-        }
-
-        /* Expanded state */
-        #gih-summary.expanded #gih-summary-list {
-            transition: max-height 0.3s ease, opacity 0.2s ease;
-            max-height: 2000px;
-            opacity: 1;
-        }
-
-        /* Arrow rotation: right (collapsed) -> down (expanded) */
-        #gih-summary.collapsed #gih-summary-arrow {
-            transform: rotate(-90deg);
-        }
-
-        #gih-summary.expanded #gih-summary-arrow {
-            transform: rotate(0deg);
-        }
-
-
-        /* === Disable positional shifts on hover/active/focus ===
-        Prevent translate/translateY/transform shifts for interactive elements
-        without affecting other visual styles (color, shadow). */
-        .card, .card:hover, .card:active,
-        .product-btn, .product-btn:hover, .product-btn:active, .product-btn:focus, .product-btn:focus-visible,
-        .gih-product, .gih-product:hover, .gih-product:active,
-        .room-item, .room-item:hover, .room-item:active,
-        .btn, .btn:active, .btn:focus, .btn:focus-visible,
-        .room-item, .room-item:hover, .room-item:active,
-        .modal, .modal.show {
-            transform: none !important;
-        }
-
-        /* Also ensure transition remains but doesn't move position */
-        .product-btn, .gih-product, .card, .room-item, .btn {
-            transition: box-shadow 180ms ease, background 180ms ease, color 180ms ease !important;
-        }
-
-        /* Safety: neutralize inline transform styles that might be applied via JS on these elements */
-        [data-style-transform] {
-            transform: none !important;
-        }
-
-
-        /* === GIH Rooms Summary (numbers list) === */
-        #gih-rooms-summary-title {
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        #gih-rooms-summary-arrow {
-            transition: transform 0.25s ease;
-        }
-
-        /* Collapsed by default */
-        #gih-rooms-summary #gih-rooms-summary-list {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.28s ease, opacity 0.2s ease;
-            will-change: max-height, opacity;
-        }
-        /* Expanded state */
-        #gih-rooms-summary.expanded #gih-rooms-summary-list {
-            max-height: 2000px;
-            opacity: 1;
-        }
-        /* Arrow rotation */
-        #gih-rooms-summary.collapsed #gih-rooms-summary-arrow {
-            transform: rotate(-90deg);
-        }
-
-        #gih-rooms-summary.expanded #gih-rooms-summary-arrow {
-            transform: rotate(0deg);
-        }
-
-        /* Chips */
-        .room-chip {
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(15,23,36,0.08);
-            background: var(--card);
-            font-size: 13px;
-            cursor: pointer;
-            transition: box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
-        }
-
-            .room-chip:hover {
-                background: rgba(39,103,73,0.08);
-            }
-
-            .room-chip.saved {
-                background: var(--primary);
-                color: #fff;
-                border-color: var(--primary-strong);
-            }
-
-        /* Green, short highlight */
-        @keyframes gihCardFlash {
-            from {
-                box-shadow: 0 0 0 3px var(--primary);
-                animation: gihCardFlash 1.5s ease-out;
-            }
-
-            to {
-                box-shadow: none;
-            }
-        }
-
-        .gih-card.highlighted {
-            box-shadow: 0 0 0 3px var(--primary);
-            animation: gihCardFlash 1.5s ease-out;
-            animation: gihCardFlash 0.8s ease-out;
-        }
-
-
-        #gih-sort-btn {
-            padding: 4px 6px;
-            min-width: auto;
+        #history-prev-day,
+        #history-next-day {
+            min-width: 28px !important;
             width: 28px;
             height: 28px;
         }
+    }
 
-            #gih-sort-btn i {
-                margin: 0;
-            }
-        /* ---------- Сброс лишних отступов ---------- */
-        @media (max-width: 920px) {
-            /* На мобилке вообще никаких левых отступов */
-            main, .content, .extra-section, .page-container, #main-content {
-                margin-left: 0 !important;
-            }
-        }
+    #history-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
 
-        @media (min-width: 921px) {
-            /* На десктопе — ровно один отступ справа от фикс-меню */
-            main, .content, .extra-section, .page-container, #main-content {
-                margin-left: calc(220px + 24px) !important;
-            }
-        }
+    #history-list .gih-card {
+        position: relative;
+        overflow: hidden;
+    }
 
-        .t-added {
-            color: #064e17;
-        }
+    #history-list.search-active {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px;
+        margin-top: 12px;
+    }
 
-        .t-here {
-            color: #044a6a;
-        }
+    /* GIH products columns layout */
+    .gih-products-columns {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
 
-        .t-out {
-            color: #333;
-        }
+    .gih-column {
+        flex: 1;
+        min-width: 0;
+    }
 
-        .t-miss {
-            color: #6b0b0b;
-        }
+    .gih-column-title {
+        font-weight: 600;
+        margin: 6px 0;
+    }
 
-        .gih-card {
-            padding: 14px;
-            border-radius: 12px;
-            background: var(--card);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 12px;
-        }
+    .gih-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
 
-        .history-date-header {
-            font-weight: 700;
-            margin: 15px 0 8px 0;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-        /* Стили для элементов управления датой в истории */
-        #history-current-date:hover {
-            background: rgba(0,0,0,0.05);
-        }
-
-        #history-date-picker {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-        /* Стили для элементов управления датой в истории */
-        #history-prev-day,
-        #history-next-day {
-            min-width: 32px !important;
-            width: 32px;
-            height: 32px;
-            padding: 6px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            #history-prev-day i,
-            #history-next-day i {
-                font-size: 12px;
-                margin: 0;
-            }
-
-        #history-current-date {
-            flex: 1;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            background: rgba(0,0,0,0.03);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: background-color 0.2s ease;
-            min-width: 0; /* Важно для правильной работы flex */
-        }
-
-            #history-current-date:hover {
-                background: rgba(0,0,0,0.05);
-            }
-
-        /* Адаптация для мобильных устройств */
-        @media (max-width: 480px) {
-            #history-current-date {
-                font-size: 13px;
-                padding: 6px;
-            }
-
-            #history-prev-day,
-            #history-next-day {
-                min-width: 28px !important;
-                width: 28px;
-                height: 28px;
-            }
-        }
-
-        #history-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-            #history-list .gih-card {
-                padding: 14px;
-                border-radius: 12px;
-                background: var(--card);
-                box-shadow: var(--shadow-sm);
-                position: relative;
-                overflow: hidden;
-            }
-
-            #history-list.search-active {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 12px;
-                margin-top: 12px;
-            }
-
-
-        /* GIH products columns layout */
+    @media (max-width:900px) {
         .gih-products-columns {
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .gih-column {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .gih-column-title {
-            font-weight: 600;
-            margin: 6px 0;
+            flex-direction: column;
         }
 
         .gih-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
+            justify-content: flex-start;
+        }
+    }
+
+    @media (min-width: 921px) {
+        .product-btn {
+            min-width: 80px !important;
+            padding: 6px 8px !important;
+            font-size: 13px !important;
         }
 
-        @media (max-width:900px) {
-            .gih-products-columns {
-                flex-direction: column;
-            }
-
-            .gih-row {
-                justify-content: flex-start;
-            }
-        }
-        /* --- Compact product buttons on desktop --- */
-        @media (min-width: 921px) {
-            .product-btn {
-                min-width: 80px !important;
-                padding: 6px 8px !important;
-                font-size: 13px !important;
-            }
-
-            .gih-column-title {
-                font-size: 13px;
-                margin-bottom: 4px;
-            }
-
-            .gih-row {
-                gap: 6px;
-            }
-        }
-        /* Улучшаем читаемость продуктов в сохранённых карточках и истории */
-        #gih-saved-records .muted,
-        #history-list .muted {
-            line-height: 1 !important;
-            font-weight: 900;
-        }
-        /* ==== Accordion styles ==== */
-        .accordion {
-            border-radius: 12px;
-            overflow: hidden;
+        .gih-column-title {
+            font-size: 13px;
+            margin-bottom: 4px;
         }
 
-        .accordion-item {
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+        .gih-row {
+            gap: 6px;
+        }
+    }
+
+    #gih-saved-records .muted,
+    #history-list .muted {
+        line-height: 1 !important;
+        font-weight: 900;
+    }
+
+    /* Accordion styles */
+    .accordion {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .accordion-item {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .accordion-header:hover {
+        background: rgba(39,103,73,0.06);
+    }
+
+    .accordion-header i {
+        transition: transform 0.25s ease;
+    }
+
+    .accordion-header.active i {
+        transform: rotate(90deg);
+    }
+
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        padding-left: 14px;
+    }
+
+    .accordion-content.open {
+        max-height: 1000px;
+        padding-bottom: 8px;
+    }
+
+    .accordion-subitem {
+        padding: 8px 0 8px 16px;
+        font-size: 14px;
+        color: #444;
+    }
+
+    /* Печать */
+    @media print {
+        nav, .nav, .sidebar, .left-menu, .left-nav,
+        .mb-header, .mobile-header,
+        .bottom-nav, #bottomNav, #history-search-btn, #history-next-day, #history-prev-day {
+            display: none !important;
         }
 
-        .accordion-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s ease;
+        main, .content, .page-container, #main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
         }
 
-            .accordion-header:hover {
-                background: rgba(39,103,73,0.06);
-            }
-
-            .accordion-header i {
-                transition: transform 0.25s ease;
-            }
-
-            .accordion-header.active i {
-                transform: rotate(90deg);
-            }
-
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            padding-left: 14px;
+        #history-current-date {
+            font-size: 20px !important;
+            background: #fff !important;
         }
 
-            .accordion-content.open {
-                max-height: 1000px;
-                padding-bottom: 8px;
-            }
-
-        .accordion-subitem {
-            padding: 8px 0 8px 16px;
-            font-size: 14px;
-            color: #444;
+        body {
+            background: #fff !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
-        /* === Печать: оптимизация под бумагу === */
-        @media print {
-            /* Убираем лишнее */
-            nav, .nav, .sidebar, .left-menu, .left-nav,
-            .mb-header, .mobile-header,
-            .bottom-nav, #bottomNav, #history-search-btn, #history-next-day, #history-prev-day {
-                display: none !important;
-            }
 
-            /* Контент на всю ширину */
-            main, .content, .page-container, #main-content {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-            }
-
-            #history-current-date {
-                font-size: 20px !important;
-                background: #fff !important;
-            }
-
-            body {
-                background: #fff !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-
-            .card {
-                box-shadow: none !important;
-            }
-            /* Компактные карточки */
-            .gih-card {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                margin-bottom: 6px !important;
-            }
-
-                .gih-card * {
-                    font-size: 16px !important;
-                    line-height: 1.2 !important;
-                    color: #000 !important;
-                }
-
-            /* Заголовки дат */
-            .history-date-header {
-                margin: 8px 0 4px 0 !important;
-                padding-bottom: 2px !important;
-                border-bottom: 1px solid #ccc !important;
-                font-size: 16px !important;
-            }
-
-            /* Убираем лишние цвета/фоны */
-            .status-1, .status-2, .status-3, .status-4,
-            .t-added, .t-here, .t-out, .t-miss {
-                background: transparent !important;
-                color: #000 !important;
-                border: none !important;
-                line-height: 2 !important;
-            }
+        .card {
+            box-shadow: none !important;
         }
-    </style>
+
+        .gih-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            margin-bottom: 6px !important;
+        }
+
+        .gih-card * {
+            font-size: 16px !important;
+            line-height: 1.2 !important;
+            color: #000 !important;
+        }
+
+        .history-date-header {
+            margin: 8px 0 4px 0 !important;
+            padding-bottom: 2px !important;
+            border-bottom: 1px solid #ccc !important;
+            font-size: 16px !important;
+        }
+
+        .status-1, .status-2, .status-3, .status-4,
+        .t-added, .t-here, .t-out, .t-miss {
+            background: transparent !important;
+            color: #000 !important;
+            border: none !important;
+            line-height: 2 !important;
+        }
+    }
+
+    #add-gih-btn {
+        background: var(--primary-strong) !important;
+        color: white !important;
+        border-color: var(--primary-strong) !important;
+        box-shadow: 0 4px 12px rgba(39, 103, 73, 0.3) !important;
+    }
+
+    #add-gih-btn:hover {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+    }
+
+    /* Улучшенные анимации для всех элементов */
+    .btn, .product-btn, .room-item, .gih-product, .nav-item, 
+    .b-item, .mb-burger-item, .accordion-header, .room-chip,
+    .mode-btn, .card, .gih-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Убираем трансформации при наведении */
+    .btn:hover, .product-btn:hover, .room-item:hover, 
+    .gih-product:hover, .card:hover {
+        transform: none !important;
+    }
+
+    /* Анимация появления для элементов */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card, .room-item, .gih-card {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Задержки для анимации */
+    .room-item:nth-child(odd) { animation-delay: 0.1s; }
+    .room-item:nth-child(even) { animation-delay: 0.2s; }
+    .gih-card:nth-child(odd) { animation-delay: 0.1s; }
+    .gih-card:nth-child(even) { animation-delay: 0.2s; }
+    .card, .room-item, .gih-card {
+        animation: none !important;
+    }
+
+    /* Упрощаем анимацию появления */
+    @keyframes simpleFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal {
+        animation: simpleFadeIn 0.3s ease !important;
+    }
+
+    /* Отключаем анимации для пользователей, которые их предпочитают не использовать */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+</style>
 </head>
 <body>
     <div class="app">
@@ -2418,15 +2270,20 @@ function updateGIHRoomsSummary() {
 
                 // Save data to Firebase
                 async function saveToFirebase() {
-                    if (isUpdatingFromFirebase) return;
-
-                    try {
-                        await database.ref('minibarData').set(appData);
-                        console.log('Data saved to Firebase');
-                    } catch (error) {
-                        console.error('Error saving to Firebase:', error);
-                    }
-                }
+    if (isUpdatingFromFirebase) return;
+    
+    try {
+        // Всегда сохраняем в localStorage
+        localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+        
+        // Сохраняем в Firebase
+        await database.ref('minibarData').set(appData);
+        console.log('Данные сохранены в Firebase и localStorage');
+    } catch (error) {
+        console.error('Ошибка сохранения в Firebase (данные остались в localStorage):', error);
+        // Данные остаются в localStorage даже при ошибке Firebase
+    }
+}
 
                 // Load data from Firebase
                 async function loadFromFirebase() {
@@ -2450,20 +2307,31 @@ function updateGIHRoomsSummary() {
 
                 // Listen for real-time updates from Firebase
                 function setupFirebaseListener() {
-                    database.ref('minibarData').on('value', (snapshot) => {
-                        const data = snapshot.val();
-
-                        if (data && !isUpdatingFromFirebase) {
-                            isUpdatingFromFirebase = true;
-                            Object.assign(appData, data);
-                            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
-                            isUpdatingFromFirebase = false;
-
-                            // Update UI
-                            updateUIFromData();
-                        }
-                    });
-                }
+    database.ref('minibarData').on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        if (data && !isUpdatingFromFirebase) {
+            console.log('Получены обновления из Firebase');
+            isUpdatingFromFirebase = true;
+            
+            // Сохраняем текущую историю на случай конфликта
+            const currentHistory = appData.gihHistory || [];
+            
+            Object.assign(appData, data);
+            
+            // Восстанавливаем историю если новая версия её потеряла
+            if (currentHistory.length > 0 && (!appData.gihHistory || appData.gihHistory.length < currentHistory.length)) {
+                console.log('Восстанавливаем историю из локальной копии');
+                appData.gihHistory = currentHistory;
+            }
+            
+            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+            isUpdatingFromFirebase = false;
+            
+            updateUIFromData();
+        }
+    });
+}
 
                 // Update UI when data changes
                 function updateUIFromData() {
@@ -3218,35 +3086,38 @@ function updateGIHRoomsSummary() {
                     const savedAtEl = card.querySelector('.saved-at');
 
                     // В функции renderGIHRecord, в обработчике кнопки "Сохранить":
-                    saveBtn.addEventListener('click', () => {
-                        const rec = appData.gihRecords.find(r => r.id === record.id);
-                        if (!rec) return;
-                        if (!canSaveCard(rec)) return;
-                        rec.savedAt = formatHHMM(new Date());
-                        rec.updatedAt = new Date().toISOString();
-                        savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
+                    // В обработчике кнопки Сохранить в renderGIHRecord():
+saveBtn.addEventListener('click', () => {
+    const rec = appData.gihRecords.find(r => r.id === record.id);
+    if (!rec) return;
+    if (!canSaveCard(rec)) return;
+    
+    rec.savedAt = formatHHMM(new Date());
+    rec.updatedAt = new Date().toISOString();
+    savedAtEl.textContent = `Сохранено в ${rec.savedAt}`;
 
-                        // Добавляем запись в историю
-                        const historyEntry = {
-                            id: rec.id,
-                            room: rec.room,
-                            products: JSON.parse(JSON.stringify(rec.products)), // Глубокая копия продуктов
-                            statusMode: rec.statusMode,
-                            comment: rec.comment,
-                            savedAt: rec.savedAt,
-                            createdAt: rec.createdAt || new Date().toISOString()
-                        };
+    const historyEntry = {
+        id: rec.id,
+        room: rec.room,
+        products: JSON.parse(JSON.stringify(rec.products)),
+        statusMode: rec.statusMode,
+        comment: rec.comment,
+        savedAt: rec.savedAt,
+        createdAt: rec.createdAt || new Date().toISOString()
+    };
 
-                        // Инициализируем gihHistory если его нет
-                        appData.gihHistory = appData.gihHistory || [];
-                        appData.gihHistory.unshift(historyEntry);
-
-                        saveDebounced();
-                        updateCardSaveUI(rec, card);
-                        card.remove();
-                        renderGIHRecord(rec);
-                        renderHistory(); // Рендерим историю
-                    });
+    appData.gihHistory = appData.gihHistory || [];
+    appData.gihHistory.unshift(historyEntry);
+    
+    // Резервное копирование истории
+    backupHistory();
+    
+    saveDebounced();
+    updateCardSaveUI(rec, card);
+    card.remove();
+    renderGIHRecord(rec);
+    renderHistory();
+});
                     updateGIHSummary();;
 
                     updateCardSaveUI(record, card);
@@ -3297,32 +3168,64 @@ function updateGIHRoomsSummary() {
 
                 /* ===== LOAD & NAV ===== */
                 async function loadData() {
-                    // First try to load from Firebase
-                    await loadFromFirebase();
-
-                    // If Firebase doesn't have data, load from localStorage
-                    if (appData.accises.length === 0 && appData.rooms.length === 0 && appData.gihRecords.length === 0) {
-                        const raw = localStorage.getItem('hotelMinibarData');
-                        if (raw) {
-                            try {
-                                const parsed = JSON.parse(raw);
-                                Object.assign(appData, parsed);
-                            } catch (e) {
-                                console.warn(e);
-                            }
-                        }
-                    }
-
-                    appData.gihRecords = appData.gihRecords || [];
-                    renderHistory();
-                    appData.gihRecords.forEach(r => normalizeRecordProducts(r));
-                    (appData.accises || []).forEach(renderAcciseItem);
-                    updateAcciseStats();
-                    appData.rooms = appData.rooms || [];
-                    renderRooms();
-                    renderAllGIHRecords();
-                    buildGIHProductsArea();
+    try {
+        // Сначала пытаемся загрузить из Firebase
+        const snapshot = await database.ref('minibarData').once('value');
+        const firebaseData = snapshot.val();
+        
+        if (firebaseData) {
+            // Данные из Firebase есть - используем их
+            console.log('Загружаем данные из Firebase');
+            isUpdatingFromFirebase = true;
+            Object.assign(appData, firebaseData);
+            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+            isUpdatingFromFirebase = false;
+        } else {
+            // Firebase пуст - пробуем локальные данные
+            console.log('Firebase пуст, загружаем из localStorage');
+            const raw = localStorage.getItem('hotelMinibarData');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    Object.assign(appData, parsed);
+                } catch (e) {
+                    console.warn('Ошибка парсинга localStorage:', e);
                 }
+            }
+        }
+    } catch (error) {
+        // Ошибка Firebase - используем локальные данные
+        console.error('Ошибка загрузки из Firebase, используем localStorage:', error);
+        const raw = localStorage.getItem('hotelMinibarData');
+        if (raw) {
+            try {
+                const parsed = JSON.parse(raw);
+                Object.assign(appData, parsed);
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+    }
+    
+    // Инициализируем массивы если они undefined
+    appData.gihRecords = appData.gihRecords || [];
+    appData.gihHistory = appData.gihHistory || [];
+    appData.accises = appData.accises || [];
+    appData.rooms = appData.rooms || [];
+    
+    // Обновляем UI
+    renderHistory();
+    appData.gihRecords.forEach(r => normalizeRecordProducts(r));
+    (appData.accises || []).forEach(renderAcciseItem);
+    updateAcciseStats();
+    renderRooms();
+    renderAllGIHRecords();
+    buildGIHProductsArea();
+    
+    // Обновляем сводки
+    updateGIHSummary();
+    updateGIHRoomsSummary();
+}
 
                 function initNav() {
                     // desktop nav items
@@ -3397,8 +3300,8 @@ function updateGIHRoomsSummary() {
                         const cur = window.scrollY || document.documentElement.scrollTop;
                         if (!ticking) {
                             window.requestAnimationFrame(() => {
-                                if (cur > lastScroll + 10) { nav.classList.add('hide'); } // scrolling down
-                                else if (cur < lastScroll - 10) { nav.classList.remove('hide'); } // scrolling up
+                                if (cur > lastScroll + 1) { nav.classList.add('hide'); } // scrolling down
+                                else if (cur < lastScroll - 1) { nav.classList.remove('hide'); } // scrolling up
                                 lastScroll = cur;
                                 ticking = false;
                             });
@@ -3409,26 +3312,33 @@ function updateGIHRoomsSummary() {
 
                 /* INIT */
                 document.addEventListener('DOMContentLoaded', async () => {
-                    initNav();
-                    initAccises();
-                    initSroki();
-                    initGIH();
-                    initHistoryDateControls();
-                    // Setup Firebase listener
-                    setupFirebaseListener();
+    initNav();
+    initAccises();
+    initSroki();
+    initGIH();
+    initHistoryDateControls();
+    
+    // Восстанавливаем историю если нужно
+    restoreHistoryIfNeeded();
+    
+    setupFirebaseListener();
+    await loadData();
+    
+    // Дополнительная проверка истории
+    if (!appData.gihHistory || appData.gihHistory.length === 0) {
+        restoreHistoryIfNeeded();
+    }
+    
+    cleanupOldGIHRecords();
+    scheduleGIHDailyCleanup();
 
-                    // Load data
-                    await loadData();
-                    cleanupOldGIHRecords();
-                    scheduleGIHDailyCleanup();
+    const activeTop = document.querySelector('.nav-item.active')?.dataset?.tab || 'accises';
+    syncBottomNav(activeTop);
 
-                    // ensure bottom nav reflects initial active top nav
-                    const activeTop = document.querySelector('.nav-item.active')?.dataset?.tab || 'accises';
-                    syncBottomNav(activeTop);
-
-                    // Small UX: close modal on orientation change
-                    window.addEventListener('orientationchange', () => { if ($('#modal').classList.contains('show')) closeModal(); });
-                });
+    window.addEventListener('orientationchange', () => { 
+        if ($('#modal').classList.contains('show')) closeModal(); 
+    });
+});
 
                 /* initGIH (form controls) */
                 function initGIH() {
@@ -3665,7 +3575,29 @@ function updateGIHRoomsSummary() {
                     });
                     apply();
                 })();
+// Резервное копирование истории при каждом изменении
+function backupHistory() {
+    if (appData.gihHistory && appData.gihHistory.length > 0) {
+        localStorage.setItem('gihHistory_backup', JSON.stringify(appData.gihHistory));
+        localStorage.setItem('gihHistory_backup_timestamp', new Date().toISOString());
+    }
+}
 
+// Восстановление истории если основная потерялась
+function restoreHistoryIfNeeded() {
+    if ((!appData.gihHistory || appData.gihHistory.length === 0) && localStorage.getItem('gihHistory_backup')) {
+        console.log('Восстанавливаем историю из резервной копии');
+        try {
+            const backup = JSON.parse(localStorage.getItem('gihHistory_backup'));
+            if (backup && backup.length > 0) {
+                appData.gihHistory = backup;
+                console.log('История восстановлена из резервной копии');
+            }
+        } catch (e) {
+            console.error('Ошибка восстановления истории:', e);
+        }
+    }
+}
             </script>
             <script>
                 function renderHistory() {
@@ -5092,6 +5024,5 @@ function updateGIHRoomsSummary() {
                     });
                 });
             </script>
-
 </body>
 </html>
