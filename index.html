@@ -1946,6 +1946,201 @@ function updateGIHRoomsSummary() {
             transition-duration: 0.01ms !important;
         }
     }
+/* === КАСТОМНЫЙ КАЛЕНДАРЬ === */
+.custom-calendar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 12, 18, 0.36);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.custom-calendar-overlay.show {
+    display: flex;
+}
+
+.custom-calendar {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    max-width: 320px;
+    padding: 16px;
+    animation: simpleFadeIn 0.3s ease;
+}
+
+.custom-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.custom-calendar-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.custom-calendar-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.custom-calendar-nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(39, 103, 73, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--primary-strong);
+    transition: var(--transition);
+}
+
+.custom-calendar-nav-btn:hover {
+    background: rgba(39, 103, 73, 0.2);
+}
+
+.custom-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.custom-calendar-weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 8px 0;
+}
+
+.custom-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.custom-calendar-day {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: var(--transition);
+    position: relative;
+}
+
+.custom-calendar-day:hover {
+    background: rgba(39, 103, 73, 0.1);
+}
+
+.custom-calendar-day.other-month {
+    color: var(--muted);
+    opacity: 0.4;
+}
+
+.custom-calendar-day.today {
+    background: rgba(39, 103, 73, 0.15);
+    color: var(--primary-strong);
+    font-weight: 600;
+}
+
+.custom-calendar-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--primary-strong);
+    border-radius: 50%;
+}
+
+.custom-calendar-day.selected {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+.custom-calendar-day.selected::after {
+    display: none;
+}
+
+.custom-calendar-day.disabled {
+    color: var(--muted);
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.custom-calendar-day.disabled:hover {
+    background: transparent;
+}
+
+/* Стиль для счетчика записей (просто число) */
+.day-record-count {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.custom-calendar-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(15, 23, 36, 0.1);
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 480px) {
+    .custom-calendar {
+        max-width: 280px;
+        padding: 12px;
+    }
+    
+    .custom-calendar-day {
+        height: 32px;
+        font-size: 13px;
+    }
+    
+    .custom-calendar-nav-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .day-record-count {
+        font-size: 8px;
+    }
+}
+
+/* Скрываем нативный календарь при открытии кастомного */
+body.custom-calendar-open input[type="date"] {
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+}
 </style>
 </head>
 <body>
@@ -2165,7 +2360,6 @@ function updateGIHRoomsSummary() {
                         <i class="fas fa-chevron-right" style="font-size:12px;"></i>
                     </button>
 
-                    <input type="date" id="history-date-picker" style="display:none;">
                 </div>
 
                 <!-- Список записей -->
@@ -3793,84 +3987,62 @@ function restoreHistoryIfNeeded() {
 
                 // Инициализация управления датой в истории
                 function initHistoryDateControls() {
-                    const prevBtn = document.getElementById('history-prev-day');
-                    const nextBtn = document.getElementById('history-next-day');
-                    const dateDisplay = document.getElementById('history-current-date');
-                    const datePicker = document.getElementById('history-date-picker');
+    const prevBtn = document.getElementById('history-prev-day');
+    const nextBtn = document.getElementById('history-next-day');
+    const dateDisplay = document.getElementById('history-current-date');
+    
+    if (!prevBtn || !nextBtn || !dateDisplay) return;
 
-                    if (!prevBtn || !nextBtn || !dateDisplay || !datePicker) return;
+    // Функция для обновления отображения даты
+    function updateDateDisplay() {
+        const dateDisplay = document.getElementById('history-current-date');
+        if (!dateDisplay) return;
 
-                    // Устанавливаем максимальную дату как сегодня
-                    const today = new Date();
-                    const todayFormatted = today.toISOString().split('T')[0];
-                    datePicker.setAttribute('max', todayFormatted);
+        // Форматируем дату для отображения
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
+        dateText = dateText.replace(/\./g, ' ');
 
-                    // Обновляем отображение даты
-                    // Обновляем отображение даты
-                    function updateDateDisplay() {
-                        const dateDisplay = document.getElementById('history-current-date');
-                        if (!dateDisplay) return;
+        dateDisplay.textContent = dateText;
+        dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
 
-                        // Форматируем дату для отображения (день месяц год)
-                        const options = { day: 'numeric', month: 'long', year: 'numeric' };
-                        let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
+        // Отключаем кнопку "вперед", если достигнут сегодняшний день
+        const today = new Date();
+        const isToday = historyCurrentDate.toDateString() === today.toDateString();
+        document.getElementById('history-next-day').disabled = isToday;
+    }
 
-                        // Заменяем точки на пробелы для лучшего отображения
-                        dateText = dateText.replace(/\./g, ' ');
+    // Обработчик для перехода на предыдущий день
+    prevBtn.addEventListener('click', () => {
+        const newDate = new Date(historyCurrentDate);
+        newDate.setDate(newDate.getDate() - 1);
+        historyCurrentDate = newDate;
+        updateDateDisplay();
+        renderHistory();
+    });
 
-                        dateDisplay.textContent = dateText;
-                        dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
+    // Обработчик для перехода на следующий день
+    nextBtn.addEventListener('click', () => {
+        const newDate = new Date(historyCurrentDate);
+        newDate.setDate(newDate.getDate() + 1);
+        
+        // Не позволяем перейти дальше сегодняшнего дня
+        const today = new Date();
+        if (newDate <= today) {
+            historyCurrentDate = newDate;
+            updateDateDisplay();
+            renderHistory();
+        }
+    });
 
-                        // Отключаем кнопку "вперед", если достигнут сегодняшний день
-                        const today = new Date();
-                        const isToday = historyCurrentDate.toDateString() === today.toDateString();
-                        document.getElementById('history-next-day').disabled = isToday;
-                    }
-
-                    // Обработчик для перехода на предыдущий день
-                    prevBtn.addEventListener('click', () => {
-                        const newDate = new Date(historyCurrentDate);
-                        newDate.setDate(newDate.getDate() - 1);
-                        historyCurrentDate = newDate;
-                        updateDateDisplay();
-                        renderHistory();
-                    });
-
-                    // Обработчик для перехода на следующий день
-                    nextBtn.addEventListener('click', () => {
-                        const newDate = new Date(historyCurrentDate);
-                        newDate.setDate(newDate.getDate() + 1);
-
-                        // Не позволяем перейти дальше сегодняшнего дня
-                        if (newDate <= today) {
-                            historyCurrentDate = newDate;
-                            updateDateDisplay();
-                            renderHistory();
-                        }
-                    });
-
-                    // Обработчик для открытия календаря
-                    dateDisplay.addEventListener('click', () => {
-                        datePicker.showPicker();
-                    });
-
-                    // Обработчик выбора даты в календаре
-                    datePicker.addEventListener('change', (e) => {
-                        const selectedDate = new Date(e.target.value);
-                        historyCurrentDate = selectedDate;
-                        updateDateDisplay();
-                        renderHistory();
-                    });
-
-                    // Инициализация начальной даты
-                    updateDateDisplay();
-                    historyDatePicker = datePicker;
-                }
+    // Инициализация начальной даты
+    updateDateDisplay();
+}
 
                 // Модифицируем функцию renderHistory для фильтрации по выбранной дате
 
@@ -5080,5 +5252,338 @@ function restoreHistoryIfNeeded() {
                     });
                 });
             </script>
+            <script>
+// === КАСТОМНЫЙ КАЛЕНДАРЬ ===
+class CustomCalendar {
+    constructor() {
+        this.currentDate = new Date();
+        this.selectedDate = new Date();
+        this.maxDate = new Date(); // сегодня
+        this.init();
+    }
+
+    init() {
+        this.createDOM();
+        this.bindEvents();
+    }
+
+    createDOM() {
+        // Создаем overlay
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'custom-calendar-overlay';
+        
+        // Создаем календарь
+        this.calendar = document.createElement('div');
+        this.calendar.className = 'custom-calendar';
+        
+        // Шаблон календаря
+        this.calendar.innerHTML = `
+            <div class="custom-calendar-header">
+                <div class="custom-calendar-title"></div>
+                <div class="custom-calendar-nav">
+                    <button class="custom-calendar-nav-btn prev-year" title="Предыдущий год">
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="custom-calendar-nav-btn prev-month" title="Предыдущий месяц">
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <button class="custom-calendar-nav-btn next-month" title="Следующий месяц">
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="custom-calendar-nav-btn next-year" title="Следующий год">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="custom-calendar-weekdays">
+                <div class="custom-calendar-weekday">Пн</div>
+                <div class="custom-calendar-weekday">Вт</div>
+                <div class="custom-calendar-weekday">Ср</div>
+                <div class="custom-calendar-weekday">Чт</div>
+                <div class="custom-calendar-weekday">Пт</div>
+                <div class="custom-calendar-weekday">Сб</div>
+                <div class="custom-calendar-weekday">Вс</div>
+            </div>
+            <div class="custom-calendar-days"></div>
+            <div class="custom-calendar-footer">
+                <button class="btn ghost small today-btn">Сегодня</button>
+                <button class="btn ghost small cancel-btn">Закрыть</button>
+            </div>
+        `;
+        
+        this.overlay.appendChild(this.calendar);
+        document.body.appendChild(this.overlay);
+        
+        // Сохраняем ссылки на элементы
+        this.titleEl = this.calendar.querySelector('.custom-calendar-title');
+        this.daysContainer = this.calendar.querySelector('.custom-calendar-days');
+        this.todayBtn = this.calendar.querySelector('.today-btn');
+        this.cancelBtn = this.calendar.querySelector('.cancel-btn');
+    }
+
+    bindEvents() {
+        // Навигация
+        this.calendar.querySelector('.prev-year').addEventListener('click', () => this.changeYear(-1));
+        this.calendar.querySelector('.prev-month').addEventListener('click', () => this.changeMonth(-1));
+        this.calendar.querySelector('.next-month').addEventListener('click', () => this.changeMonth(1));
+        this.calendar.querySelector('.next-year').addEventListener('click', () => this.changeYear(1));
+        
+        // Кнопки
+        this.todayBtn.addEventListener('click', () => this.goToToday());
+        this.cancelBtn.addEventListener('click', () => this.hide());
+        
+        // Закрытие по клику вне календаря
+        this.overlay.addEventListener('click', (e) => {
+            if (e.target === this.overlay) {
+                this.hide();
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.overlay.classList.contains('show')) {
+                this.hide();
+            }
+        });
+    }
+
+    changeMonth(delta) {
+        this.currentDate.setMonth(this.currentDate.getMonth() + delta);
+        this.render();
+    }
+
+    changeYear(delta) {
+        this.currentDate.setFullYear(this.currentDate.getFullYear() + delta);
+        this.render();
+    }
+
+    goToToday() {
+        const today = new Date();
+        this.selectDate(today.getDate(), today.getMonth(), today.getFullYear(), true);
+    }
+
+    // Функция для подсчета записей за конкретную дату
+    getRecordsCountForDate(date) {
+        if (!appData.gihHistory || !Array.isArray(appData.gihHistory)) return 0;
+        
+        const targetDateString = date.toLocaleDateString('ru-RU');
+        return appData.gihHistory.filter(record => {
+            if (!record.createdAt) return false;
+            const recordDate = new Date(record.createdAt);
+            const recordDateString = recordDate.toLocaleDateString('ru-RU');
+            return recordDateString === targetDateString;
+        }).length;
+    }
+
+    render() {
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        
+        // Обновляем заголовок
+        const monthNames = [
+            'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+        ];
+        this.titleEl.textContent = `${monthNames[month]} ${year}`;
+        
+        // Очищаем дни
+        this.daysContainer.innerHTML = '';
+        
+        // Первый день месяца и день недели
+        const firstDay = new Date(year, month, 1);
+        const startingDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Пн=0, Вс=6
+        
+        // Последний день месяца
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        
+        // Дни предыдущего месяца
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        
+        // Сегодняшняя дата для сравнения
+        const today = new Date();
+        const todayString = today.toDateString();
+        
+        // Выбранная дата для сравнения
+        const selectedString = this.selectedDate.toDateString();
+        
+        // Заполняем календарь
+        let dayCount = 1;
+        
+        for (let i = 0; i < 42; i++) { // 6 недель
+            const dayEl = document.createElement('button');
+            dayEl.className = 'custom-calendar-day';
+            
+            let dayNumber, isCurrentMonth, date;
+            
+            if (i < startingDay) {
+                // Дни предыдущего месяца
+                dayNumber = prevMonthLastDay - startingDay + i + 1;
+                date = new Date(year, month - 1, dayNumber);
+                isCurrentMonth = false;
+            } else if (dayCount <= daysInMonth) {
+                // Дни текущего месяца
+                dayNumber = dayCount;
+                date = new Date(year, month, dayCount);
+                isCurrentMonth = true;
+                dayCount++;
+            } else {
+                // Дни следующего месяца
+                dayNumber = i - startingDay - daysInMonth + 1;
+                date = new Date(year, month + 1, dayNumber);
+                isCurrentMonth = false;
+            }
+            
+            dayEl.textContent = dayNumber;
+            const dateString = date.toDateString();
+            
+            // Определяем классы для дня
+            if (!isCurrentMonth) {
+                dayEl.classList.add('other-month');
+            }
+            
+            if (dateString === todayString) {
+                dayEl.classList.add('today');
+            }
+            
+            if (dateString === selectedString) {
+                dayEl.classList.add('selected');
+            }
+            
+            // Проверяем, не будущая ли дата
+            if (date > this.maxDate) {
+                dayEl.classList.add('disabled');
+            } else {
+                // Для дней текущего месяца добавляем обработчик
+                if (isCurrentMonth) {
+                    dayEl.addEventListener('click', () => {
+                        this.selectDate(dayNumber, month, year, true);
+                    });
+                } else {
+                    // Для дней другого месяца - переключаемся на этот месяц
+                    dayEl.addEventListener('click', () => {
+                        this.selectDateFromOtherMonth(dayNumber, date);
+                    });
+                }
+                
+                // Добавляем счетчик записей для всех дней (кроме будущих)
+                const recordsCount = this.getRecordsCountForDate(date);
+                if (recordsCount > 0) {
+                    const countBadge = document.createElement('div');
+                    countBadge.className = 'day-record-count';
+                    countBadge.textContent = recordsCount; // Всегда полное число
+                    countBadge.title = `${recordsCount} записей за этот день`;
+                    dayEl.appendChild(countBadge);
+                }
+            }
+            
+            this.daysContainer.appendChild(dayEl);
+        }
+    }
+
+    selectDate(day, month, year, isCurrentMonth = true) {
+        this.selectedDate = new Date(year, month, day);
+        
+        // Применяем выбранную дату сразу
+        if (this.onDateSelect) {
+            this.onDateSelect(this.selectedDate);
+        }
+        this.hide();
+    }
+
+    selectDateFromOtherMonth(day, date) {
+        // При клике на день другого месяца переключаемся на этот месяц
+        this.currentDate = new Date(date);
+        this.selectedDate = new Date(date);
+        this.render();
+        selectDate(day,date.month,date.year);
+        // Не применяем дату сразу, пользователь может выбрать другую дату в этом месяце
+    }
+
+    show(currentDate = new Date(), onDateSelect = null) {
+        this.currentDate = new Date(currentDate);
+        this.selectedDate = new Date(currentDate);
+        this.onDateSelect = onDateSelect;
+        this.render();
+        
+        // Добавляем класс к body чтобы скрыть нативный календарь
+        document.body.classList.add('custom-calendar-open');
+        this.overlay.classList.add('show');
+    }
+
+    hide() {
+        document.body.classList.remove('custom-calendar-open');
+        this.overlay.classList.remove('show');
+    }
+}
+
+// Инициализация кастомного календаря
+let customCalendar;
+
+function initCustomCalendar() {
+    customCalendar = new CustomCalendar();
+    
+    // Заменяем нативный datepicker на кастомный
+    const dateDisplay = document.getElementById('history-current-date');
+    const nativeDatePicker = document.getElementById('history-date-picker');
+    
+    if (dateDisplay) {
+        // Скрываем нативный календарь
+        if (nativeDatePicker) {
+            nativeDatePicker.style.opacity = '0';
+            nativeDatePicker.style.position = 'absolute';
+            nativeDatePicker.style.pointerEvents = 'none';
+        }
+        
+        dateDisplay.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const currentDate = historyCurrentDate;
+            customCalendar.show(currentDate, (selectedDate) => {
+                historyCurrentDate = selectedDate;
+                updateDateDisplay();
+                renderHistory();
+            });
+        });
+    }
+}
+
+// Обновляем функцию отображения даты - БЕЗ счетчика записей
+function updateDateDisplay() {
+    const dateDisplay = document.getElementById('history-current-date');
+    if (!dateDisplay) return;
+
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
+    dateText = dateText.replace(/\./g, ' ');
+    
+    // Убираем счетчик записей - оставляем только дату
+    dateDisplay.textContent = dateText;
+    dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // Отключаем кнопку "вперед", если достигнут сегодняшний день
+    const today = new Date();
+    const isToday = historyCurrentDate.toDateString() === today.toDateString();
+    document.getElementById('history-next-day').disabled = isToday;
+}
+
+// Инициализируем кастомный календарь при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initCustomCalendar, 100);
+});
+
+// Обновляем отображение даты при изменении истории
+const originalRenderHistory = window.renderHistory;
+window.renderHistory = function() {
+    if (originalRenderHistory) originalRenderHistory();
+    updateDateDisplay();
+};
+</script>
 </body>
 </html>
