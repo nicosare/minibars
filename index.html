@@ -649,6 +649,10 @@ function updateGIHRoomsSummary() {
     gap: 8px;
     /* Фиксированная ширина с учетом места для счетчика */
     padding-right: 30px;
+    /* Добавляем перенос текста */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     }
 
     .product-btn:hover {
@@ -678,7 +682,8 @@ function updateGIHRoomsSummary() {
     font-weight: 700;
     font-size: 11px;
     line-height: 1;
-    }
+    flex-shrink: 0;
+}
     .product-count:empty {
     background: transparent;
     border: 1px solid rgba(15,23,36,0.2);
@@ -1135,7 +1140,17 @@ function updateGIHRoomsSummary() {
         .product-btn {
         min-width: 90px;
         padding: 10px 12px;
-        padding-right: 30px;
+        /* Увеличиваем правый отступ для счетчика */
+        padding-right: 35px;
+        /* Уменьшаем минимальную ширину для мобильных */
+        min-width: 85px;
+    }
+    .product-count {
+        /* Уменьшаем размер счетчика на мобильных */
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        right: 10px;
     }
 
         .card {
@@ -1147,6 +1162,28 @@ function updateGIHRoomsSummary() {
             display: flex;
         }
     }
+    
+    @media (max-width: 920px) {
+    .gih-products-area .product-btn {
+        min-width: 85px;
+        padding: 10px 8px;
+        padding-right: 32px;
+        font-size: 12px;
+    }
+    
+    .gih-row .product-btn {
+        min-width: 80px;
+    }
+}
+
+/* Убедимся, что текст не выходит за пределы */
+.product-btn .btn-text {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
     /* MOBILE: very small screens */
     @media (max-width:480px) {
@@ -1155,9 +1192,15 @@ function updateGIHRoomsSummary() {
         }
 
         .product-btn {
-            min-width: 88px;
-            font-size: 13px;
-            padding: 10px;
+            min-width: 80px;
+            padding-right: 32px;
+            font-size: 12px;
+        }
+        .product-count {
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+            right: 8px;
         }
 
         .modal {
@@ -2947,11 +2990,16 @@ body.custom-calendar-open input[type="date"] {
     container.innerHTML = '';
     keys.forEach(k => {
         const name = appData.products[k] || k;
-        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] + ' ' : '';
+        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] : '';
         const btn = document.createElement('button');
         btn.className = 'product-btn';
         btn.dataset.product = k;
-        btn.innerHTML = emoji + name;
+        
+        // Используем span для текста для лучшего контроля
+        const textSpan = document.createElement('span');
+        textSpan.className = 'btn-text';
+        textSpan.textContent = emoji ? `${emoji} ${name}` : name;
+        btn.appendChild(textSpan);
         
         const maxQ = MULTI_LIMITS[k] || 1;
         const cur = targetObj[k] || 0;
