@@ -636,16 +636,19 @@ function updateGIHRoomsSummary() {
     }
 
     .product-btn {
-        padding: 8px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(15,23,36,0.06);
-        background: transparent;
-        cursor: pointer;
-        min-width: 110px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+        position: relative;
+    min-width: 110px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(15,23,36,0.06);
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    /* Фиксированная ширина с учетом места для счетчика */
+    padding-right: 30px;
     }
 
     .product-btn:hover {
@@ -660,14 +663,26 @@ function updateGIHRoomsSummary() {
     }
 
     .product-count {
-        background: var(--accent);
-        color: #fff;
-        padding: 3px 7px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 12px;
-        margin-left: 8px;
+    position: absolute;
+    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1;
     }
+    .product-count:empty {
+    background: transparent;
+    border: 1px solid rgba(15,23,36,0.2);
+}
 
     .gih-form {
         display: none;
@@ -682,7 +697,7 @@ function updateGIHRoomsSummary() {
         flex-wrap: wrap;
         border-radius: 10px;
         border: 1px solid rgba(15,23,36,0.04);
-        max-height: 260px;
+        max-height: 400px;
         overflow: auto;
         background: transparent;
     }
@@ -1118,8 +1133,10 @@ function updateGIHRoomsSummary() {
         }
 
         .product-btn {
-            min-width: 90px;
-        }
+        min-width: 90px;
+        padding: 10px 12px;
+        padding-right: 30px;
+    }
 
         .card {
             padding: 12px;
@@ -1750,10 +1767,16 @@ function updateGIHRoomsSummary() {
 
     @media (min-width: 921px) {
         .product-btn {
-            min-width: 80px !important;
-            padding: 6px 8px !important;
-            font-size: 13px !important;
-        }
+        min-width: 80px !important;
+        padding: 6px 8px !important;
+        padding-right: 26px !important;
+        font-size: 13px !important;
+    }
+    .product-count {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
 
         .gih-column-title {
             font-size: 13px;
@@ -2920,30 +2943,52 @@ body.custom-calendar-open input[type="date"] {
 
                 /* renderProductButtons for forms */
                 function renderProductButtons(container, keys = [], targetObj = {}, onChange = null, options = {}) {
-                    if (!container) return;
-                    container.innerHTML = '';
-                    keys.forEach(k => {
-                        const name = appData.products[k] || k;
-                        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] + ' ' : '';
-                        const btn = document.createElement('button');
-                        btn.className = 'product-btn';
-                        btn.dataset.product = k;
-                        btn.innerHTML = emoji + name;
-                        const maxQ = MULTI_LIMITS[k] || 1;
-                        const cur = targetObj[k] || 0;
-                        if (cur > 0) { btn.classList.add('active'); const span = document.createElement('span'); span.className = 'product-count'; span.textContent = cur; btn.appendChild(span); }
-                        btn.addEventListener('click', () => {
-                            const cur = targetObj[k] || 0;
-                            const next = (cur + 1) % (maxQ + 1);
-                            if (next === 0) delete targetObj[k]; else targetObj[k] = next;
-                            btn.querySelectorAll('.product-count').forEach(n => n.remove());
-                            if (next > 0) { btn.classList.add('active'); const span = document.createElement('span'); span.className = 'product-count'; span.textContent = next; btn.appendChild(span); } else { btn.classList.remove('active'); }
-                            if (typeof onChange === 'function') onChange(k, next);
-                            saveDebounced();
-                        });
-                        container.appendChild(btn);
-                    });
-                }
+    if (!container) return;
+    container.innerHTML = '';
+    keys.forEach(k => {
+        const name = appData.products[k] || k;
+        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] + ' ' : '';
+        const btn = document.createElement('button');
+        btn.className = 'product-btn';
+        btn.dataset.product = k;
+        btn.innerHTML = emoji + name;
+        
+        const maxQ = MULTI_LIMITS[k] || 1;
+        const cur = targetObj[k] || 0;
+        
+        // Всегда создаем элемент для счетчика
+        const span = document.createElement('span');
+        span.className = 'product-count';
+        if (cur > 0) {
+            btn.classList.add('active');
+            span.textContent = cur;
+        }
+        // Если количество 0, span остается пустым - будет показан пустой кружочек
+        btn.appendChild(span);
+        
+        btn.addEventListener('click', () => {
+            const cur = targetObj[k] || 0;
+            const next = (cur + 1) % (maxQ + 1);
+            if (next === 0) delete targetObj[k]; 
+            else targetObj[k] = next;
+            
+            // Обновляем счетчик
+            const countSpan = btn.querySelector('.product-count');
+            if (next > 0) {
+                btn.classList.add('active');
+                countSpan.textContent = next;
+            } else {
+                btn.classList.remove('active');
+                countSpan.textContent = ''; // Очищаем текст - покажет пустой кружочек
+            }
+            
+            if (typeof onChange === 'function') onChange(k, next);
+            saveDebounced();
+        });
+        
+        container.appendChild(btn);
+    });
+}
 
                 /* ===== GIH logic ===== */
                 let gihTempProducts = {}; let editingGIHId = null; let gihSortAsc = true;
