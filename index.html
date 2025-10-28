@@ -381,11 +381,11 @@ function updateGIHRoomsSummary() {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 8px;
+        padding: 6px 6px;     
         border-radius: 999px;
+        border: 1px solid rgba(15,23,36,0.06);
         background: transparent;
         box-shadow: none;
-        border: none;
         user-select: none;
     }
     .calc-chip:hover {
@@ -480,7 +480,7 @@ function updateGIHRoomsSummary() {
     /* Упрощенные переходы без конфликтов */
     .btn, .product-btn, .room-item, .gih-product, .nav-item, 
     .b-item, .mb-burger-item, .accordion-header, .room-chip,
-    .mode-btn, .card, .gih-card, .input {
+    .mode-btn, .card, .gih-card, .input, .calc-chip {
         transition: 
             background-color var(--transition),
             border-color var(--transition),
@@ -3793,6 +3793,7 @@ saveBtn.addEventListener('click', () => {
                     const resetBtn = document.getElementById('calc-reset');
                     if (!chipsWrap || !totalEl || !selectedEl || !resetBtn) return;
 
+
                     const prices = {
                         twix: 250,
                         jager: 750,
@@ -3834,27 +3835,42 @@ saveBtn.addEventListener('click', () => {
                     function formatMoney(n) { return new Intl.NumberFormat('ru-RU').format(n) + ' ₽'; }
 
                     function recalc() {
-                        let sum = 0;
-                        const lines = [];
-                        order.forEach(k => {
-                            const c = counts[k] || 0;
-                            if (c > 0) {
-                                sum += c * (prices[k] || 0);
-                                const name = appData.products[k] || k;
-                                lines.push(`${name} — ${c} шт.`);
-                            }
-                        });
-                        totalEl.textContent = formatMoney(sum);
-                        selectedEl.innerHTML = lines.length ? lines.map(t => `<div>${t}</div>`).join('') : '<span class="muted">Пусто</span>';
-                        // update disabled state for minus buttons
-                        chipsWrap.querySelectorAll('.calc-chip').forEach(ch => {
-                            const key = ch.getAttribute('data-key');
-                            const minus = ch.querySelector('[data-act="minus"]');
-                            const counter = ch.querySelector('.calc-count');
-                            if (minus) minus.classList.toggle('disabled', counts[key] <= 0);
-                            if (counter) counter.textContent = String(counts[key] || 0);
-                        });
-                    }
+    let sum = 0;
+    const lines = [];
+    order.forEach(k => {
+        const c = counts[k] || 0;
+        if (c > 0) {
+            sum += c * (prices[k] || 0);
+            const name = appData.products[k] || k;
+            lines.push(`${name} — ${c} шт.`);
+        }
+    });
+
+    // Обновляем итоговую сумму
+    totalEl.textContent = formatMoney(sum);
+
+    // Показываем список выбранных товаров только если есть элементы
+    // selectedEl — это сам блок с id="calc-selected"
+    // его parentElement в текущей структуре — контейнер, который содержит заголовок "Выбрано" и сам selectedEl.
+    if (lines.length > 0) {
+        selectedEl.innerHTML = lines.map(t => `<div>${t}</div>`).join('');
+        if (selectedEl.parentElement) selectedEl.parentElement.style.display = 'block';
+    } else {
+        // очистим содержимое и скрываем весь блок с заголовком + списком
+        selectedEl.innerHTML = '';
+        if (selectedEl.parentElement) selectedEl.parentElement.style.display = 'none';
+    }
+
+    // обновляем состояние кнопок "-" (отключаем, если счётчик 0) и текст счетчиков на чипах
+    chipsWrap.querySelectorAll('.calc-chip').forEach(ch => {
+        const key = ch.getAttribute('data-key');
+        const minus = ch.querySelector('[data-act="minus"]');
+        const counter = ch.querySelector('.calc-count');
+        if (minus) minus.classList.toggle('disabled', counts[key] <= 0);
+        if (counter) counter.textContent = String(counts[key] || 0);
+    });
+}
+
 
                     function makeChip(key) {
                         const name = appData.products[key] || key;
