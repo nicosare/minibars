@@ -376,6 +376,51 @@ function updateGIHRoomsSummary() {
             width: 100%;
         }
     }
+    /* ==== Calculator minimalist chips ==== */
+    .calc-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 999px;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        user-select: none;
+    }
+    .calc-chip:hover {
+        background: rgba(39,103,73,0.06);
+    }
+    .calc-op {
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--primary-strong);
+        padding: 0 6px;
+        line-height: 1;
+    }
+    .calc-op.disabled {
+        opacity: 0.35;
+        cursor: default;
+        pointer-events: none;
+    }
+    .calc-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+    }
+    .calc-price {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 12px;
+    }
+    .calc-count {
+        min-width: 20px;
+        text-align: center;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 12px;
+    }
 
     /* === НИЖНЯЯ НАВИГАЦИЯ НА МОБИЛЬНЫХ === */
     @media (max-width: 920px) {
@@ -517,6 +562,22 @@ function updateGIHRoomsSummary() {
     .hidden {
         display: none !important;
     }
+
+    /* Секции вкладок - управляются через JavaScript */
+    .card[id$="-section"] {
+        display: none !important;
+    }
+    
+    .card[id$="-section"].show {
+        display: block !important;
+    }
+    
+    .card[id$="-section"].hidden {
+        display: none !important;
+    }
+    
+    /* По умолчанию показываем только первую вкладку */
+    
 
     .input {
         width: 100%;
@@ -2225,6 +2286,7 @@ body.custom-calendar-open input[type="date"] {
 <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
 <div class="nav-item extra" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
+<div class="nav-item extra" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
 <div class="nav-separator"></div>
 <!-- Desktop connection status -->
 <div class="connection-status disconnected" id="connectionStatus">
@@ -2244,6 +2306,7 @@ body.custom-calendar-open input[type="date"] {
 <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
 <div class="mb-burger-item" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
+<div class="mb-burger-item" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
 </div>
 </div>
 <div class="card" id="accises-section">
@@ -2411,6 +2474,21 @@ body.custom-calendar-open input[type="date"] {
 </div>
 <!-- Список записей -->
 <div id="history-list"></div>
+</div>
+<!-- ==== Калькулятор (отдельная вкладка) ==== -->
+<div class="card" id="calculator-section" class="hidden">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+<div style="font-weight:700; font-size:16px">Калькулятор</div>
+<div class="row" style="gap:10px; align-items:center;">
+<div class="muted" style="font-size:14px;">Итого: <strong id="calc-total">0 ₽</strong></div>
+<button class="btn ghost small" id="calc-reset">Сбросить</button>
+</div>
+</div>
+<div id="calc-chips" class="products-wrap" style="max-height:none;"></div>
+<div style="margin-top:12px;">
+<div style="font-weight:600; font-size:14px; margin-bottom:6px;">Выбрано</div>
+<div id="calc-selected" class="muted" style="font-size:13px; line-height:1.6;"></div>
+</div>
 </div>
 <!-- MOBILE: bottom navigation duplicate (visible on small screens) -->
 <div aria-hidden="true" class="bottom-nav" id="bottomNav">
@@ -3575,31 +3653,35 @@ saveBtn.addEventListener('click', () => {
                     const bottom = $$('#bottomNav .b-item');
                     bottom.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
                 }
-                // === ОБНОВЛЕННАЯ ФУНКЦИЯ showTab ДЛЯ ВСЕХ ВКЛАДОК ===
+                // === ЕДИНАЯ ФУНКЦИЯ showTab ДЛЯ ВСЕХ ВКЛАДОК ===
                 function showTab(tab) {
-                    // Скрываем все основные секции
-                    $('#accises-section').classList.add('hidden');
-                    $('#sroki-section').classList.add('hidden');
-                    $('#gih-section').classList.add('hidden');
-
-                    // Скрываем все дополнительные секции
-                    $('#settings-section').classList.add('hidden');
-                    $('#learning-section').classList.add('hidden');
-                    $('#practice-section').classList.add('hidden');
-                    $('#history-section').classList.add('hidden');
+                    // Скрываем все секции динамически
+                    const allEls = document.querySelectorAll('[id$="-section"]');
+                    allEls.forEach(el => {
+                        el.classList.add('hidden');
+                        el.classList.remove('show');
+                        el.style.display = 'none';
+                    });
 
                     // Показываем выбранную секцию
-                    if (tab === 'accises') $('#accises-section').classList.remove('hidden');
-                    if (tab === 'sroki') $('#sroki-section').classList.remove('hidden');
-                    if (tab === 'gih') $('#gih-section').classList.remove('hidden');
-                    if (tab === 'settings') $('#settings-section').classList.remove('hidden');
-                    if (tab === 'learning') $('#learning-section').classList.remove('hidden');
-                    if (tab === 'practice') $('#practice-section').classList.remove('hidden');
-                    if (tab === 'history') $('#history-section').classList.remove('hidden');
+                    const targetSection = document.getElementById(tab + '-section');
+                    if (targetSection) {
+                        targetSection.classList.remove('hidden');
+                        targetSection.classList.add('show');
+                        targetSection.style.display = 'block';
+                    }
 
                     // Синхронизируем навигацию
                     syncBottomNav(tab);
                     syncTopNav(tab);
+
+                    // Прокрутка к началу контента
+                    try {
+                        const mainContent = document.getElementById('main-content');
+                        if (mainContent) {
+                            mainContent.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    } catch (e) { }
                 }
 
                 // === ОБНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ СИНХРОНИЗАЦИИ ВЕРХНЕЙ НАВИГАЦИИ ===
@@ -3657,6 +3739,12 @@ saveBtn.addEventListener('click', () => {
 
     const activeTop = document.querySelector('.nav-item.active')?.dataset?.tab || 'accises';
     syncBottomNav(activeTop);
+    
+    // Инициализируем правильное отображение активной вкладки
+    showTab(activeTop);
+    
+    // Инициализируем калькулятор после правильного отображения вкладок
+    initCalculator();
 
     window.addEventListener('orientationchange', () => { 
         if ($('#modal').classList.contains('show')) closeModal(); 
@@ -3697,6 +3785,139 @@ saveBtn.addEventListener('click', () => {
                 /* Escape closes modal */
                 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('#modal').classList.contains('show')) closeModal(); } });
 
+                /* ==== Calculator: product chips with totals ==== */
+                function initCalculator() {
+                    const chipsWrap = document.getElementById('calc-chips');
+                    const totalEl = document.getElementById('calc-total');
+                    const selectedEl = document.getElementById('calc-selected');
+                    const resetBtn = document.getElementById('calc-reset');
+                    if (!chipsWrap || !totalEl || !selectedEl || !resetBtn) return;
+
+                    const prices = {
+                        twix: 250,
+                        jager: 750,
+                        gin: 850,
+                        rum: 750,
+                        cognac: 1900,
+                        whiskey: 1300,
+                        vodka: 590,
+                        pepper: 350,
+                        redbull: 490,
+                        cola: 350,
+                        baikal: 290,
+                        borjomi: 290,
+                        white_wine: 1250,
+                        red_wine: 1250,
+                        apple: 450,
+                        tomato: 450,
+                        corona: 720,
+                        stella: 650,
+                        gancha: 1550,
+                        martini: 1550,
+                        orange: 450,
+                        cherry: 450,
+                        loriot: 9800,
+                        whiskey02: 3900
+                    };
+
+                    const categories = [
+                        { title: 'Дверца', items: ['twix', 'jager', 'gin', 'rum', 'cognac', 'whiskey', 'vodka'] },
+                        { title: 'Напитки', items: ['pepper', 'redbull', 'cola', 'baikal', 'borjomi'] },
+                        { title: 'Алкоголь', items: ['white_wine', 'red_wine', 'corona', 'stella', 'gancha', 'martini', 'loriot', 'whiskey02'] },
+                        { title: 'Соки', items: ['apple', 'tomato', 'orange', 'cherry'] }
+                    ];
+                    const order = categories.map(c => c.items).flat();
+
+                    const counts = {};
+                    order.forEach(k => counts[k] = 0);
+
+                    function formatMoney(n) { return new Intl.NumberFormat('ru-RU').format(n) + ' ₽'; }
+
+                    function recalc() {
+                        let sum = 0;
+                        const lines = [];
+                        order.forEach(k => {
+                            const c = counts[k] || 0;
+                            if (c > 0) {
+                                sum += c * (prices[k] || 0);
+                                const name = appData.products[k] || k;
+                                lines.push(`${name} — ${c} шт.`);
+                            }
+                        });
+                        totalEl.textContent = formatMoney(sum);
+                        selectedEl.innerHTML = lines.length ? lines.map(t => `<div>${t}</div>`).join('') : '<span class="muted">Пусто</span>';
+                        // update disabled state for minus buttons
+                        chipsWrap.querySelectorAll('.calc-chip').forEach(ch => {
+                            const key = ch.getAttribute('data-key');
+                            const minus = ch.querySelector('[data-act="minus"]');
+                            const counter = ch.querySelector('.calc-count');
+                            if (minus) minus.classList.toggle('disabled', counts[key] <= 0);
+                            if (counter) counter.textContent = String(counts[key] || 0);
+                        });
+                    }
+
+                    function makeChip(key) {
+                        const name = appData.products[key] || key;
+                        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[key]) ? PRODUCT_EMOJIS[key] : '';
+                        const price = prices[key] || 0;
+                        const chip = document.createElement('div');
+                        chip.className = 'calc-chip';
+                        chip.setAttribute('data-key', key);
+
+                        const minus = document.createElement('span');
+                        minus.className = 'calc-op';
+                        minus.textContent = '−';
+                        minus.setAttribute('data-act', 'minus');
+
+                        const label = document.createElement('div');
+                        label.className = 'calc-label';
+                        label.innerHTML = `${emoji ? `<span>${emoji}</span>` : ''}<span>${name}</span> <span class=\"calc-price\">${price} ₽</span>`;
+
+                        const count = document.createElement('div');
+                        count.className = 'calc-count';
+                        count.textContent = '0';
+
+                        const plus = document.createElement('span');
+                        plus.className = 'calc-op';
+                        plus.textContent = '+';
+                        plus.setAttribute('data-act', 'plus');
+
+                        minus.addEventListener('click', () => { if (counts[key] > 0) { counts[key]--; recalc(); } });
+                        plus.addEventListener('click', () => { counts[key]++; recalc(); });
+
+                        chip.appendChild(minus);
+                        chip.appendChild(label);
+                        chip.appendChild(count);
+                        chip.appendChild(plus);
+                        return chip;
+                    }
+
+                    chipsWrap.innerHTML = '';
+                    const columnsWrap = document.createElement('div');
+                    columnsWrap.className = 'gih-products-columns';
+                    categories.forEach(cat => {
+                        const colEl = document.createElement('div');
+                        colEl.className = 'gih-column';
+                        const titleEl = document.createElement('div');
+                        titleEl.className = 'gih-column-title';
+                        titleEl.textContent = cat.title;
+                        colEl.appendChild(titleEl);
+                        const row = document.createElement('div');
+                        row.className = 'gih-row';
+                        cat.items.forEach(k => row.appendChild(makeChip(k)));
+                        colEl.appendChild(row);
+                        columnsWrap.appendChild(colEl);
+                    });
+                    chipsWrap.appendChild(columnsWrap);
+
+                    resetBtn.addEventListener('click', () => {
+                        order.forEach(k => counts[k] = 0);
+                        recalc();
+                    });
+
+                    recalc();
+                }
+
                 /* small accessibility improvement: make bottom nav items keyboard focusable */
                 (function makeBottomNavFocusable() {
                     try {
@@ -3704,36 +3925,10 @@ saveBtn.addEventListener('click', () => {
                     } catch (e) { }
                 })();
 
-                // ==== ADDED: extend tab logic + burger + move mobile indicator ====
+                // ==== BURGER MENU + MOBILE INDICATOR ====
                 (function () {
                     const $ = (s, r = document) => r.querySelector(s);
                     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-
-                    // Extend showTab to include new sections
-                    const originalShowTab = window.showTab;
-                    window.showTab = function (tab) {
-                        try {
-                            // hide new sections
-                            ['settings', 'learning', 'practice', 'history'].forEach(t => {
-                                const el = $('#' + t + '-section');
-                                if (el) el.classList.remove('show'), el.classList.add('hidden');
-                            });
-                        } catch (e) { }
-                        // call original
-                        if (typeof originalShowTab === 'function') originalShowTab(tab);
-                        // show new section if matched
-                        if (['settings', 'learning', 'practice'].includes(tab)) {
-                            // hide base sections
-                            ['accises', 'sroki', 'gih'].forEach(t => {
-                                const el = $('#' + t + '-section');
-                                if (el) el.classList.add('hidden');
-                            });
-                            // show our section
-                            const target = $('#' + tab + '-section');
-                            if (target) target.classList.add('show'), target.classList.remove('hidden');
-                        }
-                        try { document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' }); } catch (e) { }
-                    };
 
                     // Burger interactions
                     const burgerBtn = $('#mbBurgerBtn');
@@ -3747,8 +3942,7 @@ saveBtn.addEventListener('click', () => {
                             it.addEventListener('click', () => {
                                 const tab = it.dataset.tab;
                                 burgerMenu.classList.remove('show');
-                                if (window.showTab) window.showTab(tab);
-                                if (typeof syncTopNav === 'function') syncTopNav(tab);
+                                showTab(tab);
                             });
                         });
                     }
@@ -5674,5 +5868,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-</script></body>
+</script>
+<script>
+(function(){
+  const sections = [
+    'accises','sroki','gih','settings','learning','practice','history','calculator'
+  ];
+  function hideAll(){
+    sections.forEach(name=>{
+      const el=document.getElementById(name+'-section');
+      if(el){
+        el.style.display='none';
+        el.classList.add('hidden');
+        el.classList.remove('show');
+      }
+    });
+  }
+  window.showTab=function(tab){
+    hideAll();
+    const t=document.getElementById(tab+'-section');
+    if(t){
+      t.style.display='block';
+      t.classList.remove('hidden');
+      t.classList.add('show');
+    }
+    document.querySelectorAll('[data-tab]').forEach(n=>{
+      n.classList.toggle('active',n.dataset.tab===tab);
+    });
+    localStorage.setItem('active-tab',tab);
+  };
+  document.addEventListener('click',e=>{
+    const t=e.target.closest('[data-tab]');
+    if(t){ e.preventDefault(); showTab(t.dataset.tab); }
+  });
+  document.addEventListener('DOMContentLoaded',()=>{
+    const s=localStorage.getItem('active-tab')||'accises';
+    showTab(s);
+  });
+})();
+</script>
+</body>
 </html>
