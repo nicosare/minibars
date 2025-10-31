@@ -2650,9 +2650,25 @@ body.custom-calendar-open input[type="date"] {
         // Всегда сохраняем в localStorage
         localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
         
-        // Сохраняем в Firebase
-        await database.ref('minibarData').set(appData);
-        console.log('Данные сохранены в Firebase и localStorage');
+        // Безопасное сохранение в Firebase с мержем истории
+        // 1) читаем текущую историю на сервере
+        const serverSnap = await database.ref('minibarData/gihHistory').once('value');
+        const serverHistory = Array.isArray(serverSnap.val()) ? serverSnap.val() : (serverSnap.val() || []);
+        const localHistory = Array.isArray(appData.gihHistory) ? appData.gihHistory : (appData.gihHistory || []);
+        
+        // 2) объединяем по id (уникальные записи)
+        const byId = new Map();
+        [...serverHistory, ...localHistory].forEach(item => {
+            if (item && item.id != null && !byId.has(item.id)) byId.set(item.id, item);
+        });
+        const mergedHistory = Array.from(byId.values());
+        
+        // 3) готовим итоговые данные к сохранению
+        const dataToSave = { ...appData, gihHistory: mergedHistory };
+        
+        // 4) сохраняем целиком, но уже с объединённой историей
+        await database.ref('minibarData').set(dataToSave);
+        console.log('Данные (с объединённой историей) сохранены в Firebase и localStorage');
     } catch (error) {
         console.error('Ошибка сохранения в Firebase (данные остались в localStorage):', error);
         // Данные остаются в localStorage даже при ошибке Firebase
