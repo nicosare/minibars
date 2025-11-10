@@ -7,6 +7,8 @@
 <title>Минибары</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- PDF.js для парсера депатчеров -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 <!-- Firebase App (обязательный скрипт для Firebase) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">/* ====== GIH SUMMARY ====== */
 function updateGIHSummary() {
@@ -2270,6 +2272,125 @@ body.custom-calendar-open input[type="date"] {
 }
 
 @media (max-width: 920px) {.desktop-only{display:none!important;}}
+
+/* === Стили для Депатчеров === */
+.floor-section {
+    margin-bottom: 20px;
+}
+
+.floor-title {
+    background: var(--primary);
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.dispatchers-room-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.dispatchers-room-item {
+    background: rgba(39,103,73,0.08);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: 1px solid rgba(15,23,36,0.06);
+    font-size: 13px;
+}
+
+.dispatchers-room-item:hover {
+    background: rgba(39,103,73,0.15);
+    box-shadow: 0 2px 8px rgba(39,103,73,0.1);
+}
+
+.dispatchers-room-item.selected {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary-strong);
+}
+
+.dispatchers-room-item.excluded {
+    background: #f7bdbd;
+    color: #6b0b0b;
+    border-color: rgba(229,62,62,0.3);
+}
+
+.dispatchers-room-item.on-arrival {
+    background: #bfeec0;
+    color: #064e17;
+    border-color: rgba(39,103,73,0.3);
+}
+
+.dispatchers-room-item.found {
+    background: #fff9c4;
+    border-color: rgba(255,193,7,0.3);
+}
+
+.dispatchers-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: rgba(39,103,73,0.05);
+    border-radius: 10px;
+}
+
+.dispatchers-stat-item {
+    text-align: center;
+}
+
+.dispatchers-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-strong);
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.dispatchers-stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.dispatchers-error {
+    color: #e53e3e;
+    background: rgba(229,62,62,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border-left: 3px solid #e53e3e;
+}
+
+.dispatchers-success {
+    color: var(--primary-strong);
+    background: rgba(39,103,73,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border-left: 3px solid var(--primary);
+}
+
+.dispatchers-loading {
+    color: var(--primary);
+    text-align: center;
+    padding: 20px;
+}
+
+.dispatchers-room-item.found.selected {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary-strong) !important;
+}
 </style>
 </head>
 <body>
@@ -2280,6 +2401,7 @@ body.custom-calendar-open input[type="date"] {
 <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
 <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
 <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
+<div class="nav-item desktop-only" data-tab="dispatchers"><i class="fas fa-file-pdf"></i><span>Депатчеры</span></div>
 <div class="nav-separator"></div>
 <!-- ADDED: extra desktop tabs (above connection status) -->
 <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
@@ -2474,6 +2596,46 @@ body.custom-calendar-open input[type="date"] {
 </div>
 <!-- Список записей -->
 <div id="history-list"></div>
+</div>
+<!-- ==== Депатчеры ==== -->
+<div class="card hidden" id="dispatchers-section">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+<div style="font-weight:700; font-size:16px">Депатчеры</div>
+<div style="display:flex; gap:8px; align-items:center;">
+<input type="file" id="dispatchers-pdfFile" accept=".pdf" style="display:none;"/>
+<span id="dispatchers-fileName" class="muted" style="font-size:13px; margin-right:8px;"></span>
+<button class="btn" id="dispatchers-selectFileBtn"><i class="fas fa-upload"></i> Выбрать файл</button>
+</div>
+</div>
+<div class="instructions" style="background:rgba(39,103,73,0.08); padding:15px; border-radius:10px; margin-bottom:15px;">
+<h3 style="margin:0 0 10px 0; font-size:14px; font-weight:600;">Инструкция:</h3>
+<ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
+<li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
+<li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
+<li>Выберите номера комнат, которые сегодня уже проверили</li>
+<li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
+<li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
+<li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
+</ol>
+<div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
+<strong>Путь к файлу:</strong> G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
+</div>
+</div>
+<div class="card" style="margin-bottom:15px;">
+<div style="font-weight:600; font-size:14px; margin-bottom:10px;">Таблица номеров комнат</div>
+<div class="selection-controls" style="margin:10px 0; padding:10px; background:rgba(39,103,73,0.05); border-radius:8px;">
+<span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
+</div>
+<div id="dispatchers-roomsGrid"></div>
+</div>
+<div class="card" style="margin-bottom:15px;">
+<div style="display:flex; justify-content:flex-start;">
+<button class="btn" id="dispatchers-processBtn"><i class="fas fa-file-pdf"></i> Получить депатчеры</button>
+</div>
+</div>
+<div class="card" id="dispatchers-result">
+<p class="muted" style="text-align:center; padding:20px;">Результаты появятся здесь после обработки файла.</p>
+</div>
 </div>
 <!-- ==== Калькулятор (отдельная вкладка) ==== -->
 <div class="card" id="calculator-section" class="hidden">
@@ -2902,13 +3064,24 @@ body.custom-calendar-open input[type="date"] {
                         }
 
                         if (confirm("Очистить список акциз после копирования?")) {
-                            doCopy(() => {
-                                appData.accises = [];
-                                document.querySelector('#accises-list').innerHTML = '';
-                                updateAcciseStats();
-                                saveDebounced();
-                            });
-                        } else {
+    doCopy(() => {
+        // Немедленно очищаем данные
+        appData.accises = [];
+        document.querySelector('#accises-list').innerHTML = '';
+        updateAcciseStats();
+        
+        // Принудительно сохраняем изменения в Firebase и localStorage
+        clearTimeout(saveTimer); // Очищаем любой отложенный вызов
+        try {
+            // Сразу сохраняем в localStorage
+            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+            // Немедленно сохраняем в Firebase
+            saveToFirebase();
+        } catch (e) {
+            console.warn('Ошибка при сохранении:', e);
+        }
+    });
+} else {
                             doCopy();
                         }
                     });
@@ -4770,11 +4943,11 @@ function restoreHistoryIfNeeded() {
                 (function () {
                     window.showTab = function (tab) {
                         var $ = (sel) => document.querySelector(sel);
-                        // Скрываем все секции
-                        ['accises', 'sroki', 'gih'].forEach(function (name) {
-                            var el = document.getElementById(name + '-section');
-                            if (el) el.classList.toggle('hidden', name !== tab);
-                        });
+                    // Скрываем все секции
+                    ['accises', 'sroki', 'gih', 'dispatchers'].forEach(function (name) {
+                        var el = document.getElementById(name + '-section');
+                        if (el) el.classList.toggle('hidden', name !== tab);
+                    });
                         // Обновляем состояние навигации
                         try { syncBottomNav(tab); } catch (e) { }
                         try { syncTopNav(tab); } catch (e) { }
@@ -4938,6 +5111,7 @@ function restoreHistoryIfNeeded() {
                         accises: $('#accises-section'),
                         sroki: $('#sroki-section'),
                         gih: $('#gih-section'),
+                        dispatchers: $('#dispatchers-section'),
                         settings: $('#settings-section'),
                         learning: $('#learning-section'),
                         practice: $('#practice-section'),
@@ -4962,6 +5136,11 @@ function restoreHistoryIfNeeded() {
 
                         /* закрываем бургер-меню */
                         $('#mbBurgerMenu')?.classList.remove('show');
+                        
+                        /* Инициализируем депатчеры при переключении на вкладку */
+                        if (tab === 'dispatchers' && typeof window.dispatchersInit === 'function') {
+                            setTimeout(window.dispatchersInit, 100);
+                        }
                     }
 
                     /* Вешаем клики на все переключатели */
@@ -5017,7 +5196,7 @@ function restoreHistoryIfNeeded() {
                     const $$ = s => Array.from(document.querySelectorAll(s));
 
                     const sections = [
-                        'accises-section', 'sroki-section', 'gih-section', 'settings-section', 'learning-section', 'practice-section', 'history-section'
+                        'accises-section', 'sroki-section', 'gih-section', 'dispatchers-section', 'settings-section', 'learning-section', 'practice-section', 'history-section'
                     ];
 
                     function hideAll() {
@@ -5902,9 +6081,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <script>
-(function(){
+                (function(){
   const sections = [
-    'accises','sroki','gih','settings','learning','practice','history','calculator'
+    'accises','sroki','gih','dispatchers','settings','learning','practice','history','calculator'
   ];
   function hideAll(){
     sections.forEach(name=>{
@@ -5939,5 +6118,689 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
+<script>
+    // ====== ДЕПАТЧЕРЫ: Парсер номеров комнат ======
+    (function() {
+        'use strict';
+        
+        // Устанавливаем путь к worker'у PDF.js
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        }
+        
+        // Список всех существующих номеров комнат (из appData.roomsList или fallback)
+        let allRoomNumbers = [];
+        
+        // Состояния номеров в результатах: 0 - нет пометки, 1 - исключен, 2 - на заезд
+        let resultRoomStates = new Map();
+        
+        function getAllRoomNumbers() {
+            if (typeof appData !== 'undefined' && appData.roomsList && appData.roomsList.length > 0) {
+                return appData.roomsList.map(r => String(r));
+            }
+            // Fallback список
+            return [
+            '500', '502', '504', '506', '508', '509', '510', '512', '514', '516', '518', '520', '522', '524', '526', '528', '530', '532', '534',
+            '600', '602', '604', '606', '608', '609', '610', '612', '614', '616', '618', '620', '622', '624', '626', '628', '630', '632', '634',
+            '700', '702', '704', '706', '708', '709', '710', '712', '714', '716', '717', '718', '720', '722', '724', '725', '726', '728', '730', '732', '734',
+            '800', '802', '804', '806', '808', '809', '810', '812', '814', '816', '817', '818', '820', '822', '824', '825', '826', '828', '830', '832', '834',
+            '900', '902', '904', '906', '908', '909', '910', '912', '914', '916', '917', '918', '920', '922', '924', '925', '926', '928', '930', '932', '934',
+            '1000', '1002', '1004', '1006', '1008', '1009', '1010', '1012', '1014', '1016', '1017', '1018', '1020', '1022', '1024', '1025', '1026', '1028', '1030', '1032', '1034',
+            '1100', '1102', '1104', '1106', '1108', '1109', '1110', '1112', '1114', '1116', '1117', '1118', '1120', '1122', '1124', '1125', '1126', '1128', '1130', '1132', '1134',
+            '1200', '1202', '1204', '1206', '1208', '1209', '1210', '1212', '1214', '1216', '1217', '1218', '1220', '1222', '1224', '1225', '1226', '1228', '1230', '1232', '1234',
+            '1300', '1302', '1304', '1306', '1308', '1309', '1310', '1312', '1314', '1316', '1317', '1318', '1320', '1322', '1324', '1325', '1326', '1328', '1330', '1332', '1334',
+            '1400', '1402', '1404', '1406', '1408', '1409', '1410', '1412', '1414', '1416', '1417', '1418', '1420', '1422', '1424', '1425', '1426', '1428', '1430', '1432', '1434',
+            '1500', '1502', '1504', '1506', '1508', '1509', '1510', '1512', '1514', '1516', '1517', '1518', '1520', '1522', '1524', '1525', '1526', '1528', '1530', '1532', '1534',
+            '1600', '1602', '1604', '1606', '1608', '1609', '1610', '1612', '1614', '1616', '1617', '1618', '1620', '1622', '1624', '1625', '1626', '1628', '1630', '1632', '1634',
+            '1700', '1702', '1704', '1706', '1708', '1709', '1710', '1712', '1714', '1716', '1717', '1718', '1720', '1722', '1724', '1725', '1726', '1728', '1730', '1732', '1734',
+            '1800', '1802', '1804', '1806', '1807', '1808', '1810', '1811', '1812', '1814', '1816', '1818', '1902', '1904', '1906', '1908', '1910', '1911', '1912', '1914', '1916', '1918', '1919', '1920'
+            ];
+        }
+    
+        const selectedRooms = new Set();
+        
+        function groupRoomsByFloor(rooms) {
+            const floors = {};
+            rooms.forEach(room => {
+                let floor;
+                if (room.length === 3) {
+                    floor = room.charAt(0);
+                } else {
+                    floor = room.substring(0, 2);
+                }
+                if (!floors[floor]) {
+                    floors[floor] = [];
+                }
+                floors[floor].push(room);
+            });
+            return floors;
+        }
+        
+        function initializeRoomGrid() {
+            const grid = document.getElementById('dispatchers-roomsGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            allRoomNumbers = getAllRoomNumbers();
+            const floors = groupRoomsByFloor(allRoomNumbers);
+            const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            sortedFloors.forEach(floor => {
+                const floorSection = document.createElement('div');
+                floorSection.className = 'floor-section';
+                
+                const floorTitle = document.createElement('div');
+                floorTitle.className = 'floor-title';
+                floorTitle.textContent = `${floor} этаж`;
+                floorSection.appendChild(floorTitle);
+                
+                const roomList = document.createElement('div');
+                roomList.className = 'dispatchers-room-list';
+                
+                const sortedRooms = floors[floor].sort((a, b) => parseInt(a) - parseInt(b));
+                
+                sortedRooms.forEach(room => {
+                    const roomElement = document.createElement('div');
+                    roomElement.className = 'dispatchers-room-item';
+                    roomElement.textContent = room;
+                    roomElement.dataset.room = room;
+                    
+                    roomElement.addEventListener('click', function() {
+                        toggleRoomSelection(room);
+                    });
+                    
+                    roomList.appendChild(roomElement);
+                });
+                
+                floorSection.appendChild(roomList);
+                grid.appendChild(floorSection);
+            });
+            
+            updateSelectedCount();
+        }
+        
+        function toggleRoomSelection(roomNumber) {
+            if (selectedRooms.has(roomNumber)) {
+                selectedRooms.delete(roomNumber);
+            } else {
+                selectedRooms.add(roomNumber);
+            }
+            
+            updateRoomAppearance(roomNumber);
+            updateSelectedCount();
+        }
+        
+        function toggleResultState(roomNumber) {
+            let currentState = resultRoomStates.get(roomNumber) || 0;
+            currentState = (currentState + 1) % 3;
+            resultRoomStates.set(roomNumber, currentState);
+            updateResultRoomAppearance(roomNumber);
+        }
+        
+        function updateRoomAppearance(roomNumber) {
+            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+            if (roomElement) {
+                if (selectedRooms.has(roomNumber)) {
+                    roomElement.classList.add('selected');
+                } else {
+                    roomElement.classList.remove('selected');
+                }
+            }
+        }
+        
+        function updateResultRoomAppearance(roomNumber) {
+            const roomElement = document.querySelector(`.result-room[data-room="${roomNumber}"]`);
+            if (roomElement) {
+                // Убираем все состояния
+                roomElement.classList.remove('excluded', 'on-arrival');
+                const state = resultRoomStates.get(roomNumber) || 0;
+                if (state === 1) {
+                    roomElement.classList.add('excluded');
+                } else if (state === 2) {
+                    roomElement.classList.add('on-arrival');
+                }
+            }
+        }
+        
+        function updateSelectedCount() {
+            const countEl = document.getElementById('dispatchers-selectedCount');
+            if (countEl) {
+                countEl.textContent = `Выбрано: ${selectedRooms.size} номеров`;
+            }
+        }
+        
+        async function processPDFWithExclusion() {
+            const fileInput = document.getElementById('dispatchers-pdfFile');
+            const resultDiv = document.getElementById('dispatchers-result');
+            
+            if (!fileInput || !fileInput.files[0]) {
+                showError('Пожалуйста, выберите PDF файл');
+                return;
+            }
+    
+            if (resultDiv) {
+                resultDiv.innerHTML = '<p class="dispatchers-loading">Обработка PDF файла с исключением выбранных номеров...</p>';
+            }
+    
+            try {
+                const file = fileInput.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                await processPDFArrayBufferWithExclusion(arrayBuffer);
+            } catch (error) {
+                console.error('Ошибка при обработке PDF:', error);
+                showError('Ошибка при обработке PDF файла: ' + error.message);
+            }
+        }
+        
+        async function processPDFArrayBufferWithExclusion(arrayBuffer) {
+            const resultDiv = document.getElementById('dispatchers-result');
+            
+            if (typeof pdfjsLib === 'undefined') {
+                showError('PDF.js не загружен. Пожалуйста, обновите страницу.');
+                return;
+            }
+            
+            try {
+                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                
+                let allText = '';
+                const foundRoomNumbers = new Set();
+    
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    let pageText = '';
+                    const textItems = [];
+                    
+                    for (const item of textContent.items) {
+                        pageText += item.str + ' ';
+                        textItems.push({
+                            text: item.str,
+                            x: item.transform[4],
+                            y: item.transform[5]
+                        });
+                    }
+                    
+                    allText += pageText;
+                    analyzeTableStructure(textItems, foundRoomNumbers);
+                }
+    
+                analyzeSimpleText(allText, foundRoomNumbers);
+    
+                if (foundRoomNumbers.size === 0) {
+                    showError('Номера комнат не найдены в файле. Проверьте структуру PDF.');
+                    return;
+                }
+    
+                const filteredRooms = Array.from(foundRoomNumbers).filter(room => 
+                    !selectedRooms.has(room)
+                );
+                
+                const sortedRooms = filteredRooms.sort((a, b) => parseInt(a) - parseInt(b));
+                
+                updateFoundRoomsAppearance(foundRoomNumbers);
+                showResults(sortedRooms, foundRoomNumbers.size);
+                
+            } catch (error) {
+                console.error('Ошибка при обработке PDF:', error);
+                showError('Ошибка при обработке PDF файла: ' + error.message);
+            }
+        }
+        
+        function showResults(rooms, totalFound) {
+            const resultDiv = document.getElementById('dispatchers-result');
+            if (!resultDiv) return;
+            
+            const excludedCount = selectedRooms.size;
+            const resultFloors = groupRoomsByFloor(rooms);
+            const sortedFloors = Object.keys(resultFloors).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            let resultsHTML = `
+                <div class="dispatchers-stats">
+                    <div class="dispatchers-stat-item">
+                        <div class="dispatchers-stat-value">${rooms.length}</div>
+                        <div class="dispatchers-stat-label">Итоговых номеров</div>
+                    </div>
+                    <div class="dispatchers-stat-item">
+                        <div class="dispatchers-stat-value">${excludedCount}</div>
+                        <div class="dispatchers-stat-label">Исключено номеров</div>
+                    </div>
+                </div>
+                
+                <div style="font-weight:600; font-size:14px; margin-bottom:10px;">Итоговые номера (${rooms.length}):</div>
+                <p class="muted" style="font-size:12px; margin-bottom:15px;"><em>один клик - исключить жилой номер, двойной клик - пометить номер на заезд</em></p>
+            `;
+            
+            sortedFloors.forEach(floor => {
+                resultsHTML += `<div class="floor-section">
+                    <div class="floor-title">${floor} этаж</div>
+                    <div class="dispatchers-room-list">`;
+                
+                const sortedRooms = resultFloors[floor].sort((a, b) => parseInt(a) - parseInt(b));
+                sortedRooms.forEach(room => {
+                    const state = resultRoomStates.get(room) || 0;
+                    let classes = 'dispatchers-room-item result-room';
+                    if (state === 1) classes += ' excluded';
+                    else if (state === 2) classes += ' on-arrival';
+                    resultsHTML += `<div class="${classes}" data-room="${room}">${room}</div>`;
+                });
+                
+                resultsHTML += `</div></div>`;
+            });
+            
+            resultsHTML += `
+                <div style="margin-top: 20px; display:flex; gap:8px;">
+                    <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
+                    <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = resultsHTML;
+            
+            // Добавляем обработчики событий для номеров в результатах
+            resultDiv.querySelectorAll('.result-room').forEach(roomEl => {
+                const roomNumber = roomEl.dataset.room;
+                
+                roomEl.addEventListener('click', function() {
+                    toggleResultState(roomNumber);
+                });
+            });
+        }
+        
+        function printDepartures() {
+    const now = new Date();
+    const dateString = now.toLocaleDateString('ru-RU');
+    
+    // Собираем все номера из результатов, которые не в состоянии 1 (исключен)
+    const finalRooms = [];
+    document.querySelectorAll('.result-room').forEach(roomEl => {
+        const roomNumber = roomEl.dataset.room;
+        const state = resultRoomStates.get(roomNumber) || 0;
+        if (state !== 1) {
+            // Для состояния 2 добавляем стрелочку
+            const displayNumber = state === 2 ? `→ ${roomNumber}` : roomNumber;
+            finalRooms.push({ number: roomNumber, display: displayNumber });
+        }
+    });
+
+    // Сортируем по числовому значению номера
+    finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+    
+    // Просто делим отсортированный массив пополам на две колонки
+    const totalRooms = finalRooms.length;
+    const half = Math.ceil(totalRooms / 2);
+    
+    const leftColumn = finalRooms.slice(0, half);
+    const rightColumn = finalRooms.slice(half);
+    
+    // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
+    const pages = [];
+    const itemsPerPage = 36;
+    
+    // Определяем максимальное количество страниц
+    const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
+    
+    for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+        const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+        const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+        
+        // Добиваем каждую колонку до 36 номеров пустыми строками
+        while (pageLeft.length < itemsPerPage) pageLeft.push(null);
+        while (pageRight.length < itemsPerPage) pageRight.push(null);
+        
+        pages.push([pageLeft, pageRight]);
+    }
+
+    const printWindow = window.open('', '_blank');
+    
+    let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Departures ${dateString}</title>
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 1cm;
+                }
+                body { 
+                    font-family: Times New Roman, sans-serif; 
+                    margin: 0;
+                    padding: 0;
+                }
+                .page-container {
+                    display: flex;
+                    justify-content: space-around;
+                    width: 100%;
+                    height: 95vh;
+                    page-break-after: always;
+                }
+                .page-column {
+                    flex: 1;
+                    padding-top: 0;
+                    padding-left: 1cm;
+                    padding-right: 1cm;
+                    box-sizing: border-box;
+                }
+                .print-table { 
+                    width: 100%; 
+                    border-collapse: collapse;
+                    font-size: 10px;
+                }
+                .print-table th, .print-table td { 
+                    border: 1px solid #000; 
+                    padding: 2px 4px;
+                    height: 14px;
+                }
+                .print-table th { 
+                    background: #f0f0f0; 
+                    font-weight: bold; 
+                    text-align: center;
+                }
+                .print-table .number-col { 
+                    width: 50px; 
+                    text-align: center; 
+                }
+                .print-table .departures-col { 
+                    width: auto; 
+                    text-align: center;
+                }
+                @media print {
+                    body { 
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .page-container {
+                        height: 95vh;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+    `;
+    
+    // Для каждой страницы
+    pages.forEach((page) => {
+        htmlContent += `
+            <div class="page-container">
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col">№</th>
+                                <th class="departures-col">Departures of ${dateString}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        // Левая колонка - 36 строк
+        for (let i = 0; i < 36; i++) {
+            if (page[0][i]) {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong>${page[0][i].display}</strong></td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col">№</th>
+                                <th class="departures-col">Departures of ${dateString}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        // Правая колонка - 36 строк
+        for (let i = 0; i < 36; i++) {
+            if (page[1][i]) {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong>${page[1][i].display}</strong></td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    });
+    
+    htmlContent += `
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+}
+        
+        function updateFoundRoomsAppearance(foundRooms) {
+            document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
+                item.classList.remove('found');
+            });
+            
+            foundRooms.forEach(room => {
+                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${room}"]`);
+                if (roomElement) {
+                    roomElement.classList.add('found');
+                }
+            });
+        }
+    
+        function analyzeTableStructure(textItems, foundRoomNumbers) {
+            const lines = {};
+            textItems.forEach(item => {
+                const y = Math.round(item.y);
+                if (!lines[y]) lines[y] = [];
+                lines[y].push(item);
+            });
+    
+            const sortedLines = Object.keys(lines).sort((a, b) => b - a);
+            
+            sortedLines.forEach(y => {
+                const lineItems = lines[y];
+                lineItems.sort((a, b) => a.x - b.x);
+                
+                const lineText = lineItems.map(item => item.text).join(' ');
+                
+                const roomMatch = lineText.match(/^(\d{3,4})\s/);
+                if (roomMatch) {
+                    const roomNumber = roomMatch[1];
+                    validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
+                }
+                
+                const patternMatch = lineText.match(/\b(\d{3,4})\s+[A-Z][a-z]/);
+                if (patternMatch) {
+                    const roomNumber = patternMatch[1];
+                    validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
+                }
+            });
+        }
+    
+        function analyzeSimpleText(allText, foundRoomNumbers) {
+            const lines = allText.split(/\r?\n/);
+            
+            lines.forEach(line => {
+                line = line.trim();
+                
+                const patterns = [
+                    /^(\d{3,4})\s+[A-Z]/,
+                    /\b(\d{3,4})\s+[A-Z][a-z]+,/,
+                    /Room No\.\s*[\s\S]*?(\d{3,4})\b/,
+                    /Departure[\s\S]*?(\d{3,4})\s/
+                ];
+                
+                patterns.forEach(pattern => {
+                    const match = line.match(pattern);
+                    if (match && match[1]) {
+                        validateAndAddRoomNumber(match[1], foundRoomNumbers);
+                    }
+                });
+                
+                const numberMatches = line.match(/\b\d{3,4}\b/g);
+                if (numberMatches) {
+                    numberMatches.forEach(match => {
+                        if (!line.match(/\d{1,2}\.\d{1,2}\.\d{2,4}/) &&
+                            !line.match(/\d{1,2}:\d{2}/) &&
+                            isValidRoomNumberFormat(match)) {
+                            validateAndAddRoomNumber(match, foundRoomNumbers);
+                        }
+                    });
+                }
+            });
+        }
+    
+        function validateAndAddRoomNumber(roomNumber, foundRoomNumbers) {
+            const normalized = roomNumber.replace(/^0+/, '');
+            
+            if (allRoomNumbers.includes(normalized)) {
+                foundRoomNumbers.add(normalized);
+            }
+        }
+    
+        function isValidRoomNumberFormat(number) {
+            const num = parseInt(number);
+            return num >= 1 && num <= 1999;
+        }
+    
+        function showError(message) {
+            const resultDiv = document.getElementById('dispatchers-result');
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="dispatchers-error">${message}</div>`;
+            }
+        }
+    
+        function clearResults() {
+            const resultDiv = document.getElementById('dispatchers-result');
+            if (resultDiv) {
+                resultDiv.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Результаты очищены.</p>';
+            }
+            
+            const fileInput = document.getElementById('dispatchers-pdfFile');
+            const fileNameSpan = document.getElementById('dispatchers-fileName');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            if (fileNameSpan) {
+                fileNameSpan.textContent = '';
+            }
+            
+            document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
+                item.classList.remove('found');
+            });
+            
+            resultRoomStates.clear();
+        }
+        
+        // Экспортируем функции в глобальную область для использования в onclick
+        window.dispatchersPrintDepartures = printDepartures;
+        window.dispatchersClearResults = clearResults;
+        window.dispatchersInit = initDispatchers;
+        
+        // Инициализация при загрузке страницы или при показе вкладки
+        function initDispatchers() {
+            if (document.getElementById('dispatchers-roomsGrid') && !document.getElementById('dispatchers-roomsGrid').hasChildNodes()) {
+                initializeRoomGrid();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем после небольшой задержки, чтобы appData успел загрузиться
+            setTimeout(initDispatchers, 500);
+            
+            const processBtn = document.getElementById('dispatchers-processBtn');
+            const selectFileBtn = document.getElementById('dispatchers-selectFileBtn');
+            const fileInput = document.getElementById('dispatchers-pdfFile');
+            const fileNameSpan = document.getElementById('dispatchers-fileName');
+            
+            if (processBtn) {
+                processBtn.addEventListener('click', processPDFWithExclusion);
+            }
+            
+            // Обработчик кнопки выбора файла
+            if (selectFileBtn && fileInput) {
+                selectFileBtn.addEventListener('click', function() {
+                    fileInput.click();
+                });
+            }
+            
+            // Отображение имени выбранного файла
+            if (fileInput && fileNameSpan) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        fileNameSpan.textContent = file.name;
+                    } else {
+                        fileNameSpan.textContent = '';
+                    }
+                });
+            }
+            
+            // Drag and drop для файлов
+            if (fileInput) {
+                const selectFileBtn = document.getElementById('dispatchers-selectFileBtn');
+                const container = selectFileBtn ? selectFileBtn.closest('.card') : null;
+                
+                if (container) {
+                    container.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        container.style.background = 'rgba(39,103,73,0.1)';
+                    });
+                    
+                    container.addEventListener('dragleave', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        container.style.background = '';
+                    });
+                    
+                    container.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        container.style.background = '';
+                        if (e.dataTransfer.files.length) {
+                            fileInput.files = e.dataTransfer.files;
+                            // Обновляем имя файла
+                            if (fileNameSpan && fileInput.files[0]) {
+                                fileNameSpan.textContent = fileInput.files[0].name;
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
