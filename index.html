@@ -2412,6 +2412,8 @@ body.custom-calendar-open input[type="date"] {
     position: relative;
     transition: 0.3s;
     border: 1px solid rgba(15,23,36,0.1);
+    display: flex;
+    align-items: center;
 }
 
 .toggle-knob {
@@ -2420,10 +2422,12 @@ body.custom-calendar-open input[type="date"] {
     background: white;
     border-radius: 50%;
     position: absolute;
-    top: 2px;
     left: 2px;
     transition: 0.3s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    /* Центрируем вертикально */
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -2432,7 +2436,7 @@ body.custom-calendar-open input[type="date"] {
 }
 
 .toggle-switch input:checked + .toggle-slider .toggle-knob {
-    transform: translateX(22px);
+    transform: translateX(22px) translateY(-50%);
 }
 
 .toggle-switch:hover .toggle-slider {
