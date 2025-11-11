@@ -2453,6 +2453,55 @@ body.custom-calendar-open input[type="date"] {
     color: var(--text);
     white-space: nowrap;
 }
+/* Адаптация для мобильной версии депатчеров */
+@media (max-width: 920px) {
+    #dispatchers-section .desktop-only {
+        display: none !important;
+    }
+    
+    .mobile-only {
+        display: flex !important;
+    }
+    
+    #dispatchers-room-input-mobile {
+        max-width: 150px !important;
+        font-size: 13px !important;
+        padding: 6px 10px !important;
+    }
+    
+    #dispatchers-apply-rooms-mobile,
+    #dispatchers-clear-rooms-mobile {
+        padding: 6px 8px !important;
+        min-width: 40px !important;
+    }
+    
+    .dispatchers-room-list {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
+        gap: 8px !important;
+    }
+    
+    .dispatchers-room-item {
+        padding: 8px !important;
+        font-size: 12px !important;
+        min-height: 40px !important;
+    }
+    
+    .floor-title {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* Десктопная версия */
+@media (min-width: 921px) {
+    .mobile-only {
+        display: none !important;
+    }
+    
+    .desktop-only {
+        display: block !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -2660,44 +2709,86 @@ body.custom-calendar-open input[type="date"] {
 <div id="history-list"></div>
 </div>
 <!-- ==== Депатчеры ==== -->
+<!-- ==== Депатчеры ==== -->
 <div class="card hidden" id="dispatchers-section">
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-<div style="font-weight:700; font-size:16px">Депатчеры</div>
-<div style="display:flex; gap:8px; align-items:center;">
-<input type="file" id="dispatchers-pdfFile" accept=".pdf" style="display:none;"/>
-<span id="dispatchers-fileName" class="muted" style="font-size:13px; margin-right:8px;"></span>
-<button class="btn" id="dispatchers-selectFileBtn"><i class="fas fa-upload"></i> Выбрать файл</button>
-</div>
-</div>
-<div class="instructions" style="background:rgba(39,103,73,0.08); padding:15px; border-radius:10px; margin-bottom:15px;">
-<h3 style="margin:0 0 10px 0; font-size:14px; font-weight:600;">Инструкция:</h3>
-<ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
-<li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
-<li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
-<li>Выберите номера комнат, которые сегодня уже проверили</li>
-<li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
-<li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
-<li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
-</ol>
-<div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
-<strong>Путь к файлу:</strong> G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
-</div>
-</div>
-<div class="card" style="margin-bottom:15px;">
-<div style="font-weight:600; font-size:14px; margin-bottom:10px;">Таблица номеров комнат</div>
-<div class="selection-controls" style="margin:10px 0; padding:10px; background:rgba(39,103,73,0.05); border-radius:8px;">
-<span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
-</div>
-<div id="dispatchers-roomsGrid"></div>
-</div>
-<div class="card" style="margin-bottom:15px;">
-<div style="display:flex; justify-content:flex-start;">
-<button class="btn" id="dispatchers-processBtn"><i class="fas fa-file-pdf"></i> Получить депатчеры</button>
-</div>
-</div>
-<div class="card" id="dispatchers-result">
-<p class="muted" style="text-align:center; padding:20px;">Результаты появятся здесь после обработки файла.</p>
-</div>
+    <!-- Заголовок и кнопка выбора файла (для десктопной версии) -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+        <div style="font-weight:700; font-size:16px">Депатчеры</div>
+        <!-- Кнопка выбора файла только для десктопной версии -->
+        <div class="desktop-only" style="display:flex; gap:8px; align-items:center;">
+            <input type="file" id="dispatchers-pdfFile" accept=".pdf" style="display:none;"/>
+            <span id="dispatchers-fileName" class="muted" style="font-size:13px; margin-right:8px;"></span>
+            <button class="btn" id="dispatchers-selectFileBtn"><i class="fas fa-upload"></i> Выбрать файл</button>
+        </div>
+        
+        <!-- Поле ввода и кнопки для мобильной версии (в строке с заголовком) -->
+        <div class="mobile-only" style="display:flex; gap:8px; align-items:center; flex: 1; justify-content: flex-end;">
+            <input type="text" id="dispatchers-room-input-mobile" placeholder="Вставить из чата" 
+                   style="padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; max-width: 150px; font-size: 13px;">
+            <button class="btn small" id="dispatchers-apply-rooms-mobile" style="white-space: nowrap; min-width: auto; padding: 6px 8px;">
+                Внести данные
+            </button>
+            <button class="btn ghost small" id="dispatchers-clear-rooms-mobile" style="white-space: nowrap; min-width: auto; padding: 6px 8px;" title="Сбросить">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Инструкции (только для десктопной версии) -->
+    <div class="desktop-only">
+        <div class="instructions" style="background:rgba(39,103,73,0.08); padding:15px; border-radius:10px; margin-bottom:15px;">
+            <h3 style="margin:0 0 10px 0; font-size:14px; font-weight:600;">Инструкция:</h3>
+            <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
+                <li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
+                <li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
+                <li>Выберите номера комнат или скопируйте номера из чата, которые сегодня уже проверили</li>
+                <li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
+                <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
+                <li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
+            </ol>
+            <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
+                <strong>Путь к файлу:</strong> G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
+            </div>
+        </div>
+    </div>
+    
+    <!-- Блок управления для десктопной версии (между инструкцией и таблицей) -->
+    <div class="desktop-only">
+        <div class="selection-controls" style="display: flex; justify-content: space-between; align-items: center; margin:10px 0; padding:10px; background:rgba(39,103,73,0.05); border-radius:8px;">
+            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                <input type="text" id="dispatchers-room-input" placeholder="Вставьте текст из чата с номерами комнат" style="padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; font-size: 14px;">
+                <button class="btn small" id="dispatchers-apply-rooms" style="white-space: nowrap;">Внести данные</button>
+                <button class="btn ghost small" id="dispatchers-clear-rooms" style="white-space: nowrap;">Сбросить</button>
+            </div>
+            <span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px; margin-left: 15px;">Выбрано: 0 номеров</span>
+        </div>
+    </div>
+    
+    <!-- Таблица номеров комнат -->
+    <div class="card" style="margin-bottom:15px;">
+        <div style="font-weight:600; font-size:14px; margin-bottom:10px;" class="desktop-only">Таблица номеров комнат</div>
+        <div id="dispatchers-roomsGrid"></div>
+    </div>
+    
+    <!-- Счетчик выделенных номеров (под таблицей) - для мобильной версии -->
+    <div class="mobile-only" style="text-align: center; padding: 10px; background: rgba(39,103,73,0.05); border-radius: 8px; margin-bottom: 15px;">
+        <span id="dispatchers-selectedCount-mobile" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
+    </div>
+    
+    <!-- Счетчик выделенных номеров для десктопной версии (уже есть в selection-controls) -->
+    
+    <!-- Кнопки обработки (только для десктопной версии) -->
+    <div class="desktop-only">
+        <div class="card" style="margin-bottom:15px;">
+            <div style="display:flex; justify-content:flex-start;">
+                <button class="btn" id="dispatchers-processBtn"><i class="fas fa-file-pdf"></i> Получить депатчеры</button>
+            </div>
+        </div>
+        
+        <div class="card" id="dispatchers-result">
+            <p class="muted" style="text-align:center; padding:20px;">Результаты появятся здесь после обработки файла.</p>
+        </div>
+    </div>
 </div>
 <!-- ==== Калькулятор (отдельная вкладка) ==== -->
 <div class="card" id="calculator-section" class="hidden">
@@ -2721,6 +2812,7 @@ body.custom-calendar-open input[type="date"] {
 <div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
 <div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
 <div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
+<div class="b-item" data-tab="dispatchers" title="Депатчеры"><i class="fas fa-list"></i><div class="b-label">Депатчеры</div></div>
 </div>
 <!-- Modal (rooms) -->
 <div aria-hidden="true" class="overlay" id="modal">
@@ -2811,7 +2903,8 @@ body.custom-calendar-open input[type="date"] {
                         stella: 'Стелла', gancha: 'Ганча', martini: 'Мартини', orange: 'Апельсин',
                         cherry: 'Вишня', loriot: 'Лориот', whiskey02: 'Виски 0.2'
                     },
-                    roomsList: [500, 502, 504, 506, 508, 509, 510, 512, 514, 516, 518, 520, 522, 524, 526, 528, 530, 532, 534, 600, 602, 604, 606, 608, 609, 610, 612, 614, 616, 618, 620, 622, 624, 626, 628, 630, 632, 634, 700, 702, 704, 706, 708, 709, 710, 712, 714, 716, 717, 718, 720, 722, 724, 725, 726, 728, 730, 732, 734, 800, 802, 804, 806, 808, 809, 810, 812, 814, 816, 817, 818, 820, 822, 824, 825, 826, 828, 830, 832, 834, 900, 902, 904, 906, 908, 909, 910, 912, 914, 916, 917, 918, 920, 922, 924, 925, 926, 928, 930, 932, 934, 1000, 1002, 1004, 1006, 1008, 1009, 1010, 1012, 1014, 1016, 1017, 1018, 1020, 1022, 1024, 1025, 1026, 1028, 1030, 1032, 1034, 1100, 1102, 1104, 1106, 1108, 1109, 1110, 1112, 1114, 1116, 1117, 1118, 1120, 1122, 1124, 1125, 1126, 1128, 1130, 1132, 1134, 1200, 1202, 1204, 1206, 1208, 1209, 1210, 1212, 1214, 1216, 1217, 1218, 1220, 1222, 1224, 1225, 1226, 1228, 1230, 1232, 1234, 1300, 1302, 1304, 1306, 1308, 1309, 1310, 1312, 1314, 1316, 1317, 1318, 1320, 1322, 1324, 1325, 1326, 1328, 1330, 1332, 1334, 1400, 1402, 1404, 1406, 1408, 1409, 1410, 1412, 1414, 1416, 1417, 1418, 1420, 1422, 1424, 1425, 1426, 1428, 1430, 1432, 1434, 1500, 1502, 1504, 1506, 1508, 1509, 1510, 1512, 1514, 1516, 1517, 1518, 1520, 1522, 1524, 1525, 1526, 1528, 1530, 1532, 1534, 1600, 1602, 1604, 1606, 1608, 1609, 1610, 1612, 1614, 1616, 1617, 1618, 1620, 1622, 1624, 1625, 1626, 1628, 1630, 1632, 1634, 1700, 1702, 1704, 1706, 1708, 1709, 1710, 1712, 1714, 1716, 1717, 1718, 1720, 1722, 1724, 1725, 1726, 1728, 1730, 1732, 1734, 1800, 1802, 1804, 1806, 1807, 1808, 1810, 1811, 1812, 1814, 1816, 1818, 1902, 1904, 1906, 1908, 1910, 1911, 1912, 1914, 1916, 1918, 1919, 1920]
+                    roomsList: [500, 502, 504, 506, 508, 509, 510, 512, 514, 516, 518, 520, 522, 524, 526, 528, 530, 532, 534, 600, 602, 604, 606, 608, 609, 610, 612, 614, 616, 618, 620, 622, 624, 626, 628, 630, 632, 634, 700, 702, 704, 706, 708, 709, 710, 712, 714, 716, 717, 718, 720, 722, 724, 725, 726, 728, 730, 732, 734, 800, 802, 804, 806, 808, 809, 810, 812, 814, 816, 817, 818, 820, 822, 824, 825, 826, 828, 830, 832, 834, 900, 902, 904, 906, 908, 909, 910, 912, 914, 916, 917, 918, 920, 922, 924, 925, 926, 928, 930, 932, 934, 1000, 1002, 1004, 1006, 1008, 1009, 1010, 1012, 1014, 1016, 1017, 1018, 1020, 1022, 1024, 1025, 1026, 1028, 1030, 1032, 1034, 1100, 1102, 1104, 1106, 1108, 1109, 1110, 1112, 1114, 1116, 1117, 1118, 1120, 1122, 1124, 1125, 1126, 1128, 1130, 1132, 1134, 1200, 1202, 1204, 1206, 1208, 1209, 1210, 1212, 1214, 1216, 1217, 1218, 1220, 1222, 1224, 1225, 1226, 1228, 1230, 1232, 1234, 1300, 1302, 1304, 1306, 1308, 1309, 1310, 1312, 1314, 1316, 1317, 1318, 1320, 1322, 1324, 1325, 1326, 1328, 1330, 1332, 1334, 1400, 1402, 1404, 1406, 1408, 1409, 1410, 1412, 1414, 1416, 1417, 1418, 1420, 1422, 1424, 1425, 1426, 1428, 1430, 1432, 1434, 1500, 1502, 1504, 1506, 1508, 1509, 1510, 1512, 1514, 1516, 1517, 1518, 1520, 1522, 1524, 1525, 1526, 1528, 1530, 1532, 1534, 1600, 1602, 1604, 1606, 1608, 1609, 1610, 1612, 1614, 1616, 1617, 1618, 1620, 1622, 1624, 1625, 1626, 1628, 1630, 1632, 1634, 1700, 1702, 1704, 1706, 1708, 1709, 1710, 1712, 1714, 1716, 1717, 1718, 1720, 1722, 1724, 1725, 1726, 1728, 1730, 1732, 1734, 1800, 1802, 1804, 1806, 1807, 1808, 1810, 1811, 1812, 1814, 1816, 1818, 1902, 1904, 1906, 1908, 1910, 1911, 1912, 1914, 1916, 1918, 1919, 1920],
+                    dispatchersSelectedRooms: []
                 };
 
                 // Emoji map for product buttons
@@ -3002,7 +3095,11 @@ body.custom-calendar-open input[type="date"] {
                     renderAllGIHRecords();
                     updateGIHSummary();
 
-                    updateGIHRoomsSummary(); isRendering = false;
+                    updateGIHRoomsSummary();
+                    
+    renderDispatchersRooms();
+    updateDispatchersSelectedCount();
+                    isRendering = false;
                 }
 
                 /* debounce save */
@@ -3832,6 +3929,7 @@ saveBtn.addEventListener('click', () => {
             Object.assign(appData, firebaseData);
             localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
             isUpdatingFromFirebase = false;
+        loadDispatchersSelectionFromFirebase();
         } else {
             // Firebase пуст - пробуем локальные данные
             console.log('Firebase пуст, загружаем из localStorage');
@@ -3880,26 +3978,28 @@ saveBtn.addEventListener('click', () => {
 }
 
                 function initNav() {
-                    // desktop nav items
-                    $$('.nav-item').forEach(item => {
-                        item.addEventListener('click', () => {
-                            $$('.nav-item').forEach(n => n.classList.remove('active')); item.classList.add('active');
-                            const tab = item.dataset.tab;
-                            showTab(tab);
-                            syncBottomNav(tab);
-                        });
-                    });
+    // desktop nav items
+    $$('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            $$('.nav-item').forEach(n => n.classList.remove('active')); 
+            item.classList.add('active');
+            const tab = item.dataset.tab;
+            showTab(tab);
+            syncBottomNav(tab);
+        });
+    });
 
-                    // bottom nav items (MOBILE)
-                    $$('#bottomNav .b-item').forEach(item => {
-                        item.addEventListener('click', () => {
-                            $$('#bottomNav .b-item').forEach(n => n.classList.remove('active')); item.classList.add('active');
-                            const tab = item.dataset.tab;
-                            showTab(tab);
-                            syncTopNav(tab);
-                        });
-                    });
-                }
+    // bottom nav items (MOBILE)
+    $$('#bottomNav .b-item').forEach(item => {
+        item.addEventListener('click', () => {
+            $$('#bottomNav .b-item').forEach(n => n.classList.remove('active')); 
+            item.classList.add('active');
+            const tab = item.dataset.tab;
+            showTab(tab);
+            syncTopNav(tab);
+        });
+    });
+}
                 function syncBottomNav(tab) {
                     const bottom = $$('#bottomNav .b-item');
                     bottom.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -6267,10 +6367,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     roomElement.textContent = room;
                     roomElement.dataset.room = room;
                     
-                    roomElement.addEventListener('click', function() {
-                        toggleRoomSelection(room);
-                    });
-                    
                     roomList.appendChild(roomElement);
                 });
                 
@@ -6279,6 +6375,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             updateSelectedCount();
+            
+            // Используем делегирование событий для обработки кликов
+            setupRoomGridEventDelegation();
+        }
+        
+        function setupRoomGridEventDelegation() {
+            const grid = document.getElementById('dispatchers-roomsGrid');
+            if (!grid) return;
+            
+            // Удаляем старые обработчики и добавляем новый через делегирование
+            grid.removeEventListener('click', handleRoomGridClick);
+            grid.addEventListener('click', handleRoomGridClick);
+        }
+        
+        function handleRoomGridClick(event) {
+            const roomElement = event.target.closest('.dispatchers-room-item');
+            if (roomElement) {
+                const roomNumber = roomElement.dataset.room;
+                toggleRoomSelection(roomNumber);
+            }
         }
         
         function toggleRoomSelection(roomNumber) {
@@ -6290,6 +6406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             updateRoomAppearance(roomNumber);
             updateSelectedCount();
+            saveDispatchersSelectionToFirebase();
         }
         
         function toggleResultState(roomNumber) {
@@ -6469,14 +6586,25 @@ document.addEventListener('DOMContentLoaded', () => {
             
             resultDiv.innerHTML = resultsHTML;
             
-            // Добавляем обработчики событий для номеров в результатах
-            resultDiv.querySelectorAll('.result-room').forEach(roomEl => {
-                const roomNumber = roomEl.dataset.room;
-                
-                roomEl.addEventListener('click', function() {
-                    toggleResultState(roomNumber);
-                });
-            });
+            // Используем делегирование событий для результатов
+            setupResultsEventDelegation();
+        }
+        
+        function setupResultsEventDelegation() {
+            const resultDiv = document.getElementById('dispatchers-result');
+            if (!resultDiv) return;
+            
+            // Удаляем старые обработчики и добавляем новый через делегирование
+            resultDiv.removeEventListener('click', handleResultsClick);
+            resultDiv.addEventListener('click', handleResultsClick);
+        }
+        
+        function handleResultsClick(event) {
+            const roomElement = event.target.closest('.result-room');
+            if (roomElement) {
+                const roomNumber = roomElement.dataset.room;
+                toggleResultState(roomNumber);
+            }
         }
         
         function printDepartures() {
@@ -6499,45 +6627,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Сортируем по числовому значению номера
     finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
     
-    let leftColumn, rightColumn;
+    let pages = [];
     
     if (splitBetweenTwo) {
         // Режим "Разделить на двоих" - делим пополам
         const half = Math.ceil(finalRooms.length / 2);
-        leftColumn = finalRooms.slice(0, half);
-        rightColumn = finalRooms.slice(half);
+        const leftColumn = finalRooms.slice(0, half);
+        const rightColumn = finalRooms.slice(half);
+        
+        // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
+        const itemsPerPage = 36;
+        const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
+        
+        for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+            const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+            const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+            
+            // Добиваем каждую колонку до 36 номеров пустыми строками
+            while (pageLeft.length < itemsPerPage) pageLeft.push(null);
+            while (pageRight.length < itemsPerPage) pageRight.push(null);
+            
+            pages.push([pageLeft, pageRight]);
+        }
     } else {
-        // Режим без разделения - заполняем последовательно
-        // Сначала все номера идут в левую колонку, потом в правую
-        const itemsPerColumn = 36; // Максимум номеров в одной колонке на странице
-        leftColumn = [];
-        rightColumn = [];
+        // Режим без разделения - последовательное заполнение всех колонок на всех страницах
+        const itemsPerPage = 72; // Всего номеров на странице (2 колонки × 36)
+        const pageCount = Math.ceil(finalRooms.length / itemsPerPage);
         
-        finalRooms.forEach((room, index) => {
-            if (index < itemsPerColumn) {
-                leftColumn.push(room);
-            } else {
-                rightColumn.push(room);
-            }
-        });
-    }
-    
-    // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
-    const pages = [];
-    const itemsPerPage = 36;
-    
-    // Определяем максимальное количество страниц
-    const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
-    
-    for (let pageNum = 0; pageNum < maxPages; pageNum++) {
-        const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-        const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-        
-        // Добиваем каждую колонку до 36 номеров пустыми строками
-        while (pageLeft.length < itemsPerPage) pageLeft.push(null);
-        while (pageRight.length < itemsPerPage) pageRight.push(null);
-        
-        pages.push([pageLeft, pageRight]);
+        for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+            const pageStart = pageNum * itemsPerPage;
+            const pageEnd = pageStart + itemsPerPage;
+            const pageItems = finalRooms.slice(pageStart, pageEnd);
+            
+            // Разбиваем страницу на две колонки
+            const leftPage = pageItems.slice(0, 36);
+            const rightPage = pageItems.slice(36, 72);
+            
+            // Добиваем каждую колонку до 36 номеров пустыми строками
+            while (leftPage.length < 36) leftPage.push(null);
+            while (rightPage.length < 36) rightPage.push(null);
+            
+            pages.push([leftPage, rightPage]);
+        }
     }
 
     const printWindow = window.open('', '_blank');
@@ -6566,7 +6697,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 .page-column {
                     flex: 1;
-                    padding-top: 0;
+                    padding-top: 1cm;
                     padding-left: 1cm;
                     padding-right: 1cm;
                     box-sizing: border-box;
@@ -6578,8 +6709,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 .print-table th, .print-table td { 
                     border: 1px solid #000; 
-                    padding: 2px 4px;
-                    height: 14px;
+                    padding: 0px;
+                    height: 16px;
                 }
                 .print-table th { 
                     background: #f0f0f0; 
@@ -6609,15 +6740,23 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     
     // Для каждой страницы
-    pages.forEach((page) => {
+    pages.forEach((page, pageIndex) => {
+        let left = page[0];
+        let right = page[1];
+        
+        // В режиме "Разделить на двоих" на четных страницах меняем колонки местами
+        if (splitBetweenTwo && pageIndex % 2 === 1) {
+            [left, right] = [right, left];
+        }
+
         htmlContent += `
             <div class="page-container">
                 <div class="page-column">
                     <table class="print-table">
                         <thead>
                             <tr>
-                                <th class="number-col">№</th>
-                                <th class="departures-col">Departures of ${dateString}</th>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -6625,10 +6764,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Левая колонка - 36 строк
         for (let i = 0; i < 36; i++) {
-            if (page[0][i]) {
+            if (left[i]) {
                 htmlContent += `
                     <tr>
-                        <td class="number-col"><strong>${page[0][i].display}</strong></td>
+                        <td class="number-col"><strong><font size="2">${left[i].display}</font></strong></td>
                         <td class="departures-col">&nbsp;</td>
                     </tr>
                 `;
@@ -6650,8 +6789,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <table class="print-table">
                         <thead>
                             <tr>
-                                <th class="number-col">№</th>
-                                <th class="departures-col">Departures of ${dateString}</th>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -6659,10 +6798,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Правая колонка - 36 строк
         for (let i = 0; i < 36; i++) {
-            if (page[1][i]) {
+            if (right[i]) {
                 htmlContent += `
                     <tr>
-                        <td class="number-col"><strong>${page[1][i].display}</strong></td>
+                        <td class="number-col"><strong><font size="2">${right[i].display}</font></strong></td>
                         <td class="departures-col">&nbsp;</td>
                     </tr>
                 `;
@@ -6889,6 +7028,251 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     })();
-    </script>
+
+   // Функция для парсинга номеров комнат из текста чата
+function parseRoomNumbersFromChatText(text) {
+    const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
+    const foundRooms = new Set();
+    
+    // Разбиваем текст на строки
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    lines.forEach(line => {
+        // Удаляем временные метки и имена [29.10, 20:26] +7 903 993-00-92: 
+        const cleanLine = line.replace(/\[\d{2}\.\d{2}, \d{2}:\d{2}\]\s*[^:]*:\s*/, '');
+        
+        // Ищем все числа в строке
+        const numbers = cleanLine.match(/\d+/g);
+        
+        if (numbers) {
+            numbers.forEach(numStr => {
+                const num = parseInt(numStr, 10);
+                // Проверяем, является ли число валидным номером комнаты
+                if (validRooms.has(num)) {
+                    foundRooms.add(num);
+                }
+            });
+        }
+    });
+    
+    return Array.from(foundRooms);
+}
+
+// Функция для парсинга номеров из ручного ввода (без диапазонов)
+function parseRoomNumbersFromManualInput(text) {
+    const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
+    const foundRooms = new Set();
+    
+    // Разбиваем на части по запятым, пробелам, переносам строк
+    const parts = text.split(/[,;\s\n]+/).filter(part => part.trim());
+    
+    parts.forEach(part => {
+        part = part.trim();
+        
+        // Ищем только отдельные номера (без диапазонов)
+        const num = parseInt(part);
+        if (!isNaN(num) && validRooms.has(num)) {
+            foundRooms.add(num);
+        }
+    });
+    
+    return Array.from(foundRooms);
+}
+
+// Умная функция парсинга, которая определяет тип ввода
+function parseRoomNumbersFromText(text) {
+    // Если текст содержит шаблон сообщений из чата (даты в квадратных скобках)
+    if (text.includes('[') && text.includes(']') && text.includes(':')) {
+        return parseRoomNumbersFromChatText(text);
+    } else {
+        return parseRoomNumbersFromManualInput(text);
+    }
+}
+
+// Функция для обновления счетчика выбранных номеров
+function updateDispatchersSelectedCount() {
+    const selectedCount = document.querySelectorAll('.dispatchers-room-item.selected').length;
+    
+    // Обновляем счетчик в десктопной версии
+    const selectedCountEl = document.getElementById('dispatchers-selectedCount');
+    if (selectedCountEl) {
+        selectedCountEl.textContent = `Выбрано: ${selectedCount} номеров`;
+    }
+    
+    // Обновляем счетчик в мобильной версии
+    const selectedCountMobileEl = document.getElementById('dispatchers-selectedCount-mobile');
+    if (selectedCountMobileEl) {
+        selectedCountMobileEl.textContent = `Выбрано: ${selectedCount} номеров`;
+    }
+}
+
+// Функция для очистки всех выделенных номеров
+function clearAllSelectedRooms() {
+    document.querySelectorAll('.dispatchers-room-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    updateDispatchersSelectedCount();
+    saveDispatchersSelectionToFirebase();
+}
+
+// Функция для добавления номеров к текущим выделениям
+function addToSelectedRooms(roomNumbers) {
+    roomNumbers.forEach(roomNumber => {
+        const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+        if (roomElement && !roomElement.classList.contains('selected')) {
+            roomElement.classList.add('selected');
+        }
+    });
+    
+    // Обновляем счетчик
+    updateDispatchersSelectedCount();
+    
+    // Сохраняем в Firebase
+    saveDispatchersSelectionToFirebase();
+}
+
+// Функция для сохранения выделенных номеров в Firebase
+function saveDispatchersSelectionToFirebase() {
+    const selectedRooms = Array.from(document.querySelectorAll('.dispatchers-room-item.selected'))
+        .map(item => parseInt(item.getAttribute('data-room')));
+    
+    // Сохраняем в appData для синхронизации
+    appData.dispatchersSelectedRooms = selectedRooms;
+    
+    // Сохраняем в Firebase
+    database.ref('minibarData/dispatchersSelectedRooms').set(selectedRooms)
+        .catch(error => {
+            console.error('Ошибка сохранения выделенных номеров в Firebase:', error);
+        });
+}
+
+// Функция для загрузки выделенных номеров из Firebase
+function loadDispatchersSelectionFromFirebase() {
+    database.ref('minibarData/dispatchersSelectedRooms').once('value')
+        .then(snapshot => {
+            const selectedRooms = snapshot.val() || [];
+            
+            // Снимаем все выделения
+            document.querySelectorAll('.dispatchers-room-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Выделяем номера из Firebase
+            selectedRooms.forEach(roomNumber => {
+                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+                if (roomElement) {
+                    roomElement.classList.add('selected');
+                }
+            });
+            
+            // Обновляем счетчик
+            updateDispatchersSelectedCount();
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки выделенных номеров из Firebase:', error);
+        });
+}
+
+// Слушатель изменений выделенных номеров в реальном времени
+function setupDispatchersRealtimeListener() {
+    database.ref('minibarData/dispatchersSelectedRooms').on('value', snapshot => {
+        const selectedRooms = snapshot.val() || [];
+        
+        // Снимаем все выделения
+        document.querySelectorAll('.dispatchers-room-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Выделяем номера из Firebase
+        selectedRooms.forEach(roomNumber => {
+            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+            if (roomElement) {
+                roomElement.classList.add('selected');
+            }
+        });
+        
+        // Обновляем счетчик
+        updateDispatchersSelectedCount();
+    });
+}
+
+function initDispatchersEventHandlers() {
+    // Обработчики для десктопной версии
+    const applyRoomsBtn = document.getElementById('dispatchers-apply-rooms');
+    const clearRoomsBtn = document.getElementById('dispatchers-clear-rooms');
+    const roomInput = document.getElementById('dispatchers-room-input');
+    
+    // Обработчики для мобильной версии
+    const applyRoomsBtnMobile = document.getElementById('dispatchers-apply-rooms-mobile');
+    const clearRoomsBtnMobile = document.getElementById('dispatchers-clear-rooms-mobile');
+    const roomInputMobile = document.getElementById('dispatchers-room-input-mobile');
+    
+    // Общая функция для обработки ввода данных
+    function handleApplyRooms(inputElement) {
+        const text = inputElement.value.trim();
+        if (!text) return;
+        
+        const roomNumbers = parseRoomNumbersFromText(text);
+        
+        if (roomNumbers.length === 0) {
+            inputElement.value = '';
+            return;
+        }
+        
+        // Добавляем номера к текущим выделениям (не сбрасываем предыдущие)
+        addToSelectedRooms(roomNumbers);
+        
+        // Очищаем поле ввода
+        inputElement.value = '';
+    }
+    
+    // Обработчики для десктопной версии
+    if (applyRoomsBtn && roomInput) {
+        applyRoomsBtn.addEventListener('click', () => handleApplyRooms(roomInput));
+        
+        // Обработка Enter в поле ввода
+        roomInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleApplyRooms(roomInput);
+            }
+        });
+    }
+    
+    if (clearRoomsBtn) {
+        clearRoomsBtn.addEventListener('click', clearAllSelectedRooms);
+    }
+    
+    // Обработчики для мобильной версии
+    if (applyRoomsBtnMobile && roomInputMobile) {
+        applyRoomsBtnMobile.addEventListener('click', () => handleApplyRooms(roomInputMobile));
+        
+        // Обработка Enter в поле ввода
+        roomInputMobile.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleApplyRooms(roomInputMobile);
+            }
+        });
+    }
+    
+    if (clearRoomsBtnMobile) {
+        clearRoomsBtnMobile.addEventListener('click', clearAllSelectedRooms);
+    }
+}
+
+// Обработчик для кнопки "Внести данные"
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализируем обработчики событий для обеих версий
+    initDispatchersEventHandlers();
+    
+    // Загружаем выделенные номера при загрузке страницы
+    loadDispatchersSelectionFromFirebase();
+    
+    // Настраиваем слушатель реального времени
+    setupDispatchersRealtimeListener();
+    
+    // Обновляем счетчик при загрузке страницы
+    updateDispatchersSelectedCount();
+});
+</script>
 </body>
 </html>
