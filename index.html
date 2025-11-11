@@ -2760,12 +2760,12 @@ body.custom-calendar-open input[type="date"] {
     style="padding:6px 10px; border:1px solid rgba(15,23,36,0.1); border-radius:8px; max-width:110px; font-size:13px;"
   />
 
-  <button id="dispatchers-apply-rooms-mobile" class="icon-btn" title="Внести данные" aria-label="Внести">
+  <button id="dispatchers-apply-rooms-mobile" class="btn small" title="Внести данные" aria-label="Внести">
     <i class="fas fa-check" aria-hidden="true"></i>
   </button>
 
-  <button id="dispatchers-clear-rooms-mobile" class="icon-btn ghost" title="Очистить" aria-label="Очистить">
-    <i class="fas fa-times" aria-hidden="true"></i>
+  <button id="dispatchers-clear-rooms-mobile" class="btn ghost small" title="Очистить" aria-label="Очистить">
+    <i class="fas fa-refresh" aria-hidden="true"></i>
   </button>
 </div>
 
@@ -2781,6 +2781,7 @@ body.custom-calendar-open input[type="date"] {
                 <li>Выберите номера комнат или скопируйте номера из чата, которые сегодня уже проверили</li>
                 <li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
                 <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
+                <li>Выберите режим печати на одного или для двоих (опционально)</li>
                 <li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
             </ol>
             <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
@@ -2802,11 +2803,8 @@ body.custom-calendar-open input[type="date"] {
     </div>
     
     <!-- Таблица номеров комнат -->
-    <div class="card" style="margin-bottom:15px;">
         <div style="font-weight:600; font-size:14px; margin-bottom:10px;" class="desktop-only">Таблица номеров комнат</div>
         <div id="dispatchers-roomsGrid"></div>
-    </div>
-    
     <!-- Счетчик выделенных номеров (под таблицей) - для мобильной версии -->
     <div class="mobile-only" style="text-align: center; padding: 10px; background: rgba(39,103,73,0.05); border-radius: 8px; margin-bottom: 15px;">
         <span id="dispatchers-selectedCount-mobile" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
@@ -6924,7 +6922,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
                 
                 <label class="toggle-switch">
-                    <input type="checkbox" id="split-between-two" checked>
+                    <input type="checkbox" id="split-between-two">
                     <div class="toggle-slider">
                         <div class="toggle-knob"></div>
                     </div>
@@ -7181,6 +7179,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         printWindow.document.write(htmlContent);
         printWindow.document.close();
+
+        printWindow.onload = function() {
+        setTimeout(() => {
+            printWindow.print();
+            // Закрываем окно после печати
+            setTimeout(() => {
+                printWindow.close();
+            }, 500);
+        }, 500);
+    };
     }
 
     function clearResults() {
