@@ -2539,7 +2539,7 @@ body.custom-calendar-open input[type="date"] {
 <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
 <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
 <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
-<div class="nav-item desktop-only" data-tab="dispatchers"><i class="fas fa-file-pdf"></i><span>Депатчеры</span></div>
+<div class="nav-item" data-tab="dispatchers"><i class="fas fa-file-pdf"></i><span>Депатчеры</span></div>
 <div class="nav-separator"></div>
 <!-- ADDED: extra desktop tabs (above connection status) -->
 <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
@@ -6318,27 +6318,30 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 <script>
-    // ====== ДЕПАТЧЕРЫ: Парсер номеров комнат ======
-    (function() {
-        'use strict';
-        
-        // Устанавливаем путь к worker'у PDF.js
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+// ====== ДЕПАТЧЕРЫ: Полный исправленный код ======
+(function() {
+    'use strict';
+    
+    // Устанавливаем путь к worker'у PDF.js
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+    
+    // Список всех существующих номеров комнат
+    let allRoomNumbers = [];
+    
+    // Состояния номеров в результатах: 0 - нет пометки, 1 - исключен, 2 - на заезд
+    let resultRoomStates = new Map();
+    
+    // Глобальный Set для выделенных номеров
+    window.selectedRooms = new Set();
+    
+    function getAllRoomNumbers() {
+        if (typeof appData !== 'undefined' && appData.roomsList && appData.roomsList.length > 0) {
+            return appData.roomsList.map(r => String(r));
         }
-        
-        // Список всех существующих номеров комнат (из appData.roomsList или fallback)
-        let allRoomNumbers = [];
-        
-        // Состояния номеров в результатах: 0 - нет пометки, 1 - исключен, 2 - на заезд
-        let resultRoomStates = new Map();
-        
-        function getAllRoomNumbers() {
-            if (typeof appData !== 'undefined' && appData.roomsList && appData.roomsList.length > 0) {
-                return appData.roomsList.map(r => String(r));
-            }
-            // Fallback список
-            return [
+        // Fallback список
+        return [
             '500', '502', '504', '506', '508', '509', '510', '512', '514', '516', '518', '520', '522', '524', '526', '528', '530', '532', '534',
             '600', '602', '604', '606', '608', '609', '610', '612', '614', '616', '618', '620', '622', '624', '626', '628', '630', '632', '634',
             '700', '702', '704', '706', '708', '709', '710', '712', '714', '716', '717', '718', '720', '722', '724', '725', '726', '728', '730', '732', '734',
@@ -6353,975 +6356,993 @@ document.addEventListener('DOMContentLoaded', () => {
             '1600', '1602', '1604', '1606', '1608', '1609', '1610', '1612', '1614', '1616', '1617', '1618', '1620', '1622', '1624', '1625', '1626', '1628', '1630', '1632', '1634',
             '1700', '1702', '1704', '1706', '1708', '1709', '1710', '1712', '1714', '1716', '1717', '1718', '1720', '1722', '1724', '1725', '1726', '1728', '1730', '1732', '1734',
             '1800', '1802', '1804', '1806', '1807', '1808', '1810', '1811', '1812', '1814', '1816', '1818', '1902', '1904', '1906', '1908', '1910', '1911', '1912', '1914', '1916', '1918', '1919', '1920'
-            ];
-        }
-    
-        const selectedRooms = new Set();
-        
-        function groupRoomsByFloor(rooms) {
-            const floors = {};
-            rooms.forEach(room => {
-                let floor;
-                if (room.length === 3) {
-                    floor = room.charAt(0);
-                } else {
-                    floor = room.substring(0, 2);
-                }
-                if (!floors[floor]) {
-                    floors[floor] = [];
-                }
-                floors[floor].push(room);
-            });
-            return floors;
-        }
-        
-        function initializeRoomGrid() {
-            const grid = document.getElementById('dispatchers-roomsGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            
-            allRoomNumbers = getAllRoomNumbers();
-            const floors = groupRoomsByFloor(allRoomNumbers);
-            const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
-            
-            sortedFloors.forEach(floor => {
-                const floorSection = document.createElement('div');
-                floorSection.className = 'floor-section';
-                
-                const floorTitle = document.createElement('div');
-                floorTitle.className = 'floor-title';
-                floorTitle.textContent = `${floor} этаж`;
-                floorSection.appendChild(floorTitle);
-                
-                const roomList = document.createElement('div');
-                roomList.className = 'dispatchers-room-list';
-                
-                const sortedRooms = floors[floor].sort((a, b) => parseInt(a) - parseInt(b));
-                
-                sortedRooms.forEach(room => {
-                    const roomElement = document.createElement('div');
-                    roomElement.className = 'dispatchers-room-item';
-                    roomElement.textContent = room;
-                    roomElement.dataset.room = room;
-                    
-                    roomList.appendChild(roomElement);
-                });
-                
-                floorSection.appendChild(roomList);
-                grid.appendChild(floorSection);
-            });
-            
-            updateSelectedCount();
-            
-            // Используем делегирование событий для обработки кликов
-            setupRoomGridEventDelegation();
-        }
-        
-        function setupRoomGridEventDelegation() {
-            const grid = document.getElementById('dispatchers-roomsGrid');
-            if (!grid) return;
-            
-            // Удаляем старые обработчики и добавляем новый через делегирование
-            grid.removeEventListener('click', handleRoomGridClick);
-            grid.addEventListener('click', handleRoomGridClick);
-        }
-        
-        function handleRoomGridClick(event) {
-            const roomElement = event.target.closest('.dispatchers-room-item');
-            if (roomElement) {
-                const roomNumber = roomElement.dataset.room;
-                toggleRoomSelection(roomNumber);
-            }
-        }
-        
-        function toggleRoomSelection(roomNumber) {
-            if (selectedRooms.has(roomNumber)) {
-                selectedRooms.delete(roomNumber);
-            } else {
-                selectedRooms.add(roomNumber);
-            }
-            
-            updateRoomAppearance(roomNumber);
-            updateSelectedCount();
-            saveDispatchersSelectionToFirebase();
-        }
-        
-        function toggleResultState(roomNumber) {
-            let currentState = resultRoomStates.get(roomNumber) || 0;
-            currentState = (currentState + 1) % 3;
-            resultRoomStates.set(roomNumber, currentState);
-            updateResultRoomAppearance(roomNumber);
-        }
-        
-        function updateRoomAppearance(roomNumber) {
-            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
-            if (roomElement) {
-                if (selectedRooms.has(roomNumber)) {
-                    roomElement.classList.add('selected');
-                } else {
-                    roomElement.classList.remove('selected');
-                }
-            }
-        }
-        
-        function updateResultRoomAppearance(roomNumber) {
-            const roomElement = document.querySelector(`.result-room[data-room="${roomNumber}"]`);
-            if (roomElement) {
-                // Убираем все состояния
-                roomElement.classList.remove('excluded', 'on-arrival');
-                const state = resultRoomStates.get(roomNumber) || 0;
-                if (state === 1) {
-                    roomElement.classList.add('excluded');
-                } else if (state === 2) {
-                    roomElement.classList.add('on-arrival');
-                }
-            }
-        }
-        
-        function updateSelectedCount() {
-            const countEl = document.getElementById('dispatchers-selectedCount');
-            if (countEl) {
-                countEl.textContent = `Выбрано: ${selectedRooms.size} номеров`;
-            }
-        }
-        
-        async function processPDFWithExclusion() {
-            const fileInput = document.getElementById('dispatchers-pdfFile');
-            const resultDiv = document.getElementById('dispatchers-result');
-            
-            if (!fileInput || !fileInput.files[0]) {
-                showError('Пожалуйста, выберите PDF файл');
-                return;
-            }
-    
-            if (resultDiv) {
-                resultDiv.innerHTML = '<p class="dispatchers-loading">Обработка PDF файла с исключением выбранных номеров...</p>';
-            }
-    
-            try {
-                const file = fileInput.files[0];
-                const arrayBuffer = await file.arrayBuffer();
-                await processPDFArrayBufferWithExclusion(arrayBuffer);
-            } catch (error) {
-                console.error('Ошибка при обработке PDF:', error);
-                showError('Ошибка при обработке PDF файла: ' + error.message);
-            }
-        }
-        
-        async function processPDFArrayBufferWithExclusion(arrayBuffer) {
-            const resultDiv = document.getElementById('dispatchers-result');
-            
-            if (typeof pdfjsLib === 'undefined') {
-                showError('PDF.js не загружен. Пожалуйста, обновите страницу.');
-                return;
-            }
-            
-            try {
-                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                
-                let allText = '';
-                const foundRoomNumbers = new Set();
-    
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    
-                    let pageText = '';
-                    const textItems = [];
-                    
-                    for (const item of textContent.items) {
-                        pageText += item.str + ' ';
-                        textItems.push({
-                            text: item.str,
-                            x: item.transform[4],
-                            y: item.transform[5]
-                        });
-                    }
-                    
-                    allText += pageText;
-                    analyzeTableStructure(textItems, foundRoomNumbers);
-                }
-    
-                analyzeSimpleText(allText, foundRoomNumbers);
-    
-                if (foundRoomNumbers.size === 0) {
-                    showError('Номера комнат не найдены в файле. Проверьте структуру PDF.');
-                    return;
-                }
-    
-                const filteredRooms = Array.from(foundRoomNumbers).filter(room => 
-                    !selectedRooms.has(room)
-                );
-                
-                const sortedRooms = filteredRooms.sort((a, b) => parseInt(a) - parseInt(b));
-                
-                updateFoundRoomsAppearance(foundRoomNumbers);
-                showResults(sortedRooms, foundRoomNumbers.size);
-                
-            } catch (error) {
-                console.error('Ошибка при обработке PDF:', error);
-                showError('Ошибка при обработке PDF файла: ' + error.message);
-            }
-        }
-        
-        function showResults(rooms, totalFound) {
-            const resultDiv = document.getElementById('dispatchers-result');
-            if (!resultDiv) return;
-            
-            const excludedCount = selectedRooms.size;
-            const resultFloors = groupRoomsByFloor(rooms);
-            const sortedFloors = Object.keys(resultFloors).sort((a, b) => parseInt(a) - parseInt(b));
-            
-            let resultsHTML = `
-                <div class="dispatchers-stats">
-                    <div class="dispatchers-stat-item">
-                        <div class="dispatchers-stat-value">${rooms.length}</div>
-                        <div class="dispatchers-stat-label">Итоговых номеров</div>
-                    </div>
-                    <div class="dispatchers-stat-item">
-                        <div class="dispatchers-stat-value">${excludedCount}</div>
-                        <div class="dispatchers-stat-label">Исключено номеров</div>
-                    </div>
-                </div>
-                
-                <div style="font-weight:600; font-size:14px; margin-bottom:10px;">Итоговые номера (${rooms.length}):</div>
-                <p class="muted" style="font-size:12px; margin-bottom:15px;"><em>один клик - исключить жилой номер, двойной клик - пометить номер на заезд</em></p>
-            `;
-            
-            sortedFloors.forEach(floor => {
-                resultsHTML += `<div class="floor-section">
-                    <div class="floor-title">${floor} этаж</div>
-                    <div class="dispatchers-room-list">`;
-                
-                const sortedRooms = resultFloors[floor].sort((a, b) => parseInt(a) - parseInt(b));
-                sortedRooms.forEach(room => {
-                    const state = resultRoomStates.get(room) || 0;
-                    let classes = 'dispatchers-room-item result-room';
-                    if (state === 1) classes += ' excluded';
-                    else if (state === 2) classes += ' on-arrival';
-                    resultsHTML += `<div class="${classes}" data-room="${room}">${room}</div>`;
-                });
-                
-                resultsHTML += `</div></div>`;
-            });
-            
-            resultsHTML += `
-    <div style="margin-top: 20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
-        
-        <label class="toggle-switch">
-            <input type="checkbox" id="split-between-two" checked>
-            <div class="toggle-slider">
-                <div class="toggle-knob"></div>
-            </div>
-            <span>Разделить на двоих</span>
-        </label>
-        
-        <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
-    </div>
-`;
-            
-            resultDiv.innerHTML = resultsHTML;
-            
-            // Используем делегирование событий для результатов
-            setupResultsEventDelegation();
-        }
-        
-        function setupResultsEventDelegation() {
-            const resultDiv = document.getElementById('dispatchers-result');
-            if (!resultDiv) return;
-            
-            // Удаляем старые обработчики и добавляем новый через делегирование
-            resultDiv.removeEventListener('click', handleResultsClick);
-            resultDiv.addEventListener('click', handleResultsClick);
-        }
-        
-        function handleResultsClick(event) {
-            const roomElement = event.target.closest('.result-room');
-            if (roomElement) {
-                const roomNumber = roomElement.dataset.room;
-                toggleResultState(roomNumber);
-            }
-        }
-        
-        function printDepartures() {
-    const now = new Date();
-    const dateString = now.toLocaleDateString('ru-RU');
-    const splitBetweenTwo = document.getElementById('split-between-two').checked;
-    
-    // Собираем все номера из результатов, которые не в состоянии 1 (исключен)
-    const finalRooms = [];
-    document.querySelectorAll('.result-room').forEach(roomEl => {
-        const roomNumber = roomEl.dataset.room;
-        const state = resultRoomStates.get(roomNumber) || 0;
-        if (state !== 1) {
-            // Для состояния 2 добавляем стрелочку
-            const displayNumber = state === 2 ? `→ ${roomNumber}` : roomNumber;
-            finalRooms.push({ number: roomNumber, display: displayNumber });
-        }
-    });
+        ];
+    }
 
-    // Сортируем по числовому значению номера
-    finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+    function groupRoomsByFloor(rooms) {
+        const floors = {};
+        rooms.forEach(room => {
+            let floor;
+            if (room.length === 3) {
+                floor = room.charAt(0);
+            } else {
+                floor = room.substring(0, 2);
+            }
+            if (!floors[floor]) {
+                floors[floor] = [];
+            }
+            floors[floor].push(room);
+        });
+        return floors;
+    }
     
-    let pages = [];
+    // Функция для обновления выделения номеров в DOM
+    function updateRoomsSelectionInDOM() {
+        document.querySelectorAll('.dispatchers-room-item').forEach(item => {
+            const roomNumber = item.dataset.room;
+            if (window.selectedRooms.has(roomNumber)) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+        updateDispatchersSelectedCount();
+    }
     
-    if (splitBetweenTwo) {
-        // Режим "Разделить на двоих" - делим пополам
-        const half = Math.ceil(finalRooms.length / 2);
-        const leftColumn = finalRooms.slice(0, half);
-        const rightColumn = finalRooms.slice(half);
-        
-        // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
-        const itemsPerPage = 36;
-        const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
-        
-        for (let pageNum = 0; pageNum < maxPages; pageNum++) {
-            const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-            const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-            
-            // Добиваем каждую колонку до 36 номеров пустыми строками
-            while (pageLeft.length < itemsPerPage) pageLeft.push(null);
-            while (pageRight.length < itemsPerPage) pageRight.push(null);
-            
-            pages.push([pageLeft, pageRight]);
+    function initializeRoomGrid() {
+        const grid = document.getElementById('dispatchers-roomsGrid');
+        if (!grid) {
+            console.error('Элемент dispatchers-roomsGrid не найден');
+            return;
         }
-    } else {
-        // Режим без разделения - последовательное заполнение всех колонок на всех страницах
-        const itemsPerPage = 72; // Всего номеров на странице (2 колонки × 36)
-        const pageCount = Math.ceil(finalRooms.length / itemsPerPage);
         
-        for (let pageNum = 0; pageNum < pageCount; pageNum++) {
-            const pageStart = pageNum * itemsPerPage;
-            const pageEnd = pageStart + itemsPerPage;
-            const pageItems = finalRooms.slice(pageStart, pageEnd);
+        console.log('Инициализация таблицы номеров...');
+        grid.innerHTML = '';
+        
+        allRoomNumbers = getAllRoomNumbers();
+        console.log('Загружено номеров:', allRoomNumbers.length);
+        
+        const floors = groupRoomsByFloor(allRoomNumbers);
+        const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        if (sortedFloors.length === 0) {
+            grid.innerHTML = '<div class="muted" style="text-align:center; padding:20px;">Номера комнат не найдены</div>';
+            return;
+        }
+        
+        sortedFloors.forEach(floor => {
+            const floorSection = document.createElement('div');
+            floorSection.className = 'floor-section';
             
-            // Разбиваем страницу на две колонки
-            const leftPage = pageItems.slice(0, 36);
-            const rightPage = pageItems.slice(36, 72);
+            const floorTitle = document.createElement('div');
+            floorTitle.className = 'floor-title';
+            floorTitle.textContent = `${floor} этаж`;
+            floorSection.appendChild(floorTitle);
             
-            // Добиваем каждую колонку до 36 номеров пустыми строками
-            while (leftPage.length < 36) leftPage.push(null);
-            while (rightPage.length < 36) rightPage.push(null);
+            const roomList = document.createElement('div');
+            roomList.className = 'dispatchers-room-list';
             
-            pages.push([leftPage, rightPage]);
+            const sortedRooms = floors[floor].sort((a, b) => parseInt(a) - parseInt(b));
+            
+            sortedRooms.forEach(room => {
+                const roomElement = document.createElement('div');
+                roomElement.className = 'dispatchers-room-item';
+                roomElement.textContent = room;
+                roomElement.dataset.room = room;
+                
+                // Устанавливаем начальное состояние выделения
+                if (window.selectedRooms.has(room)) {
+                    roomElement.classList.add('selected');
+                }
+                
+                roomList.appendChild(roomElement);
+            });
+            
+            floorSection.appendChild(roomList);
+            grid.appendChild(floorSection);
+        });
+        
+        console.log('Таблица номеров инициализирована');
+        updateDispatchersSelectedCount();
+        
+        // Используем делегирование событий для обработки кликов
+        setupRoomGridEventDelegation();
+    }
+    
+    function setupRoomGridEventDelegation() {
+        const grid = document.getElementById('dispatchers-roomsGrid');
+        if (!grid) return;
+        
+        // Удаляем старые обработчики и добавляем новый через делегирование
+        grid.removeEventListener('click', handleRoomGridClick);
+        grid.addEventListener('click', handleRoomGridClick);
+    }
+    
+    function handleRoomGridClick(event) {
+        const roomElement = event.target.closest('.dispatchers-room-item');
+        if (roomElement) {
+            const roomNumber = roomElement.dataset.room;
+            toggleRoomSelection(roomNumber);
+        }
+    }
+    
+    // Основная функция переключения выделения номера
+    function toggleRoomSelection(roomNumber) {
+        if (window.selectedRooms.has(roomNumber)) {
+            window.selectedRooms.delete(roomNumber);
+        } else {
+            window.selectedRooms.add(roomNumber);
+        }
+        
+        // Немедленно обновляем DOM
+        updateRoomsSelectionInDOM();
+        
+        // Сохраняем в Firebase
+        saveDispatchersSelectionToFirebase();
+    }
+    
+    function toggleResultState(roomNumber) {
+        let currentState = resultRoomStates.get(roomNumber) || 0;
+        currentState = (currentState + 1) % 3;
+        resultRoomStates.set(roomNumber, currentState);
+        updateResultRoomAppearance(roomNumber);
+    }
+    
+    function updateResultRoomAppearance(roomNumber) {
+        const roomElement = document.querySelector(`.result-room[data-room="${roomNumber}"]`);
+        if (roomElement) {
+            // Убираем все состояния
+            roomElement.classList.remove('excluded', 'on-arrival');
+            const state = resultRoomStates.get(roomNumber) || 0;
+            if (state === 1) {
+                roomElement.classList.add('excluded');
+            } else if (state === 2) {
+                roomElement.classList.add('on-arrival');
+            }
+        }
+    }
+    
+    function updateDispatchersSelectedCount() {
+        const countEl = document.getElementById('dispatchers-selectedCount');
+        if (countEl) {
+            countEl.textContent = `Выбрано: ${window.selectedRooms.size} номеров`;
+        }
+        
+        const countMobileEl = document.getElementById('dispatchers-selectedCount-mobile');
+        if (countMobileEl) {
+            countMobileEl.textContent = `Выбрано: ${window.selectedRooms.size} номеров`;
+        }
+    }
+    
+    // Функция для парсинга номеров комнат из текста чата
+    function parseRoomNumbersFromChatText(text) {
+        const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
+        const foundRooms = new Set();
+        
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        lines.forEach(line => {
+            const cleanLine = line.replace(/\[\d{2}\.\d{2}, \d{2}:\d{2}\]\s*[^:]*:\s*/, '');
+            
+            const numbers = cleanLine.match(/\d+/g);
+            
+            if (numbers) {
+                numbers.forEach(numStr => {
+                    const num = parseInt(numStr, 10);
+                    if (validRooms.has(num)) {
+                        foundRooms.add(num);
+                    }
+                });
+            }
+        });
+        
+        return Array.from(foundRooms);
+    }
+
+    // Функция для парсинга номеров из ручного ввода (без диапазонов)
+    function parseRoomNumbersFromManualInput(text) {
+        const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
+        const foundRooms = new Set();
+        
+        const parts = text.split(/[,;\s\n]+/).filter(part => part.trim());
+        
+        parts.forEach(part => {
+            part = part.trim();
+            
+            const num = parseInt(part);
+            if (!isNaN(num) && validRooms.has(num)) {
+                foundRooms.add(num);
+            }
+        });
+        
+        return Array.from(foundRooms);
+    }
+
+    // Умная функция парсинга, которая определяет тип ввода
+    function parseRoomNumbersFromText(text) {
+        if (text.includes('[') && text.includes(']') && text.includes(':')) {
+            return parseRoomNumbersFromChatText(text);
+        } else {
+            return parseRoomNumbersFromManualInput(text);
         }
     }
 
-    const printWindow = window.open('', '_blank');
+    // Функция для очистки всех выделенных номеров
+    function clearAllSelectedRooms() {
+        window.selectedRooms.clear();
+        updateRoomsSelectionInDOM();
+        saveDispatchersSelectionToFirebase();
+    }
+
+    // Функция для добавления номеров к текущим выделениям
+    function addToSelectedRooms(roomNumbers) {
+        roomNumbers.forEach(roomNumber => {
+            window.selectedRooms.add(String(roomNumber));
+        });
+        
+        updateRoomsSelectionInDOM();
+        saveDispatchersSelectionToFirebase();
+    }
+
+    // УЛУЧШЕННАЯ функция для сохранения выделенных номеров в Firebase
+    function saveDispatchersSelectionToFirebase() {
+        const selectedRoomsArray = Array.from(window.selectedRooms).map(Number);
+        
+        // Сохраняем в appData для синхронизации
+        appData.dispatchersSelectedRooms = selectedRoomsArray;
+        
+        // Сохраняем в Firebase
+        database.ref('minibarData/dispatchersSelectedRooms').set(selectedRoomsArray)
+            .catch(error => {
+                console.error('Ошибка сохранения выделенных номеров в Firebase:', error);
+            });
+    }
+
+    // УЛУЧШЕННАЯ функция для загрузки выделенных номеров из Firebase
+    function loadDispatchersSelectionFromFirebase() {
+        database.ref('minibarData/dispatchersSelectedRooms').once('value')
+            .then(snapshot => {
+                const selectedRoomsFromDb = snapshot.val() || [];
+                
+                // Очищаем текущее выделение
+                window.selectedRooms.clear();
+                
+                // Загружаем данные из Firebase
+                selectedRoomsFromDb.forEach(roomNum => {
+                    window.selectedRooms.add(String(roomNum));
+                });
+                
+                // Обновляем DOM
+                updateRoomsSelectionInDOM();
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки выделенных номеров из Firebase:', error);
+            });
+    }
+
+    // УЛУЧШЕННЫЙ слушатель изменений выделенных номеров в реальном времени
+    function setupDispatchersRealtimeListener() {
+        database.ref('minibarData/dispatchersSelectedRooms').on('value', snapshot => {
+            const selectedRoomsFromDb = snapshot.val() || [];
+            
+            // Очищаем текущее выделение
+            window.selectedRooms.clear();
+            
+            // Загружаем данные из Firebase
+            selectedRoomsFromDb.forEach(roomNum => {
+                window.selectedRooms.add(String(roomNum));
+            });
+            
+            // Обновляем DOM
+            updateRoomsSelectionInDOM();
+        });
+    }
+
+    function initDispatchersEventHandlers() {
+        // Обработчики для десктопной версии
+        const applyRoomsBtn = document.getElementById('dispatchers-apply-rooms');
+        const clearRoomsBtn = document.getElementById('dispatchers-clear-rooms');
+        const roomInput = document.getElementById('dispatchers-room-input');
+        
+        // Обработчики для мобильной версии
+        const applyRoomsBtnMobile = document.getElementById('dispatchers-apply-rooms-mobile');
+        const clearRoomsBtnMobile = document.getElementById('dispatchers-clear-rooms-mobile');
+        const roomInputMobile = document.getElementById('dispatchers-room-input-mobile');
+        
+        // Общая функция для обработки ввода данных
+        function handleApplyRooms(inputElement) {
+            const text = inputElement.value.trim();
+            if (!text) return;
+            
+            const roomNumbers = parseRoomNumbersFromText(text);
+            
+            if (roomNumbers.length === 0) {
+                inputElement.value = '';
+                return;
+            }
+            
+            // Добавляем номера к текущим выделениям (не сбрасываем предыдущие)
+            addToSelectedRooms(roomNumbers);
+            
+            // Очищаем поле ввода
+            inputElement.value = '';
+        }
+        
+        // Обработчики для десктопной версии
+        if (applyRoomsBtn && roomInput) {
+            applyRoomsBtn.addEventListener('click', () => handleApplyRooms(roomInput));
+            
+            // Обработка Enter в поле ввода
+            roomInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleApplyRooms(roomInput);
+                }
+            });
+        }
+        
+        if (clearRoomsBtn) {
+            clearRoomsBtn.addEventListener('click', clearAllSelectedRooms);
+        }
+        
+        // Обработчики для мобильной версии
+        if (applyRoomsBtnMobile && roomInputMobile) {
+            applyRoomsBtnMobile.addEventListener('click', () => handleApplyRooms(roomInputMobile));
+            
+            // Обработка Enter в поле ввода
+            roomInputMobile.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleApplyRooms(roomInputMobile);
+                }
+            });
+        }
+        
+        if (clearRoomsBtnMobile) {
+            clearRoomsBtnMobile.addEventListener('click', clearAllSelectedRooms);
+        }
+    }
+
+    // PDF обработка функций
+    async function processPDFWithExclusion() {
+        const fileInput = document.getElementById('dispatchers-pdfFile');
+        const resultDiv = document.getElementById('dispatchers-result');
+        
+        if (!fileInput || !fileInput.files[0]) {
+            showError('Пожалуйста, выберите PDF файл');
+            return;
+        }
+
+        if (resultDiv) {
+            resultDiv.innerHTML = '<p class="dispatchers-loading">Обработка PDF файла с исключением выбранных номеров...</p>';
+        }
+
+        try {
+            const file = fileInput.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            await processPDFArrayBufferWithExclusion(arrayBuffer);
+        } catch (error) {
+            console.error('Ошибка при обработке PDF:', error);
+            showError('Ошибка при обработке PDF файла: ' + error.message);
+        }
+    }
     
-    let htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Departures ${dateString}</title>
-            <style>
-                @page {
-                    size: A4 landscape;
-                    margin: 1cm;
+    async function processPDFArrayBufferWithExclusion(arrayBuffer) {
+        const resultDiv = document.getElementById('dispatchers-result');
+        
+        if (typeof pdfjsLib === 'undefined') {
+            showError('PDF.js не загружен. Пожалуйста, обновите страницу.');
+            return;
+        }
+        
+        try {
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            
+            let allText = '';
+            const foundRoomNumbers = new Set();
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                let pageText = '';
+                const textItems = [];
+                
+                for (const item of textContent.items) {
+                    pageText += item.str + ' ';
+                    textItems.push({
+                        text: item.str,
+                        x: item.transform[4],
+                        y: item.transform[5]
+                    });
                 }
-                body { 
-                    font-family: Times New Roman, sans-serif; 
-                    margin: 0;
-                    padding: 0;
+                
+                allText += pageText;
+                analyzeTableStructure(textItems, foundRoomNumbers);
+            }
+
+            analyzeSimpleText(allText, foundRoomNumbers);
+
+            if (foundRoomNumbers.size === 0) {
+                showError('Номера комнат не найдены в файле. Проверьте структуру PDF.');
+                return;
+            }
+
+            // ИСПРАВЛЕНИЕ: Используем актуальные данные из window.selectedRooms
+            const filteredRooms = Array.from(foundRoomNumbers).filter(room => 
+                !window.selectedRooms.has(room)
+            );
+            
+            const sortedRooms = filteredRooms.sort((a, b) => parseInt(a) - parseInt(b));
+            
+            updateFoundRoomsAppearance(foundRoomNumbers);
+            showResults(sortedRooms, foundRoomNumbers.size);
+            
+        } catch (error) {
+            console.error('Ошибка при обработке PDF:', error);
+            showError('Ошибка при обработке PDF файла: ' + error.message);
+        }
+    }
+
+    function analyzeTableStructure(textItems, foundRoomNumbers) {
+        const lines = {};
+        textItems.forEach(item => {
+            const y = Math.round(item.y);
+            if (!lines[y]) lines[y] = [];
+            lines[y].push(item);
+        });
+
+        const sortedLines = Object.keys(lines).sort((a, b) => b - a);
+        
+        sortedLines.forEach(y => {
+            const lineItems = lines[y];
+            lineItems.sort((a, b) => a.x - b.x);
+            
+            const lineText = lineItems.map(item => item.text).join(' ');
+            
+            const roomMatch = lineText.match(/^(\d{3,4})\s/);
+            if (roomMatch) {
+                const roomNumber = roomMatch[1];
+                validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
+            }
+            
+            const patternMatch = lineText.match(/\b(\d{3,4})\s+[A-Z][a-z]/);
+            if (patternMatch) {
+                const roomNumber = patternMatch[1];
+                validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
+            }
+        });
+    }
+
+    function analyzeSimpleText(allText, foundRoomNumbers) {
+        const lines = allText.split(/\r?\n/);
+        
+        lines.forEach(line => {
+            line = line.trim();
+            
+            const patterns = [
+                /^(\d{3,4})\s+[A-Z]/,
+                /\b(\d{3,4})\s+[A-Z][a-z]+,/,
+                /Room No\.\s*[\s\S]*?(\d{3,4})\b/,
+                /Departure[\s\S]*?(\d{3,4})\s/
+            ];
+            
+            patterns.forEach(pattern => {
+                const match = line.match(pattern);
+                if (match && match[1]) {
+                    validateAndAddRoomNumber(match[1], foundRoomNumbers);
                 }
-                .page-container {
-                    display: flex;
-                    justify-content: space-around;
-                    width: 100%;
-                    height: 95vh;
-                    page-break-after: always;
-                }
-                .page-column {
-                    flex: 1;
-                    padding-top: 1cm;
-                    padding-left: 1cm;
-                    padding-right: 1cm;
-                    box-sizing: border-box;
-                }
-                .print-table { 
-                    width: 100%; 
-                    border-collapse: collapse;
-                    font-size: 10px;
-                }
-                .print-table th, .print-table td { 
-                    border: 1px solid #000; 
-                    padding: 0px;
-                    height: 16px;
-                }
-                .print-table th { 
-                    background: #f0f0f0; 
-                    font-weight: bold; 
-                    text-align: center;
-                }
-                .print-table .number-col { 
-                    width: 50px; 
-                    text-align: center; 
-                }
-                .print-table .departures-col { 
-                    width: auto; 
-                    text-align: center;
-                }
-                @media print {
+            });
+            
+            const numberMatches = line.match(/\b\d{3,4}\b/g);
+            if (numberMatches) {
+                numberMatches.forEach(match => {
+                    if (!line.match(/\d{1,2}\.\d{1,2}\.\d{2,4}/) &&
+                        !line.match(/\d{1,2}:\d{2}/) &&
+                        isValidRoomNumberFormat(match)) {
+                        validateAndAddRoomNumber(match, foundRoomNumbers);
+                    }
+                });
+            }
+        });
+    }
+
+    function validateAndAddRoomNumber(roomNumber, foundRoomNumbers) {
+        const normalized = roomNumber.replace(/^0+/, '');
+        
+        if (allRoomNumbers.includes(normalized)) {
+            foundRoomNumbers.add(normalized);
+        }
+    }
+
+    function isValidRoomNumberFormat(number) {
+        const num = parseInt(number);
+        return num >= 1 && num <= 1999;
+    }
+
+    function showError(message) {
+        const resultDiv = document.getElementById('dispatchers-result');
+        if (resultDiv) {
+            resultDiv.innerHTML = `<div class="dispatchers-error">${message}</div>`;
+        }
+    }
+
+    function updateFoundRoomsAppearance(foundRooms) {
+        document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
+            item.classList.remove('found');
+        });
+        
+        foundRooms.forEach(room => {
+            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${room}"]`);
+            if (roomElement) {
+                roomElement.classList.add('found');
+            }
+        });
+    }
+
+    function showResults(rooms, totalFound) {
+        const resultDiv = document.getElementById('dispatchers-result');
+        if (!resultDiv) return;
+        
+        const excludedCount = window.selectedRooms.size;
+        const resultFloors = groupRoomsByFloor(rooms);
+        const sortedFloors = Object.keys(resultFloors).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        let resultsHTML = `
+            <div class="dispatchers-stats">
+                <div class="dispatchers-stat-item">
+                    <div class="dispatchers-stat-value">${rooms.length}</div>
+                    <div class="dispatchers-stat-label">Итоговых номеров</div>
+                </div>
+                <div class="dispatchers-stat-item">
+                    <div class="dispatchers-stat-value">${excludedCount}</div>
+                    <div class="dispatchers-stat-label">Исключено номеров</div>
+                </div>
+            </div>
+            
+            <div style="font-weight:600; font-size:14px; margin-bottom:10px;">Итоговые номера (${rooms.length}):</div>
+            <p class="muted" style="font-size:12px; margin-bottom:15px;"><em>один клик - исключить жилой номер, двойной клик - пометить номер на заезд</em></p>
+        `;
+        
+        sortedFloors.forEach(floor => {
+            resultsHTML += `<div class="floor-section">
+                <div class="floor-title">${floor} этаж</div>
+                <div class="dispatchers-room-list">`;
+            
+            const sortedRooms = resultFloors[floor].sort((a, b) => parseInt(a) - parseInt(b));
+            sortedRooms.forEach(room => {
+                const state = resultRoomStates.get(room) || 0;
+                let classes = 'dispatchers-room-item result-room';
+                if (state === 1) classes += ' excluded';
+                else if (state === 2) classes += ' on-arrival';
+                resultsHTML += `<div class="${classes}" data-room="${room}">${room}</div>`;
+            });
+            
+            resultsHTML += `</div></div>`;
+        });
+        
+        resultsHTML += `
+            <div style="margin-top: 20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
+                
+                <label class="toggle-switch">
+                    <input type="checkbox" id="split-between-two" checked>
+                    <div class="toggle-slider">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span>Разделить на двоих</span>
+                </label>
+                
+                <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
+            </div>
+        `;
+        
+        resultDiv.innerHTML = resultsHTML;
+        
+        // Используем делегирование событий для результатов
+        setupResultsEventDelegation();
+    }
+
+    function setupResultsEventDelegation() {
+        const resultDiv = document.getElementById('dispatchers-result');
+        if (!resultDiv) return;
+        
+        // Удаляем старые обработчики и добавляем новый через делегирование
+        resultDiv.removeEventListener('click', handleResultsClick);
+        resultDiv.addEventListener('click', handleResultsClick);
+    }
+
+    function handleResultsClick(event) {
+        const roomElement = event.target.closest('.result-room');
+        if (roomElement) {
+            const roomNumber = roomElement.dataset.room;
+            toggleResultState(roomNumber);
+        }
+    }
+
+    function printDepartures() {
+        const now = new Date();
+        const dateString = now.toLocaleDateString('ru-RU');
+        const splitBetweenTwo = document.getElementById('split-between-two').checked;
+        
+        // Собираем все номера из результатов, которые не в состоянии 1 (исключен)
+        const finalRooms = [];
+        document.querySelectorAll('.result-room').forEach(roomEl => {
+            const roomNumber = roomEl.dataset.room;
+            const state = resultRoomStates.get(roomNumber) || 0;
+            if (state !== 1) {
+                // Для состояния 2 добавляем стрелочку
+                const displayNumber = state === 2 ? `→ ${roomNumber}` : roomNumber;
+                finalRooms.push({ number: roomNumber, display: displayNumber });
+            }
+        });
+
+        // Сортируем по числовому значению номера
+        finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+        
+        let pages = [];
+        
+        if (splitBetweenTwo) {
+            // Режим "Разделить на двоих" - делим пополам
+            const half = Math.ceil(finalRooms.length / 2);
+            const leftColumn = finalRooms.slice(0, half);
+            const rightColumn = finalRooms.slice(half);
+            
+            // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
+            const itemsPerPage = 36;
+            const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
+            
+            for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+                const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+                const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
+                
+                // Добиваем каждую колонку до 36 номеров пустыми строками
+                while (pageLeft.length < itemsPerPage) pageLeft.push(null);
+                while (pageRight.length < itemsPerPage) pageRight.push(null);
+                
+                pages.push([pageLeft, pageRight]);
+            }
+        } else {
+            // Режим без разделения - последовательное заполнение всех колонок на всех страницах
+            const itemsPerPage = 72; // Всего номеров на странице (2 колонки × 36)
+            const pageCount = Math.ceil(finalRooms.length / itemsPerPage);
+            
+            for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+                const pageStart = pageNum * itemsPerPage;
+                const pageEnd = pageStart + itemsPerPage;
+                const pageItems = finalRooms.slice(pageStart, pageEnd);
+                
+                // Разбиваем страницу на две колонки
+                const leftPage = pageItems.slice(0, 36);
+                const rightPage = pageItems.slice(36, 72);
+                
+                // Добиваем каждую колонку до 36 номеров пустыми строками
+                while (leftPage.length < 36) leftPage.push(null);
+                while (rightPage.length < 36) rightPage.push(null);
+                
+                pages.push([leftPage, rightPage]);
+            }
+        }
+
+        const printWindow = window.open('', '_blank');
+        
+        let htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Departures ${dateString}</title>
+                <style>
+                    @page {
+                        size: A4 landscape;
+                        margin: 1cm;
+                    }
                     body { 
+                        font-family: Times New Roman, sans-serif; 
                         margin: 0;
                         padding: 0;
                     }
                     .page-container {
+                        display: flex;
+                        justify-content: space-around;
+                        width: 100%;
                         height: 95vh;
+                        page-break-after: always;
                     }
-                }
-            </style>
-        </head>
-        <body>
-    `;
-    
-    // Для каждой страницы
-    pages.forEach((page, pageIndex) => {
-        let left = page[0];
-        let right = page[1];
+                    .page-column {
+                        flex: 1;
+                        padding-top: 1cm;
+                        padding-left: 1cm;
+                        padding-right: 1cm;
+                        box-sizing: border-box;
+                    }
+                    .print-table { 
+                        width: 100%; 
+                        border-collapse: collapse;
+                        font-size: 10px;
+                    }
+                    .print-table th, .print-table td { 
+                        border: 1px solid #000; 
+                        padding: 0px;
+                        height: 16px;
+                    }
+                    .print-table th { 
+                        background: #f0f0f0; 
+                        font-weight: bold; 
+                        text-align: center;
+                    }
+                    .print-table .number-col { 
+                        width: 50px; 
+                        text-align: center; 
+                    }
+                    .print-table .departures-col { 
+                        width: auto; 
+                        text-align: center;
+                    }
+                    @media print {
+                        body { 
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .page-container {
+                            height: 95vh;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+        `;
         
-        // В режиме "Разделить на двоих" на четных страницах меняем колонки местами
-        if (splitBetweenTwo && pageIndex % 2 === 1) {
-            [left, right] = [right, left];
+        // Для каждой страницы
+        pages.forEach((page, pageIndex) => {
+            let left = page[0];
+            let right = page[1];
+            
+            // В режиме "Разделить на двоих" на четных страницах меняем колонки местами
+            if (splitBetweenTwo && pageIndex % 2 === 1) {
+                [left, right] = [right, left];
+            }
+
+            htmlContent += `
+                <div class="page-container">
+                    <div class="page-column">
+                        <table class="print-table">
+                            <thead>
+                                <tr>
+                                    <th class="number-col"><font size="2">№</font></th>
+                                    <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Левая колонка - 36 строк
+            for (let i = 0; i < 36; i++) {
+                if (left[i]) {
+                    htmlContent += `
+                        <tr>
+                            <td class="number-col"><strong><font size="2">${left[i].display}</font></strong></td>
+                            <td class="departures-col">&nbsp;</td>
+                        </tr>
+                    `;
+                } else {
+                    htmlContent += `
+                        <tr>
+                            <td class="number-col">&nbsp;</td>
+                            <td class="departures-col">&nbsp;</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            htmlContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="page-column">
+                        <table class="print-table">
+                            <thead>
+                                <tr>
+                                    <th class="number-col"><font size="2">№</font></th>
+                                    <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Правая колонка - 36 строк
+            for (let i = 0; i < 36; i++) {
+                if (right[i]) {
+                    htmlContent += `
+                        <tr>
+                            <td class="number-col"><strong><font size="2">${right[i].display}</font></strong></td>
+                            <td class="departures-col">&nbsp;</td>
+                        </tr>
+                    `;
+                } else {
+                    htmlContent += `
+                        <tr>
+                            <td class="number-col">&nbsp;</td>
+                            <td class="departures-col">&nbsp;</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            htmlContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+        
+        htmlContent += `
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+    }
+
+    function clearResults() {
+        const resultDiv = document.getElementById('dispatchers-result');
+        if (resultDiv) {
+            resultDiv.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Результаты очищены.</p>';
+        }
+        
+        const fileInput = document.getElementById('dispatchers-pdfFile');
+        const fileNameSpan = document.getElementById('dispatchers-fileName');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        if (fileNameSpan) {
+            fileNameSpan.textContent = '';
+        }
+        
+        document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
+            item.classList.remove('found');
+        });
+        
+        resultRoomStates.clear();
+    }
+
+    // Основная функция инициализации депатчеров
+    function initDispatchers() {
+        console.log('Инициализация депатчеров...');
+        
+        // Всегда инициализируем таблицу номеров при вызове initDispatchers
+        initializeRoomGrid();
+        
+        // Инициализируем обработчики событий для обеих версий
+        initDispatchersEventHandlers();
+        
+        // Загружаем выделенные номера при загрузке страницы
+        loadDispatchersSelectionFromFirebase();
+        
+        // Настраиваем слушатель реального времени
+        setupDispatchersRealtimeListener();
+        
+        // Обновляем счетчик при загрузке страницы
+        updateDispatchersSelectedCount();
+        
+        console.log('Депатчеры инициализированы');
+    }
+
+    // Экспортируем функции в глобальную область для использования в onclick
+    window.printDepartures = printDepartures;
+    window.dispatchersPrintDepartures = printDepartures;
+    window.dispatchersClearResults = clearResults;
+    window.dispatchersInit = initDispatchers;
+    window.loadDispatchersSelectionFromFirebase = loadDispatchersSelectionFromFirebase;
+    window.renderDispatchersRooms = initializeRoomGrid;
+    window.getAllRoomNumbers = getAllRoomNumbers;
+
+    // Автоматическая инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM загружен, инициализируем депатчеры...');
+        
+        // Инициализируем сразу
+        initDispatchers();
+        
+        // Дополнительная инициализация при переключении на вкладку депатчеров
+        const dispatchersTab = document.querySelector('[data-tab="dispatchers"]');
+        if (dispatchersTab) {
+            dispatchersTab.addEventListener('click', function() {
+                console.log('Переключение на вкладку депатчеров');
+                setTimeout(initDispatchers, 100);
+            });
         }
 
-        htmlContent += `
-            <div class="page-container">
-                <div class="page-column">
-                    <table class="print-table">
-                        <thead>
-                            <tr>
-                                <th class="number-col"><font size="2">№</font></th>
-                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
+        // Обработчики для кнопок депатчеров
+        const processBtn = document.getElementById('dispatchers-processBtn');
+        const selectFileBtn = document.getElementById('dispatchers-selectFileBtn');
+        const fileInput = document.getElementById('dispatchers-pdfFile');
+        const fileNameSpan = document.getElementById('dispatchers-fileName');
         
-        // Левая колонка - 36 строк
-        for (let i = 0; i < 36; i++) {
-            if (left[i]) {
-                htmlContent += `
-                    <tr>
-                        <td class="number-col"><strong><font size="2">${left[i].display}</font></strong></td>
-                        <td class="departures-col">&nbsp;</td>
-                    </tr>
-                `;
-            } else {
-                htmlContent += `
-                    <tr>
-                        <td class="number-col">&nbsp;</td>
-                        <td class="departures-col">&nbsp;</td>
-                    </tr>
-                `;
-            }
+        if (processBtn) {
+            processBtn.addEventListener('click', processPDFWithExclusion);
         }
         
-        htmlContent += `
-                        </tbody>
-                    </table>
-                </div>
-                <div class="page-column">
-                    <table class="print-table">
-                        <thead>
-                            <tr>
-                                <th class="number-col"><font size="2">№</font></th>
-                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        
-        // Правая колонка - 36 строк
-        for (let i = 0; i < 36; i++) {
-            if (right[i]) {
-                htmlContent += `
-                    <tr>
-                        <td class="number-col"><strong><font size="2">${right[i].display}</font></strong></td>
-                        <td class="departures-col">&nbsp;</td>
-                    </tr>
-                `;
-            } else {
-                htmlContent += `
-                    <tr>
-                        <td class="number-col">&nbsp;</td>
-                        <td class="departures-col">&nbsp;</td>
-                    </tr>
-                `;
-            }
-        }
-        
-        htmlContent += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    });
-    
-    htmlContent += `
-        </body>
-        </html>
-    `;
-    
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-}
-        
-        function updateFoundRoomsAppearance(foundRooms) {
-            document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
-                item.classList.remove('found');
+        // Обработчик кнопки выбора файла
+        if (selectFileBtn && fileInput) {
+            selectFileBtn.addEventListener('click', function() {
+                fileInput.click();
             });
-            
-            foundRooms.forEach(room => {
-                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${room}"]`);
-                if (roomElement) {
-                    roomElement.classList.add('found');
+        }
+        
+        // Отображение имени выбранного файла
+        if (fileInput && fileNameSpan) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name;
+                } else {
+                    fileNameSpan.textContent = '';
                 }
             });
         }
-    
-        function analyzeTableStructure(textItems, foundRoomNumbers) {
-            const lines = {};
-            textItems.forEach(item => {
-                const y = Math.round(item.y);
-                if (!lines[y]) lines[y] = [];
-                lines[y].push(item);
-            });
-    
-            const sortedLines = Object.keys(lines).sort((a, b) => b - a);
-            
-            sortedLines.forEach(y => {
-                const lineItems = lines[y];
-                lineItems.sort((a, b) => a.x - b.x);
-                
-                const lineText = lineItems.map(item => item.text).join(' ');
-                
-                const roomMatch = lineText.match(/^(\d{3,4})\s/);
-                if (roomMatch) {
-                    const roomNumber = roomMatch[1];
-                    validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
-                }
-                
-                const patternMatch = lineText.match(/\b(\d{3,4})\s+[A-Z][a-z]/);
-                if (patternMatch) {
-                    const roomNumber = patternMatch[1];
-                    validateAndAddRoomNumber(roomNumber, foundRoomNumbers);
-                }
-            });
-        }
-    
-        function analyzeSimpleText(allText, foundRoomNumbers) {
-            const lines = allText.split(/\r?\n/);
-            
-            lines.forEach(line => {
-                line = line.trim();
-                
-                const patterns = [
-                    /^(\d{3,4})\s+[A-Z]/,
-                    /\b(\d{3,4})\s+[A-Z][a-z]+,/,
-                    /Room No\.\s*[\s\S]*?(\d{3,4})\b/,
-                    /Departure[\s\S]*?(\d{3,4})\s/
-                ];
-                
-                patterns.forEach(pattern => {
-                    const match = line.match(pattern);
-                    if (match && match[1]) {
-                        validateAndAddRoomNumber(match[1], foundRoomNumbers);
-                    }
-                });
-                
-                const numberMatches = line.match(/\b\d{3,4}\b/g);
-                if (numberMatches) {
-                    numberMatches.forEach(match => {
-                        if (!line.match(/\d{1,2}\.\d{1,2}\.\d{2,4}/) &&
-                            !line.match(/\d{1,2}:\d{2}/) &&
-                            isValidRoomNumberFormat(match)) {
-                            validateAndAddRoomNumber(match, foundRoomNumbers);
-                        }
-                    });
-                }
-            });
-        }
-    
-        function validateAndAddRoomNumber(roomNumber, foundRoomNumbers) {
-            const normalized = roomNumber.replace(/^0+/, '');
-            
-            if (allRoomNumbers.includes(normalized)) {
-                foundRoomNumbers.add(normalized);
-            }
-        }
-    
-        function isValidRoomNumberFormat(number) {
-            const num = parseInt(number);
-            return num >= 1 && num <= 1999;
-        }
-    
-        function showError(message) {
-            const resultDiv = document.getElementById('dispatchers-result');
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="dispatchers-error">${message}</div>`;
-            }
-        }
-    
-        function clearResults() {
-            const resultDiv = document.getElementById('dispatchers-result');
-            if (resultDiv) {
-                resultDiv.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Результаты очищены.</p>';
-            }
-            
-            const fileInput = document.getElementById('dispatchers-pdfFile');
-            const fileNameSpan = document.getElementById('dispatchers-fileName');
-            if (fileInput) {
-                fileInput.value = '';
-            }
-            if (fileNameSpan) {
-                fileNameSpan.textContent = '';
-            }
-            
-            document.querySelectorAll('.dispatchers-room-item.found').forEach(item => {
-                item.classList.remove('found');
-            });
-            
-            resultRoomStates.clear();
-        }
         
-        // Экспортируем функции в глобальную область для использования в onclick
-        window.dispatchersPrintDepartures = printDepartures;
-        window.dispatchersClearResults = clearResults;
-        window.dispatchersInit = initDispatchers;
-        
-        // Инициализация при загрузке страницы или при показе вкладки
-        function initDispatchers() {
-            if (document.getElementById('dispatchers-roomsGrid') && !document.getElementById('dispatchers-roomsGrid').hasChildNodes()) {
-                initializeRoomGrid();
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            // Инициализируем после небольшой задержки, чтобы appData успел загрузиться
-            setTimeout(initDispatchers, 500);
-            
-            const processBtn = document.getElementById('dispatchers-processBtn');
+        // Drag and drop для файлов
+        if (fileInput) {
             const selectFileBtn = document.getElementById('dispatchers-selectFileBtn');
-            const fileInput = document.getElementById('dispatchers-pdfFile');
-            const fileNameSpan = document.getElementById('dispatchers-fileName');
+            const container = selectFileBtn ? selectFileBtn.closest('.card') : null;
             
-            if (processBtn) {
-                processBtn.addEventListener('click', processPDFWithExclusion);
-            }
-            
-            // Обработчик кнопки выбора файла
-            if (selectFileBtn && fileInput) {
-                selectFileBtn.addEventListener('click', function() {
-                    fileInput.click();
+            if (container) {
+                container.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    container.style.background = 'rgba(39,103,73,0.1)';
                 });
-            }
-            
-            // Отображение имени выбранного файла
-            if (fileInput && fileNameSpan) {
-                fileInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        fileNameSpan.textContent = file.name;
-                    } else {
-                        fileNameSpan.textContent = '';
+                
+                container.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    container.style.background = '';
+                });
+                
+                container.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    container.style.background = '';
+                    if (e.dataTransfer.files.length) {
+                        fileInput.files = e.dataTransfer.files;
+                        // Обновляем имя файла
+                        if (fileNameSpan && fileInput.files[0]) {
+                            fileNameSpan.textContent = fileInput.files[0].name;
+                        }
                     }
                 });
             }
-            
-            // Drag and drop для файлов
-            if (fileInput) {
-                const selectFileBtn = document.getElementById('dispatchers-selectFileBtn');
-                const container = selectFileBtn ? selectFileBtn.closest('.card') : null;
-                
-                if (container) {
-                    container.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        container.style.background = 'rgba(39,103,73,0.1)';
-                    });
-                    
-                    container.addEventListener('dragleave', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        container.style.background = '';
-                    });
-                    
-                    container.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        container.style.background = '';
-                        if (e.dataTransfer.files.length) {
-                            fileInput.files = e.dataTransfer.files;
-                            // Обновляем имя файла
-                            if (fileNameSpan && fileInput.files[0]) {
-                                fileNameSpan.textContent = fileInput.files[0].name;
-                            }
-                        }
-                    });
-                }
-            }
-        });
-    })();
-
-   // Функция для парсинга номеров комнат из текста чата
-function parseRoomNumbersFromChatText(text) {
-    const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
-    const foundRooms = new Set();
-    
-    // Разбиваем текст на строки
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    lines.forEach(line => {
-        // Удаляем временные метки и имена [29.10, 20:26] +7 903 993-00-92: 
-        const cleanLine = line.replace(/\[\d{2}\.\d{2}, \d{2}:\d{2}\]\s*[^:]*:\s*/, '');
-        
-        // Ищем все числа в строке
-        const numbers = cleanLine.match(/\d+/g);
-        
-        if (numbers) {
-            numbers.forEach(numStr => {
-                const num = parseInt(numStr, 10);
-                // Проверяем, является ли число валидным номером комнаты
-                if (validRooms.has(num)) {
-                    foundRooms.add(num);
-                }
-            });
         }
     });
-    
-    return Array.from(foundRooms);
-}
 
-// Функция для парсинга номеров из ручного ввода (без диапазонов)
-function parseRoomNumbersFromManualInput(text) {
-    const validRooms = new Set(appData.roomsList.map(room => parseInt(room)));
-    const foundRooms = new Set();
+    // Принудительная инициализация при загрузке скрипта
+    console.log('Скрипт депатчеров загружен');
     
-    // Разбиваем на части по запятым, пробелам, переносам строк
-    const parts = text.split(/[,;\s\n]+/).filter(part => part.trim());
-    
-    parts.forEach(part => {
-        part = part.trim();
-        
-        // Ищем только отдельные номера (без диапазонов)
-        const num = parseInt(part);
-        if (!isNaN(num) && validRooms.has(num)) {
-            foundRooms.add(num);
-        }
-    });
-    
-    return Array.from(foundRooms);
-}
-
-// Умная функция парсинга, которая определяет тип ввода
-function parseRoomNumbersFromText(text) {
-    // Если текст содержит шаблон сообщений из чата (даты в квадратных скобках)
-    if (text.includes('[') && text.includes(']') && text.includes(':')) {
-        return parseRoomNumbersFromChatText(text);
+    // Если DOM уже загружен, инициализируем сразу
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDispatchers);
     } else {
-        return parseRoomNumbersFromManualInput(text);
+        setTimeout(initDispatchers, 100);
     }
-}
+})();
 
-// Функция для обновления счетчика выбранных номеров
-function updateDispatchersSelectedCount() {
-    const selectedCount = document.querySelectorAll('.dispatchers-room-item.selected').length;
-    
-    // Обновляем счетчик в десктопной версии
-    const selectedCountEl = document.getElementById('dispatchers-selectedCount');
-    if (selectedCountEl) {
-        selectedCountEl.textContent = `Выбрано: ${selectedCount} номеров`;
-    }
-    
-    // Обновляем счетчик в мобильной версии
-    const selectedCountMobileEl = document.getElementById('dispatchers-selectedCount-mobile');
-    if (selectedCountMobileEl) {
-        selectedCountMobileEl.textContent = `Выбрано: ${selectedCount} номеров`;
-    }
-}
-
-// Функция для очистки всех выделенных номеров
-function clearAllSelectedRooms() {
-    document.querySelectorAll('.dispatchers-room-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    updateDispatchersSelectedCount();
-    saveDispatchersSelectionToFirebase();
-}
-
-// Функция для добавления номеров к текущим выделениям
-function addToSelectedRooms(roomNumbers) {
-    roomNumbers.forEach(roomNumber => {
-        const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
-        if (roomElement && !roomElement.classList.contains('selected')) {
-            roomElement.classList.add('selected');
-        }
-    });
-    
-    // Обновляем счетчик
-    updateDispatchersSelectedCount();
-    
-    // Сохраняем в Firebase
-    saveDispatchersSelectionToFirebase();
-}
-
-// Функция для сохранения выделенных номеров в Firebase
-function saveDispatchersSelectionToFirebase() {
-    const selectedRooms = Array.from(document.querySelectorAll('.dispatchers-room-item.selected'))
-        .map(item => parseInt(item.getAttribute('data-room')));
-    
-    // Сохраняем в appData для синхронизации
-    appData.dispatchersSelectedRooms = selectedRooms;
-    
-    // Сохраняем в Firebase
-    database.ref('minibarData/dispatchersSelectedRooms').set(selectedRooms)
-        .catch(error => {
-            console.error('Ошибка сохранения выделенных номеров в Firebase:', error);
-        });
-}
-
-// Функция для загрузки выделенных номеров из Firebase
-function loadDispatchersSelectionFromFirebase() {
-    database.ref('minibarData/dispatchersSelectedRooms').once('value')
-        .then(snapshot => {
-            const selectedRoomsFromDb = snapshot.val() || [];
-
-            if (typeof selectedRooms === 'undefined') {
-                window.selectedRooms = new Set();
-            }
-
-            selectedRooms.clear();
-            document.querySelectorAll('.dispatchers-room-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-
-            selectedRoomsFromDb.forEach(roomNum => {
-                const roomStr = String(roomNum);
-                selectedRooms.add(roomStr);
-                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomStr}"]`);
-                if (roomElement) {
-                    roomElement.classList.add('selected');
+// Автоматическая инициализация депатчеров при показе вкладки
+(function() {
+    const originalShowTab = window.showTab;
+    window.showTab = function(tab) {
+        if (originalShowTab) originalShowTab(tab);
+        
+        if (tab === 'dispatchers') {
+            console.log('Показана вкладка депатчеров, инициализируем...');
+            // Небольшая задержка для гарантии что DOM обновлен
+            setTimeout(() => {
+                if (typeof window.dispatchersInit === 'function') {
+                    window.dispatchersInit();
                 }
-            });
-
-            if (typeof updateDispatchersSelectedCount === 'function') {
-                updateDispatchersSelectedCount();
-            }
-        })
-        .catch(console.error);
-}
-
-
-// Слушатель изменений выделенных номеров в реальном времени
-function setupDispatchersRealtimeListener() {
-    database.ref('minibarData/dispatchersSelectedRooms').on('value', snapshot => {
-        const selectedRoomsFromDb = snapshot.val() || [];
-
-        if (typeof selectedRooms === 'undefined') {
-            window.selectedRooms = new Set();
+            }, 50);
         }
-
-        selectedRooms.clear();
-        document.querySelectorAll('.dispatchers-room-item').forEach(item => {
-            item.classList.remove('selected');
-        });
-
-        selectedRoomsFromDb.forEach(roomNum => {
-            const roomStr = String(roomNum);
-            selectedRooms.add(roomStr);
-            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomStr}"]`);
-            if (roomElement) {
-                roomElement.classList.add('selected');
-            }
-        });
-
-        if (typeof updateDispatchersSelectedCount === 'function') {
-            updateDispatchersSelectedCount();
-        }
-    });
-}
-
-
-function initDispatchersEventHandlers() {
-    // Обработчики для десктопной версии
-    const applyRoomsBtn = document.getElementById('dispatchers-apply-rooms');
-    const clearRoomsBtn = document.getElementById('dispatchers-clear-rooms');
-    const roomInput = document.getElementById('dispatchers-room-input');
-    
-    // Обработчики для мобильной версии
-    const applyRoomsBtnMobile = document.getElementById('dispatchers-apply-rooms-mobile');
-    const clearRoomsBtnMobile = document.getElementById('dispatchers-clear-rooms-mobile');
-    const roomInputMobile = document.getElementById('dispatchers-room-input-mobile');
-    
-    // Общая функция для обработки ввода данных
-    function handleApplyRooms(inputElement) {
-        const text = inputElement.value.trim();
-        if (!text) return;
-        
-        const roomNumbers = parseRoomNumbersFromText(text);
-        
-        if (roomNumbers.length === 0) {
-            inputElement.value = '';
-            return;
-        }
-        
-        // Добавляем номера к текущим выделениям (не сбрасываем предыдущие)
-        addToSelectedRooms(roomNumbers);
-        
-        // Очищаем поле ввода
-        inputElement.value = '';
-    }
-    
-    // Обработчики для десктопной версии
-    if (applyRoomsBtn && roomInput) {
-        applyRoomsBtn.addEventListener('click', () => handleApplyRooms(roomInput));
-        
-        // Обработка Enter в поле ввода
-        roomInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleApplyRooms(roomInput);
-            }
-        });
-    }
-    
-    if (clearRoomsBtn) {
-        clearRoomsBtn.addEventListener('click', clearAllSelectedRooms);
-    }
-    
-    // Обработчики для мобильной версии
-    if (applyRoomsBtnMobile && roomInputMobile) {
-        applyRoomsBtnMobile.addEventListener('click', () => handleApplyRooms(roomInputMobile));
-        
-        // Обработка Enter в поле ввода
-        roomInputMobile.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleApplyRooms(roomInputMobile);
-            }
-        });
-    }
-    
-    if (clearRoomsBtnMobile) {
-        clearRoomsBtnMobile.addEventListener('click', clearAllSelectedRooms);
-    }
-}
-
-// Обработчик для кнопки "Внести данные"
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализируем обработчики событий для обеих версий
-    initDispatchersEventHandlers();
-    
-    // Загружаем выделенные номера при загрузке страницы
-    loadDispatchersSelectionFromFirebase();
-    
-    // Настраиваем слушатель реального времени
-    setupDispatchersRealtimeListener();
-    
-    // Обновляем счетчик при загрузке страницы
-    updateDispatchersSelectedCount();
-});
+    };
+})();
 </script>
 </body>
 </html>
