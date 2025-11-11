@@ -2454,43 +2454,70 @@ body.custom-calendar-open input[type="date"] {
     white-space: nowrap;
 }
 /* Адаптация для мобильной версии депатчеров */
+/* Compact controls for dispatchers header (mobile) */
 @media (max-width: 920px) {
-    #dispatchers-section .desktop-only {
-        display: none !important;
-    }
-    
-    .mobile-only {
-        display: flex !important;
-    }
-    
-    #dispatchers-room-input-mobile {
-        max-width: 150px !important;
-        font-size: 13px !important;
-        padding: 6px 10px !important;
-    }
-    
-    #dispatchers-apply-rooms-mobile,
-    #dispatchers-clear-rooms-mobile {
-        padding: 6px 8px !important;
-        min-width: 40px !important;
-    }
-    
-    .dispatchers-room-list {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
-        gap: 8px !important;
-    }
-    
-    .dispatchers-room-item {
-        padding: 8px !important;
-        font-size: 12px !important;
-        min-height: 40px !important;
-    }
-    
-    .floor-title {
-        padding: 6px 12px !important;
-        font-size: 12px !important;
-    }
+  /* контейнер в заголовке */
+  .dispatchers-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  /* компактное поле ввода */
+  #dispatchers-room-input-mobile {
+    max-width: 110px !important;
+    min-width: 80px;
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    line-height: 1;
+  }
+
+  /* иконки-кнопки */
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* стиль основной кнопки (чек) */
+  .icon-btn:not(.ghost) {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* ghost / вторичная кнопка */
+  .icon-btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(15,23,36,0.06);
+    color: var(--text);
+  }
+
+  /* уменьшение внутренних отступов, чтобы всё влезало в строку */
+  .dispatchers-header-row .btn.small,
+  .dispatchers-header-row .icon-btn,
+  #dispatchers-room-input-mobile {
+    min-height: 34px;
+  }
+
+  /* если заголовок слишком длинный — скрывать переполнение */
+  #dispatchers-section > div[style] > div:first-child {
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
+
 
 /* Десктопная версия */
 @media (min-width: 921px) {
@@ -2722,16 +2749,26 @@ body.custom-calendar-open input[type="date"] {
         </div>
         
         <!-- Поле ввода и кнопки для мобильной версии (в строке с заголовком) -->
-        <div class="mobile-only" style="display:flex; gap:8px; align-items:center; flex: 1; justify-content: flex-end;">
-            <input type="text" id="dispatchers-room-input-mobile" placeholder="Вставить из чата" 
-                   style="padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; max-width: 150px; font-size: 13px;">
-            <button class="btn small" id="dispatchers-apply-rooms-mobile" style="white-space: nowrap; min-width: auto; padding: 6px 8px;">
-                Внести данные
-            </button>
-            <button class="btn ghost small" id="dispatchers-clear-rooms-mobile" style="white-space: nowrap; min-width: auto; padding: 6px 8px;" title="Сбросить">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+        <!-- Compact mobile controls (заменяет старый блок mobile-only в заголовке) -->
+<div class="mobile-only dispatchers-header-row" role="group" style="align-items:center; gap:8px; flex:1; justify-content:flex-end;">
+  <!-- Выровнено рядом с заголовком, input компактный, кнопки — иконки -->
+  <input
+    type="text"
+    id="dispatchers-room-input-mobile"
+    placeholder="Номера"
+    aria-label="Вставить номера"
+    style="padding:6px 10px; border:1px solid rgba(15,23,36,0.1); border-radius:8px; max-width:110px; font-size:13px;"
+  />
+
+  <button id="dispatchers-apply-rooms-mobile" class="icon-btn" title="Внести данные" aria-label="Внести">
+    <i class="fas fa-check" aria-hidden="true"></i>
+  </button>
+
+  <button id="dispatchers-clear-rooms-mobile" class="icon-btn ghost" title="Очистить" aria-label="Очистить">
+    <i class="fas fa-times" aria-hidden="true"></i>
+  </button>
+</div>
+
     </div>
     
     <!-- Инструкции (только для десктопной версии) -->
