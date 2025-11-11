@@ -7187,51 +7187,61 @@ function saveDispatchersSelectionToFirebase() {
 function loadDispatchersSelectionFromFirebase() {
     database.ref('minibarData/dispatchersSelectedRooms').once('value')
         .then(snapshot => {
-            const selectedRooms = snapshot.val() || [];
-            
-            // Снимаем все выделения
+            const selectedRoomsFromDb = snapshot.val() || [];
+
+            // Сбрасываем внутренний Set и DOM-классы
+            selectedRooms.clear();
             document.querySelectorAll('.dispatchers-room-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            
-            // Выделяем номера из Firebase
-            selectedRooms.forEach(roomNumber => {
-                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+
+            // Добавляем из БД: приводим к строкам (dataset хранит строки) и помечаем DOM
+            selectedRoomsFromDb.forEach(roomNum => {
+                const roomStr = String(roomNum);
+                selectedRooms.add(roomStr);
+                const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomStr}"]`);
                 if (roomElement) {
                     roomElement.classList.add('selected');
                 }
             });
-            
-            // Обновляем счетчик
-            updateDispatchersSelectedCount();
+
+            // Обновляем счётчики / внешний вид
+            if (typeof updateSelectedCount === 'function') updateSelectedCount();
+            if (typeof updateDispatchersSelectedCount === 'function') updateDispatchersSelectedCount();
         })
         .catch(error => {
-            console.error('Ошибка загрузки выделенных номеров из Firebase:', error);
+            console.error('Ошибка загрузки выделенных номеров в Firebase:', error);
         });
 }
+
 
 // Слушатель изменений выделенных номеров в реальном времени
 function setupDispatchersRealtimeListener() {
     database.ref('minibarData/dispatchersSelectedRooms').on('value', snapshot => {
-        const selectedRooms = snapshot.val() || [];
-        
-        // Снимаем все выделения
+        const selectedRoomsFromDb = snapshot.val() || [];
+
+        // Сбрасываем внутренний Set и DOM
+        selectedRooms.clear();
         document.querySelectorAll('.dispatchers-room-item').forEach(item => {
             item.classList.remove('selected');
         });
-        
-        // Выделяем номера из Firebase
-        selectedRooms.forEach(roomNumber => {
-            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomNumber}"]`);
+
+        // Проставляем из БД
+        selectedRoomsFromDb.forEach(roomNum => {
+            const roomStr = String(roomNum);
+            selectedRooms.add(roomStr);
+            const roomElement = document.querySelector(`.dispatchers-room-item[data-room="${roomStr}"]`);
             if (roomElement) {
                 roomElement.classList.add('selected');
             }
         });
-        
-        // Обновляем счетчик
-        updateDispatchersSelectedCount();
+
+        // Обновляем счётчик
+        if (typeof updateSelectedCount === 'function') updateSelectedCount();
+        if (typeof updateDispatchersSelectedCount === 'function') updateDispatchersSelectedCount();
     });
 }
+
 
 function initDispatchersEventHandlers() {
     // Обработчики для десктопной версии
