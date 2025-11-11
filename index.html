@@ -2391,6 +2391,21 @@ body.custom-calendar-open input[type="date"] {
     color: #fff !important;
     border-color: var(--primary-strong) !important;
 }
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider .toggle-knob {
+    transform: translateX(22px);
+}
+
+.toggle-switch:hover .toggle-slider {
+    background: #b3b3b3;
+}
+
+.toggle-switch input:checked:hover + .toggle-slider {
+    background: var(--primary-strong);
+}
 </style>
 </head>
 <body>
@@ -6390,11 +6405,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             resultsHTML += `
-                <div style="margin-top: 20px; display:flex; gap:8px;">
-                    <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
-                    <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
-                </div>
-            `;
+    <div style="margin-top: 20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
+        
+        <label class="toggle-switch" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-left:10px;">
+            <input type="checkbox" id="split-between-two" checked style="display:none;">
+            <div class="toggle-slider" style="width:44px; height:22px; background:#ccc; border-radius:24px; position:relative; transition:0.3s;">
+                <div class="toggle-knob" style="width:18px; height:18px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+            </div>
+            <span style="font-size:13px; font-weight:500; color:var(--text); white-space:nowrap;">Разделить на двоих</span>
+        </label>
+        
+        <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
+    </div>
+`;
             
             resultDiv.innerHTML = resultsHTML;
             
@@ -6411,6 +6435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function printDepartures() {
     const now = new Date();
     const dateString = now.toLocaleDateString('ru-RU');
+    const splitBetweenTwo = document.getElementById('split-between-two').checked;
     
     // Собираем все номера из результатов, которые не в состоянии 1 (исключен)
     const finalRooms = [];
@@ -6427,12 +6452,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Сортируем по числовому значению номера
     finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
     
-    // Просто делим отсортированный массив пополам на две колонки
-    const totalRooms = finalRooms.length;
-    const half = Math.ceil(totalRooms / 2);
+    let leftColumn, rightColumn;
     
-    const leftColumn = finalRooms.slice(0, half);
-    const rightColumn = finalRooms.slice(half);
+    if (splitBetweenTwo) {
+        // Режим "Разделить на двоих" - делим пополам
+        const half = Math.ceil(finalRooms.length / 2);
+        leftColumn = finalRooms.slice(0, half);
+        rightColumn = finalRooms.slice(half);
+    } else {
+        // Режим без разделения - заполняем последовательно
+        // Сначала все номера идут в левую колонку, потом в правую
+        const itemsPerColumn = 36; // Максимум номеров в одной колонке на странице
+        leftColumn = [];
+        rightColumn = [];
+        
+        finalRooms.forEach((room, index) => {
+            if (index < itemsPerColumn) {
+                leftColumn.push(room);
+            } else {
+                rightColumn.push(room);
+            }
+        });
+    }
     
     // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
     const pages = [];
