@@ -2392,18 +2392,19 @@ body.custom-calendar-open input[type="date"] {
     border-color: var(--primary-strong) !important;
 }
 /* Стили для переключателя "Разделить на двоих" */
-.toggle-switch input:checked + .toggle-slider {
-    background: var(--primary);
-    border: 1px solid var(--primary-strong);
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-left: 10px;
 }
 
-.toggle-switch input:checked + .toggle-slider .toggle-knob {
-    transform: translateX(22px);
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+.toggle-switch input {
+    display: none;
 }
 
-.toggle-switch .toggle-slider {
+.toggle-slider {
     width: 44px;
     height: 22px;
     background: #ccc;
@@ -2413,13 +2414,40 @@ body.custom-calendar-open input[type="date"] {
     border: 1px solid rgba(15,23,36,0.1);
 }
 
+.toggle-knob {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--primary);
+    border-color: var(--primary-strong);
+}
+
+.toggle-switch input:checked + .toggle-slider .toggle-knob {
+    transform: translateX(22px);
+}
+
 .toggle-switch:hover .toggle-slider {
     background: #b3b3b3;
 }
 
 .toggle-switch input:checked:hover + .toggle-slider {
     background: var(--primary-strong);
-    border-color: var(--primary-strong);
+}
+
+.toggle-switch span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
 }
 </style>
 </head>
@@ -6423,12 +6451,12 @@ document.addEventListener('DOMContentLoaded', () => {
     <div style="margin-top: 20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <button class="btn" onclick="window.dispatchersPrintDepartures()"><i class="fas fa-print"></i> Выгрузить депатчеры</button>
         
-        <label class="toggle-switch" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-left:10px;">
-            <input type="checkbox" id="split-between-two" checked style="display:none;">
+        <label class="toggle-switch">
+            <input type="checkbox" id="split-between-two" checked>
             <div class="toggle-slider">
                 <div class="toggle-knob"></div>
             </div>
-            <span style="font-size:13px; font-weight:500; color:var(--text); white-space:nowrap;">Разделить на двоих</span>
+            <span>Разделить на двоих</span>
         </label>
         
         <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
