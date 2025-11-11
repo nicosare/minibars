@@ -7189,13 +7189,15 @@ function loadDispatchersSelectionFromFirebase() {
         .then(snapshot => {
             const selectedRoomsFromDb = snapshot.val() || [];
 
-            // Сбрасываем внутренний Set и DOM-классы
+            if (typeof selectedRooms === 'undefined') {
+                window.selectedRooms = new Set();
+            }
+
             selectedRooms.clear();
             document.querySelectorAll('.dispatchers-room-item').forEach(item => {
                 item.classList.remove('selected');
             });
 
-            // Добавляем из БД: приводим к строкам (dataset хранит строки) и помечаем DOM
             selectedRoomsFromDb.forEach(roomNum => {
                 const roomStr = String(roomNum);
                 selectedRooms.add(roomStr);
@@ -7205,13 +7207,11 @@ function loadDispatchersSelectionFromFirebase() {
                 }
             });
 
-            // Обновляем счётчики / внешний вид
-            if (typeof updateSelectedCount === 'function') updateSelectedCount();
-            if (typeof updateDispatchersSelectedCount === 'function') updateDispatchersSelectedCount();
+            if (typeof updateDispatchersSelectedCount === 'function') {
+                updateDispatchersSelectedCount();
+            }
         })
-        .catch(error => {
-            console.error('Ошибка загрузки выделенных номеров в Firebase:', error);
-        });
+        .catch(console.error);
 }
 
 
@@ -7220,13 +7220,15 @@ function setupDispatchersRealtimeListener() {
     database.ref('minibarData/dispatchersSelectedRooms').on('value', snapshot => {
         const selectedRoomsFromDb = snapshot.val() || [];
 
-        // Сбрасываем внутренний Set и DOM
+        if (typeof selectedRooms === 'undefined') {
+            window.selectedRooms = new Set();
+        }
+
         selectedRooms.clear();
         document.querySelectorAll('.dispatchers-room-item').forEach(item => {
             item.classList.remove('selected');
         });
 
-        // Проставляем из БД
         selectedRoomsFromDb.forEach(roomNum => {
             const roomStr = String(roomNum);
             selectedRooms.add(roomStr);
@@ -7236,9 +7238,9 @@ function setupDispatchersRealtimeListener() {
             }
         });
 
-        // Обновляем счётчик
-        if (typeof updateSelectedCount === 'function') updateSelectedCount();
-        if (typeof updateDispatchersSelectedCount === 'function') updateDispatchersSelectedCount();
+        if (typeof updateDispatchersSelectedCount === 'function') {
+            updateDispatchersSelectedCount();
+        }
     });
 }
 
