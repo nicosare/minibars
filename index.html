@@ -2391,12 +2391,26 @@ body.custom-calendar-open input[type="date"] {
     color: #fff !important;
     border-color: var(--primary-strong) !important;
 }
+/* Стили для переключателя "Разделить на двоих" */
 .toggle-switch input:checked + .toggle-slider {
     background: var(--primary);
+    border: 1px solid var(--primary-strong);
 }
 
 .toggle-switch input:checked + .toggle-slider .toggle-knob {
     transform: translateX(22px);
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.toggle-switch .toggle-slider {
+    width: 44px;
+    height: 22px;
+    background: #ccc;
+    border-radius: 24px;
+    position: relative;
+    transition: 0.3s;
+    border: 1px solid rgba(15,23,36,0.1);
 }
 
 .toggle-switch:hover .toggle-slider {
@@ -2405,6 +2419,7 @@ body.custom-calendar-open input[type="date"] {
 
 .toggle-switch input:checked:hover + .toggle-slider {
     background: var(--primary-strong);
+    border-color: var(--primary-strong);
 }
 </style>
 </head>
@@ -6410,8 +6425,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         <label class="toggle-switch" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-left:10px;">
             <input type="checkbox" id="split-between-two" checked style="display:none;">
-            <div class="toggle-slider" style="width:44px; height:22px; background:#ccc; border-radius:24px; position:relative; transition:0.3s;">
-                <div class="toggle-knob" style="width:18px; height:18px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+            <div class="toggle-slider">
+                <div class="toggle-knob"></div>
             </div>
             <span style="font-size:13px; font-weight:500; color:var(--text); white-space:nowrap;">Разделить на двоих</span>
         </label>
