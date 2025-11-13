@@ -603,6 +603,84 @@ function updateGIHRoomsSummary() {
         margin-top: 12px;
     }
 
+    #rooms-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .deadlines-floor-section {
+        padding: 12px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.6));
+        box-shadow: 0 3px 10px rgba(12,18,24,0.04);
+        border: 1px solid rgba(15,23,36,0.05);
+    }
+
+    .deadlines-floor-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 10px;
+        color: var(--primary-strong);
+    }
+
+    .deadlines-room-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .deadlines-room-item {
+        min-width: 72px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(15,23,36,0.08);
+        background: rgba(15,23,36,0.02);
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    user-select: none;
+    }
+
+    .deadlines-room-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(12,18,24,0.12);
+    }
+
+    .deadlines-room-number {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .deadlines-room-item.status-empty {
+        border: 1px solid rgba(15,23,36,0.08);
+        background: rgba(15,23,36,0.02);
+    }
+
+    .deadlines-room-item.status-alert {
+        background: rgba(220,53,69,0.12);
+        border-color: rgba(220,53,69,0.4);
+        color: #c12a35;
+    }
+
+    .deadlines-room-item.status-ok {
+        background: rgba(39,103,73,0.14);
+        border-color: rgba(39,103,73,0.45);
+        color: #215c40;
+    }
+
+    .deadlines-room-item.selected {
+        border: 2px solid var(--primary);
+        box-shadow: 0 0 0 2px rgba(39,103,73,0.2);
+    }
+
+    #modal-ok-order.deadlines-applied {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
     .room-item {
         padding: 12px;
         border-radius: 12px;
@@ -2267,66 +2345,70 @@ body.custom-calendar-open input[type="date"] {
 
 @media (max-width: 920px) {.desktop-only{display:none!important;}}
 
-/* === Стили для Депатчеров === */
-.floor-section {
-    margin-bottom: 20px;
+#dispatchers-roomsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
-
-.floor-title {
-    background: var(--primary);
-    color: #fff;
-    padding: 8px 15px;
-    border-radius: 8px;
+.dispatchers-floor-section {
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.6));
+    box-shadow: 0 3px 10px rgba(12,18,24,0.04);
+    border: 1px solid rgba(15,23,36,0.05);
+}
+.dispatchers-floor-title {
+    font-weight: 600;
+    font-size: 14px;
     margin-bottom: 10px;
-    font-weight: 600;
-    font-size: 13px;
+    color: var(--primary-strong);
 }
-
 .dispatchers-room-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
-
 .dispatchers-room-item {
-    background: rgba(39,103,73,0.08);
-    padding: 10px;
-    border-radius: 8px;
+    min-width: 72px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(15,23,36,0.08);
+    background: rgba(15,23,36,0.02);
     text-align: center;
-    font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition);
-    border: 1px solid rgba(15,23,36,0.06);
-    font-size: 13px;
+    font-weight: 600;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    user-select: none;
 }
-
 .dispatchers-room-item:hover {
-    background: rgba(39,103,73,0.15);
-    box-shadow: 0 2px 8px rgba(39,103,73,0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(12,18,24,0.12);
 }
-
 .dispatchers-room-item.selected {
-    background: var(--primary);
-    color: #fff;
-    border-color: var(--primary-strong);
+    background: rgba(39,103,73,0.16);
+    color: #215c40;
+    border-color: rgba(39,103,73,0.35);
 }
-
 .dispatchers-room-item.excluded {
-    background: #f7bdbd;
-    color: #6b0b0b;
-    border-color: rgba(229,62,62,0.3);
+    background: rgba(220,53,69,0.12);
+    color: #c12a35;
+    border-color: rgba(220,53,69,0.32);
 }
-
-.dispatchers-room-item.on-arrival {
-    background: #bfeec0;
-    color: #064e17;
-    border-color: rgba(39,103,73,0.3);
-}
-
+    .dispatchers-room-item.on-arrival {
+        background: rgba(39,103,73,0.14);
+        color: #1b5c33;
+        border-color: rgba(39,103,73,0.35);
+    }
 .dispatchers-room-item.found {
-    background: #fff9c4;
-    border-color: rgba(255,193,7,0.3);
+    position: relative;
+    border-width: 2px;
+    border-color: rgba(39,103,73,0.55);
+    background: rgba(39,103,73,0.06);
+}
+.dispatchers-room-item.found.selected {
+    border-color: rgba(39,103,73,0.8);
+    background: rgba(39,103,73,0.14);
+    color: #1b5c33;
 }
 
 .dispatchers-stats {
@@ -2581,6 +2663,15 @@ body.custom-calendar-open input[type="date"] {
 <div class="card hidden" id="sroki-section">
 <div style="display:flex; justify-content:space-between; align-items:center;">
 <div style="font-weight:700; font-size:16px">Сроки</div>
+<div class="row desktop-only" style="gap:12px; align-items:center;">
+<span id="deadlines-selected-count" style="font-size:13px; color:var(--muted); display:none;">Выбрано номеров: <strong id="deadlines-selected-number">0</strong></span>
+<button class="btn ghost small" id="deadlines-select-mode-btn" title="Режим выбора номеров"><i class="fas fa-check-square"></i> Выбрать номера</button>
+<button class="btn ghost small" id="deadlines-print-btn" title="Печать выбранных номеров" style="display:none;"><i class="fas fa-print"></i> Печать</button>
+<button class="btn small" id="deadlines-stats-btn" title="Статистика по номерам Сроки"><i class="fas fa-chart-pie"></i> Статистика</button>
+</div>
+<div class="row mobile-only" style="gap:8px; align-items:center; justify-content:flex-end;">
+<button class="btn small" id="deadlines-stats-btn-mobile" title="Статистика по номерам Сроки"><i class="fas fa-chart-pie"></i> Статистика</button>
+</div>
 </div>
 <div class="rooms-grid" id="rooms-grid"></div>
 </div>
@@ -2863,6 +2954,41 @@ body.custom-calendar-open input[type="date"] {
 </div>
 </div>
 </div>
+</div>
+<div aria-hidden="true" class="overlay" id="deadlines-stats-modal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="modal-head">
+<div>
+<div class="modal-title" style="font-weight:700">Статистика сроков</div>
+<div class="muted" style="font-size:12px;">Текущие статусы номеров и продуктов</div>
+</div>
+<div>
+<button aria-label="Закрыть" class="btn ghost small" id="deadlines-stats-close"><i class="fas fa-times"></i></button>
+</div>
+</div>
+<div id="deadlines-stats-content" style="display:flex; flex-direction:column; gap:16px;">
+<div style="display:flex; gap:12px; flex-wrap:wrap;">
+<div class="card" style="flex:1; min-width:160px; padding:12px;">
+<div class="muted" style="font-size:12px;">Номеров в порядке</div>
+<div style="font-size:24px; font-weight:700;color:#1b7a2b" id="deadlines-count-ok">0</div>
+</div>
+<div class="card" style="flex:1; min-width:160px; padding:12px;">
+<div class="muted" style="font-size:12px;">Номеров заменить</div>
+<div style="font-size:24px; font-weight:700; color:#c12a35;" id="deadlines-count-products">0</div>
+</div>
+<div class="card" style="flex:1; min-width:160px; padding:12px;">
+<div class="muted" style="font-size:12px;">Осталось проверить</div>
+<div style="font-size:24px; font-weight:700;" id="deadlines-count-neutral">0</div>
+</div>
+</div>
+<div class="card" style="padding:12px;">
+<div style="font-weight:600; margin-bottom:8px;">Статистика по продуктам</div>
+<div class="muted" style="font-size:12px; margin-bottom:8px;">Суммарное количество продуктов с истекающим сроком</div>
+<div id="deadlines-products-stats" style="display:flex; flex-wrap:wrap; gap:8px; font-size:13px;"></div>
+</div>
+</div>
+</div>
+</div>
 <script>
                 // ===== FIREBASE CONFIGURATION =====
                 // ЗАМЕНИТЕ НА СВОЮ КОНФИГУРАЦИЮ FIREBASE
@@ -3133,16 +3259,80 @@ body.custom-calendar-open input[type="date"] {
 
                 /* debounce save */
                 let saveTimer;
+                function persistLocalSnapshot() {
+                    try {
+                        localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
+                    } catch (e) {
+                        console.warn('Не удалось сохранить данные в localStorage', e);
+                    }
+                }
                 function saveDebounced() {
+                    persistLocalSnapshot();
                     clearTimeout(saveTimer);
                     saveTimer = setTimeout(() => {
-                        try {
-                            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
-                            saveToFirebase();
-                        } catch (e) {
-                            console.warn(e);
-                        }
+                        persistLocalSnapshot();
+                        saveToFirebase();
                     }, 200);
+                }
+
+                let isPushingRoomsRealtime = false;
+                let roomsRealtimeRef = null;
+                function pushRoomsRealtime() {
+                    if (!database || typeof database.ref !== 'function') return;
+                    try {
+                        const payload = JSON.parse(JSON.stringify(appData.rooms || []));
+                        isPushingRoomsRealtime = true;
+                        database
+                            .ref('minibarData/rooms')
+                            .set(payload)
+                            .then(() => { isPushingRoomsRealtime = false; })
+                            .catch(error => {
+                                console.error('Ошибка сохранения номеров в Firebase (реальное время):', error);
+                                isPushingRoomsRealtime = false;
+                            });
+                    } catch (error) {
+                        console.warn('Не удалось отправить номера в Firebase (реальное время):', error);
+                        isPushingRoomsRealtime = false;
+                    }
+                }
+
+                function setupRoomsRealtimeListener() {
+                    if (!database || typeof database.ref !== 'function') return;
+                    if (roomsRealtimeRef) return;
+                    roomsRealtimeRef = database.ref('minibarData/rooms');
+                    roomsRealtimeRef.on('value', snapshot => {
+                        const remoteRooms = snapshot.val();
+                        if (!Array.isArray(remoteRooms)) return;
+                        if (isPushingRoomsRealtime) return;
+
+                        const localSerialized = JSON.stringify(appData.rooms || []);
+                        const remoteSerialized = JSON.stringify(remoteRooms);
+                        if (localSerialized === remoteSerialized) return;
+
+                        appData.rooms = remoteRooms.map(room => {
+                            if (!room || typeof room !== 'object') return room;
+                            const copy = { ...room };
+                            if (!copy.products || typeof copy.products !== 'object') copy.products = {};
+                            copy.deadlinesStatus = copy.deadlinesStatus || (hasSelectedDeadlineProducts(copy) ? DEADLINE_STATUS.PRODUCTS : DEADLINE_STATUS.NEUTRAL);
+                            return copy;
+                        });
+
+                        persistLocalSnapshot();
+                        renderRooms();
+
+                        if (currentDeadlineRoomNumber != null) {
+                            const current = appData.rooms.find(r => r && r.number === currentDeadlineRoomNumber);
+                            if (current) {
+                                deadlineModalState = {
+                                    products: JSON.parse(JSON.stringify(current.products || {})),
+                                    status: current.deadlinesStatus || DEADLINE_STATUS.NEUTRAL,
+                                    type: current.type
+                                };
+                                renderDeadlineProducts(current);
+                                updateModalOkButton();
+                            }
+                        }
+                    });
                 }
 
                 /* status title */
@@ -3374,55 +3564,633 @@ body.custom-calendar-open input[type="date"] {
                 }
                 function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
-                /* ===== ROOMS & MODAL (unchanged) ===== */
+                /* ===== ROOMS & MODAL (deadlines) ===== */
+                const DEADLINE_STATUS = {
+                    NEUTRAL: 'neutral',
+                    PRODUCTS: 'products',
+                    OK: 'ok'
+                };
+                let currentDeadlineRoomNumber = null;
+    let deadlineModalState = null;
+    let deadlinesStatsModalOpen = false;
+    let deadlinesSelectMode = false;
+    let deadlinesSelectedRooms = new Set();
+
                 function initSroki() {
                     renderRooms();
+                    const overlay = $('#modal');
                     $('#modal-close').addEventListener('click', closeModal);
-                    $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
-                    $('#modal-save').addEventListener('click', () => {
-                        const n = appData.selectedRoom; if (n == null) return closeModal();
-                        const room = appData.rooms.find(r => r.number === n); if (room) { room.completed = true; room.completedAt = new Date().toISOString(); saveDebounced(); renderRooms(); } closeModal();
+                    overlay.addEventListener('click', e => {
+                        if (e.target === overlay) closeModal();
                     });
-                    $('#modal-ok-order').addEventListener('click', () => {
-                        const n = appData.selectedRoom; if (n == null) return;
-                        const room = appData.rooms.find(r => r.number === n); if (!room) return;
-                        room.products = {}; saveDebounced(); renderRooms();
-                        const btn = $('#modal-ok-order'); btn.style.background = 'var(--primary)'; btn.style.color = '#fff';
+
+                    const saveBtn = $('#modal-save');
+                    if (saveBtn) {
+                        saveBtn.innerHTML = '<i class="fas fa-check"></i> Сохранить';
+                        saveBtn.addEventListener('click', saveDeadlineProducts);
+                    }
+
+                    const okBtn = $('#modal-ok-order');
+                    if (okBtn) okBtn.addEventListener('click', markDeadlinesOk);
+
+                    const resetBtn = $('#modal-reset');
+                    if (resetBtn) resetBtn.addEventListener('click', resetDeadlineSelections);
+
+                    const statsBtn = $('#deadlines-stats-btn');
+                    if (statsBtn) statsBtn.addEventListener('click', openDeadlinesStatsModal);
+                    const statsBtnMobile = $('#deadlines-stats-btn-mobile');
+                    if (statsBtnMobile) statsBtnMobile.addEventListener('click', openDeadlinesStatsModal);
+
+                    const selectModeBtn = $('#deadlines-select-mode-btn');
+                    if (selectModeBtn) selectModeBtn.addEventListener('click', toggleDeadlinesSelectMode);
+
+                    const printBtn = $('#deadlines-print-btn');
+                    if (printBtn) printBtn.addEventListener('click', printDeadlinesSelected);
+
+                    const statsOverlay = $('#deadlines-stats-modal');
+                    if (statsOverlay) {
+                        statsOverlay.addEventListener('click', e => {
+                            if (e.target === statsOverlay) closeDeadlinesStatsModal();
+                        });
+                    }
+                    const statsClose = $('#deadlines-stats-close');
+                    if (statsClose) statsClose.addEventListener('click', closeDeadlinesStatsModal);
+                }
+                function groupRoomsByFloorForDeadlines(rooms = []) {
+                    const floors = {};
+                    rooms.forEach(rawNum => {
+                        const roomStr = String(rawNum);
+                        const floorKey = roomStr.length === 3 ? roomStr.charAt(0) : roomStr.substring(0, 2);
+                        if (!floors[floorKey]) floors[floorKey] = [];
+                        floors[floorKey].push(Number(rawNum));
                     });
-                    $('#modal-reset').addEventListener('click', () => {
-                        const n = appData.selectedRoom; if (n == null) return;
-                        const room = appData.rooms.find(r => r.number === n); if (!room) return;
-                        const keys = appData.roomProducts[room.type] || [];
-                        renderProductButtons($('#modal-products'), keys, room.products, () => { renderRooms(); }, { allowMaxTwo: true });
+                    return floors;
+                }
+                function ensureRoomRecord(num) {
+                    appData.rooms = appData.rooms || [];
+                    let room = appData.rooms.find(r => r.number === num);
+                    if (!room) {
+                        const isLux = (num % 2 === 1) || num === 1818 || String(num).endsWith('00') || String(num).endsWith('34');
+                        room = {
+                            number: num,
+                            type: isLux ? 'lux' : 'standard',
+                            completed: false,
+                            completedAt: null,
+                            products: {},
+                            deadlinesStatus: DEADLINE_STATUS.NEUTRAL
+                        };
+                        appData.rooms.push(room);
+                    } else {
+                        if (!room.products || typeof room.products !== 'object') {
+                            room.products = {};
+                        }
+                        if (!room.deadlinesStatus) {
+                            if (typeof room.deadlinesOk === 'boolean') {
+                                room.deadlinesStatus = room.deadlinesOk ? DEADLINE_STATUS.OK : DEADLINE_STATUS.NEUTRAL;
+                            } else if (hasSelectedDeadlineProducts(room)) {
+                                room.deadlinesStatus = DEADLINE_STATUS.PRODUCTS;
+                            } else {
+                                room.deadlinesStatus = DEADLINE_STATUS.NEUTRAL;
+                            }
+                        }
+                    }
+                    delete room.deadlinesOk;
+                    return normalizeRoomDeadlineStatus(room);
+                }
+                function hasSelectedDeadlineProducts(room) {
+                    if (!room || !room.products) return false;
+                    return Object.values(room.products).some(count => Number(count) > 0);
+                }
+                function formatDeadlineProducts(room) {
+                    const entries = Object.entries(room.products || {}).filter(([, count]) => Number(count) > 0);
+                    if (entries.length === 0) return '';
+                    return entries.map(([key, count]) => {
+                        const name = appData.products[key] || key;
+                        return count > 1 ? `${name} (x${count})` : name;
+                    }).join(', ');
+                }
+                function floorLabelFromKey(key) {
+                    const numeric = Number(key);
+                    if (Number.isFinite(numeric)) return `${numeric} этаж`;
+                    return `${key} этаж`;
+                }
+                function updateModalOkButton() {
+                    const btn = $('#modal-ok-order');
+                    if (!btn) return;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Сроки в порядке';
+                    if (deadlineModalState && deadlineModalState.status === DEADLINE_STATUS.OK) {
+                        btn.classList.add('deadlines-applied');
+                    } else {
+                        btn.classList.remove('deadlines-applied');
+                    }
+                }
+                function renderDeadlineProducts(room) {
+                    const container = $('#modal-products');
+                    if (!container || !room || !deadlineModalState) return;
+                    container.innerHTML = '';
+                    const keys = appData.roomProducts[room.type] || [];
+                    if (keys.length === 0) {
+                        const emptyHint = document.createElement('div');
+                        emptyHint.className = 'muted';
+                        emptyHint.style.fontSize = '13px';
+                        emptyHint.textContent = 'Нет продуктов для этого типа номера';
+                        container.appendChild(emptyHint);
+                        return;
+                    }
+                    keys.forEach(productKey => {
+                        const displayName = appData.products[productKey] || productKey;
+                        const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[productKey]) ? PRODUCT_EMOJIS[productKey] : '';
+                        const btn = document.createElement('button');
+                        btn.className = 'product-btn';
+                        btn.dataset.product = productKey;
+
+                        const textSpan = document.createElement('span');
+                        textSpan.className = 'btn-text';
+                        textSpan.textContent = emoji ? `${emoji} ${displayName}` : displayName;
+                        btn.appendChild(textSpan);
+
+                        const countSpan = document.createElement('span');
+                        countSpan.className = 'product-count';
+                        const count = deadlineModalState.products[productKey] || 0;
+                        if (count > 0) {
+                            btn.classList.add('active');
+                            countSpan.textContent = count;
+                        }
+                        btn.appendChild(countSpan);
+
+                        btn.addEventListener('click', () => toggleDeadlineSelection(productKey));
+                        container.appendChild(btn);
                     });
+                }
+                function toggleDeadlineSelection(productKey) {
+                    if (!deadlineModalState) return;
+                    const max = MULTI_LIMITS[productKey] || 1;
+                    const current = deadlineModalState.products[productKey] || 0;
+                    const next = (current + 1) % (max + 1);
+                    if (next === 0) {
+                        delete deadlineModalState.products[productKey];
+                    } else {
+                        deadlineModalState.products[productKey] = next;
+                    }
+                    if (Object.keys(deadlineModalState.products).length > 0) {
+                        deadlineModalState.status = DEADLINE_STATUS.PRODUCTS;
+                    } else if (deadlineModalState.status !== DEADLINE_STATUS.OK) {
+                        deadlineModalState.status = DEADLINE_STATUS.NEUTRAL;
+                    }
+                    const room = ensureRoomRecord(currentDeadlineRoomNumber);
+                    renderDeadlineProducts(room);
+                    updateModalOkButton();
+                }
+                function saveDeadlineProducts() {
+                    if (currentDeadlineRoomNumber == null || !deadlineModalState) {
+                        closeModal();
+                        return;
+                    }
+                    const room = ensureRoomRecord(currentDeadlineRoomNumber);
+                    const hasProducts = Object.keys(deadlineModalState.products).length > 0;
+                    const nextStatus = hasProducts ? DEADLINE_STATUS.PRODUCTS : DEADLINE_STATUS.NEUTRAL;
+                    commitDeadlineChanges(room, deadlineModalState.products, nextStatus);
+                    closeModal();
+                }
+                function markDeadlinesOk() {
+                    if (currentDeadlineRoomNumber == null) return;
+                    const room = ensureRoomRecord(currentDeadlineRoomNumber);
+                    commitDeadlineChanges(room, {}, DEADLINE_STATUS.OK);
+                    closeModal();
+                }
+                function resetDeadlineSelections() {
+                    if (!deadlineModalState) return;
+                    deadlineModalState.products = {};
+                    deadlineModalState.status = DEADLINE_STATUS.NEUTRAL;
+                    const room = ensureRoomRecord(currentDeadlineRoomNumber);
+                    renderDeadlineProducts(room);
+                    updateModalOkButton();
+                }
+                function commitDeadlineChanges(room, products, status) {
+                    room.products = JSON.parse(JSON.stringify(products || {}));
+                    room.deadlinesStatus = status;
+                    normalizeRoomDeadlineStatus(room);
+                    saveDebounced();
+                    renderRooms();
+                    pushRoomsRealtime();
+                    updateDeadlinesStatsIfOpen();
                 }
                 function renderRooms() {
-                    const grid = $('#rooms-grid'); grid.innerHTML = '';
-                    appData.rooms = appData.rooms || [];
-                    appData.roomsList.forEach(num => {
-                        let room = appData.rooms.find(r => r.number === num);
-                        if (!room) { const isLux = (num % 2 === 1) || num === 1818 || String(num).endsWith('00') || String(num).endsWith('34'); room = { number: num, type: isLux ? 'lux' : 'standard', completed: false, completedAt: null, products: {} }; appData.rooms.push(room); }
-                        const el = document.createElement('div'); el.className = 'room-item'; if (room.completed) el.classList.add('completed'); else if (Object.keys(room.products || {}).length) el.classList.add('has-products');
-                        const productsText = Object.entries(room.products || {}).filter(([, c]) => c > 0).map(([k, c]) => `${appData.products[k] || k}${c > 1 ? ` (x${c})` : ''}`).join(', ');
-                        el.innerHTML = `<div class="room-number">${room.number}</div><div class="room-products">${productsText || '&nbsp;'}</div>`;
-                        el.addEventListener('click', () => { appData.selectedRoom = room.number; openModal(room); });
-                        grid.appendChild(el);
+                    const grid = $('#rooms-grid');
+                    if (!grid) return;
+                    grid.innerHTML = '';
+                    const roomsList = Array.isArray(appData.roomsList) ? appData.roomsList.slice() : [];
+                    if (roomsList.length === 0) {
+                        grid.innerHTML = '<div class="muted" style="text-align:center; padding:20px;">Номера не найдены</div>';
+                        return;
+                    }
+                    const floors = groupRoomsByFloorForDeadlines(roomsList);
+                    const sortedFloors = Object.keys(floors).sort((a, b) => {
+                        const ai = parseInt(a, 10);
+                        const bi = parseInt(b, 10);
+                        const aNaN = Number.isNaN(ai);
+                        const bNaN = Number.isNaN(bi);
+                        if (aNaN && bNaN) return a.localeCompare(b, 'ru');
+                        if (aNaN) return 1;
+                        if (bNaN) return -1;
+                        return ai - bi;
+                    });
+                    sortedFloors.forEach(floorKey => {
+                        const section = document.createElement('div');
+                        section.className = 'deadlines-floor-section';
+                        const title = document.createElement('div');
+                        title.className = 'deadlines-floor-title';
+                        title.textContent = floorLabelFromKey(floorKey);
+                        section.appendChild(title);
+                        const list = document.createElement('div');
+                        list.className = 'deadlines-room-list';
+                        const roomsOnFloor = floors[floorKey].slice().sort((a, b) => a - b);
+                        roomsOnFloor.forEach(num => {
+                            const room = ensureRoomRecord(num);
+                            const roomEl = document.createElement('div');
+                            roomEl.className = 'deadlines-room-item';
+                            const status = room.deadlinesStatus;
+                            roomEl.classList.toggle('status-ok', status === DEADLINE_STATUS.OK);
+                            roomEl.classList.toggle('status-alert', status === DEADLINE_STATUS.PRODUCTS);
+                            roomEl.classList.toggle('status-empty', status === DEADLINE_STATUS.NEUTRAL);
+                            roomEl.classList.toggle('selected', deadlinesSelectedRooms.has(String(room.number)));
+                            roomEl.dataset.room = String(room.number);
+                            const numberEl = document.createElement('div');
+                            numberEl.className = 'deadlines-room-number';
+                            numberEl.textContent = room.number;
+                            const summary = formatDeadlineProducts(room);
+                            roomEl.appendChild(numberEl);
+                            if (status === DEADLINE_STATUS.PRODUCTS && summary) {
+                                roomEl.title = summary;
+                            } else if (status === DEADLINE_STATUS.OK) {
+                                roomEl.title = 'Сроки в порядке';
+                            } else {
+                                roomEl.removeAttribute('title');
+                            }
+                            roomEl.addEventListener('click', () => {
+                                if (deadlinesSelectMode) {
+                                    toggleDeadlineRoomSelection(room.number);
+                                } else {
+                                    openDeadlineModal(room.number);
+                                }
+                            });
+                            list.appendChild(roomEl);
+                        });
+                        section.appendChild(list);
+                        grid.appendChild(section);
+                    });
+                    updateDeadlinesStatsIfOpen();
+                }
+                function normalizeRoomDeadlineStatus(room) {
+                    if (!room) return { deadlinesStatus: DEADLINE_STATUS.NEUTRAL, products: {} };
+                    const hasProducts = hasSelectedDeadlineProducts(room);
+                    if (room.deadlinesStatus === DEADLINE_STATUS.OK && hasProducts) {
+                        room.deadlinesStatus = DEADLINE_STATUS.PRODUCTS;
+                    } else if (room.deadlinesStatus === DEADLINE_STATUS.PRODUCTS && !hasProducts) {
+                        room.deadlinesStatus = DEADLINE_STATUS.NEUTRAL;
+                    } else if (!room.deadlinesStatus) {
+                        room.deadlinesStatus = hasProducts ? DEADLINE_STATUS.PRODUCTS : DEADLINE_STATUS.NEUTRAL;
+                    }
+                    return room;
+                }
+                function openDeadlineModal(roomNumber) {
+                    const room = ensureRoomRecord(roomNumber);
+                    currentDeadlineRoomNumber = room.number;
+                    appData.selectedRoom = room.number;
+                    deadlineModalState = {
+                        products: JSON.parse(JSON.stringify(room.products || {})),
+                        status: room.deadlinesStatus || DEADLINE_STATUS.NEUTRAL,
+                        type: room.type
+                    };
+                    if (deadlineModalState.status === DEADLINE_STATUS.OK && Object.keys(deadlineModalState.products).length > 0) {
+                        deadlineModalState.status = DEADLINE_STATUS.PRODUCTS;
+                    }
+                    $('#modal-room').textContent = room.number;
+                    const overlay = $('#modal');
+                    overlay.classList.add('show');
+                    overlay.style.display = 'flex';
+                    const modalEl = overlay.querySelector('.modal');
+                    modalEl.classList.add('show');
+                    renderDeadlineProducts(room);
+                    updateModalOkButton();
+                }
+                function closeModal() {
+                    const overlay = $('#modal');
+                    const modalEl = overlay.querySelector('.modal');
+                    modalEl.classList.remove('show');
+                    overlay.classList.remove('show');
+                    setTimeout(() => overlay.style.display = 'none', 260);
+                    currentDeadlineRoomNumber = null;
+                    appData.selectedRoom = null;
+                    deadlineModalState = null;
+                    updateModalOkButton();
+                }
+
+                function toggleDeadlinesSelectMode() {
+                    deadlinesSelectMode = !deadlinesSelectMode;
+                    const btn = $('#deadlines-select-mode-btn');
+                    const countEl = $('#deadlines-selected-count');
+                    const printBtn = $('#deadlines-print-btn');
+                    if (btn) {
+                        if (deadlinesSelectMode) {
+                            btn.classList.add('active');
+                            btn.innerHTML = '<i class="fas fa-check-square"></i> Отменить выбор';
+                        } else {
+                            btn.classList.remove('active');
+                            btn.innerHTML = '<i class="fas fa-check-square"></i> Выбрать номера';
+                            deadlinesSelectedRooms.clear();
+                            updateDeadlinesSelectedCount();
+                            renderRooms();
+                        }
+                    }
+                    if (countEl) countEl.style.display = deadlinesSelectMode ? 'inline' : 'none';
+                    if (printBtn) printBtn.style.display = deadlinesSelectMode && deadlinesSelectedRooms.size > 0 ? 'inline-flex' : 'none';
+                }
+
+                function toggleDeadlineRoomSelection(roomNumber) {
+                    const roomStr = String(roomNumber);
+                    if (deadlinesSelectedRooms.has(roomStr)) {
+                        deadlinesSelectedRooms.delete(roomStr);
+                    } else {
+                        deadlinesSelectedRooms.add(roomStr);
+                    }
+                    updateDeadlinesSelectedCount();
+                    renderRooms();
+                }
+
+                function updateDeadlinesSelectedCount() {
+                    const count = deadlinesSelectedRooms.size;
+                    const countEl = $('#deadlines-selected-number');
+                    const printBtn = $('#deadlines-print-btn');
+                    if (countEl) countEl.textContent = String(count);
+                    if (printBtn) printBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+                }
+
+                function printDeadlinesSelected() {
+                    if (deadlinesSelectedRooms.size === 0) return;
+                    const now = new Date();
+                    const dateString = now.toLocaleDateString('ru-RU');
+                    const selectedRooms = Array.from(deadlinesSelectedRooms).map(Number).sort((a, b) => a - b);
+                    const roomsData = selectedRooms.map(num => {
+                        const room = appData.rooms.find(r => r && r.number === num);
+                        const products = room && room.products ? room.products : {};
+                        const productList = Object.entries(products)
+                            .filter(([, count]) => Number(count) > 0)
+                            .map(([key, count]) => {
+                                const name = appData.products[key] || key;
+                                return count > 1 ? `${name} x${count}` : name;
+                            })
+                            .join(', ');
+                        return { number: num, products: productList };
+                    });
+                    const itemsPerPage = 72;
+                    const pageCount = Math.ceil(roomsData.length / itemsPerPage);
+                    const printWindow = window.open('', '_blank');
+                    let htmlContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Expirations ${dateString}</title>
+                            <style>
+                                @page {
+                                    size: A4 landscape;
+                                    margin: 1cm;
+                                }
+                                body { 
+                                    font-family: Times New Roman, sans-serif; 
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                .page-container {
+                                    display: flex;
+                                    justify-content: space-around;
+                                    width: 100%;
+                                    height: 95vh;
+                                    page-break-after: always;
+                                }
+                                .page-column {
+                                    flex: 1;
+                                    padding-top: 1cm;
+                                    padding-left: 1cm;
+                                    padding-right: 1cm;
+                                    box-sizing: border-box;
+                                }
+                                .print-table { 
+                                    width: 100%; 
+                                    border-collapse: collapse;
+                                    font-size: 10px;
+                                }
+                                .print-table th, .print-table td { 
+                                    border: 1px solid #000; 
+                                    padding: 0px;
+                                    height: 16px;
+                                }
+                                .print-table th { 
+                                    background: #f0f0f0; 
+                                    font-weight: bold; 
+                                    text-align: center;
+                                }
+                                .print-table .number-col { 
+                                    width: 50px; 
+                                    text-align: center; 
+                                }
+                                .print-table .products-col { 
+                                    width: auto; 
+                                    text-align: center;
+                                }
+                                @media print {
+                                    body { 
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                    .page-container {
+                                        height: 95vh;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                    `;
+                    for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+                        const pageStart = pageNum * itemsPerPage;
+                        const pageEnd = pageStart + itemsPerPage;
+                        const pageItems = roomsData.slice(pageStart, pageEnd);
+                        const leftPage = pageItems.slice(0, 36);
+                        const rightPage = pageItems.slice(36, 72);
+                        while (leftPage.length < 36) leftPage.push(null);
+                        while (rightPage.length < 36) rightPage.push(null);
+                        htmlContent += `
+                            <div class="page-container">
+                                <div class="page-column">
+                                    <table class="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="number-col"><font size="2">№</font></th>
+                                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                        `;
+                        for (let i = 0; i < 36; i++) {
+                            if (leftPage[i]) {
+                                htmlContent += `
+                                    <tr>
+                                        <td class="number-col"><strong><font size="2">${leftPage[i].number}</font></strong></td>
+                                        <td class="products-col"><font size="1">${leftPage[i].products || '&nbsp;'}</font></td>
+                                    </tr>
+                                `;
+                            } else {
+                                htmlContent += `
+                                    <tr>
+                                        <td class="number-col">&nbsp;</td>
+                                        <td class="products-col">&nbsp;</td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                        htmlContent += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="page-column">
+                                    <table class="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="number-col"><font size="2">№</font></th>
+                                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                        `;
+                        for (let i = 0; i < 36; i++) {
+                            if (rightPage[i]) {
+                                htmlContent += `
+                                    <tr>
+                                        <td class="number-col"><strong><font size="2">${rightPage[i].number}</font></strong></td>
+                                        <td class="products-col"><font size="1">${rightPage[i].products || '&nbsp;'}</font></td>
+                                    </tr>
+                                `;
+                            } else {
+                                htmlContent += `
+                                    <tr>
+                                        <td class="number-col">&nbsp;</td>
+                                        <td class="products-col">&nbsp;</td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                        htmlContent += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    htmlContent += `
+                        </body>
+                        </html>
+                    `;
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.onload = function() {
+                        setTimeout(() => {
+                            printWindow.print();
+                            setTimeout(() => {
+                                printWindow.close();
+                            }, 500);
+                        }, 500);
+                    };
+                }
+
+                function computeDeadlinesSummary() {
+                    const summary = {
+                        ok: 0,
+                        products: 0,
+                        neutral: 0,
+                        productTotals: {}
+                    };
+                    (appData.rooms || []).forEach(room => {
+                        if (!room) return;
+                        normalizeRoomDeadlineStatus(room);
+                        const status = room.deadlinesStatus || DEADLINE_STATUS.NEUTRAL;
+                        if (status === DEADLINE_STATUS.OK) summary.ok += 1;
+                        else if (status === DEADLINE_STATUS.PRODUCTS) summary.products += 1;
+                        else summary.neutral += 1;
+
+                        const entries = Object.entries(room.products || {});
+                        entries.forEach(([key, count]) => {
+                            const num = Number(count);
+                            if (!num) return;
+                            summary.productTotals[key] = (summary.productTotals[key] || 0) + num;
+                        });
+                    });
+                    return summary;
+                }
+                function renderDeadlinesStats() {
+                    const data = computeDeadlinesSummary();
+                    const okEl = $('#deadlines-count-ok');
+                    const prodEl = $('#deadlines-count-products');
+                    const neutralEl = $('#deadlines-count-neutral');
+                    if (okEl) okEl.textContent = data.ok;
+                    if (prodEl) prodEl.textContent = data.products;
+                    if (neutralEl) neutralEl.textContent = data.neutral;
+
+                    const productsContainer = $('#deadlines-products-stats');
+                    if (!productsContainer) return;
+                    productsContainer.innerHTML = '';
+                    const entries = Object.entries(data.productTotals).sort((a, b) => b[1] - a[1]);
+                    if (entries.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'muted';
+                        empty.style.fontSize = '12px';
+                        empty.textContent = 'Нет выбранных продуктов';
+                        productsContainer.appendChild(empty);
+                        return;
+                    }
+                    entries.forEach(([key, count]) => {
+                        const name = appData.products[key] || key;
+                        const chip = document.createElement('div');
+                        chip.style.padding = '6px 10px';
+                        chip.style.borderRadius = '999px';
+                        chip.style.background = 'rgba(15,23,36,0.06)';
+                        chip.style.border = '1px solid rgba(15,23,36,0.08)';
+                        chip.textContent = `${name} — ${count}`;
+                        productsContainer.appendChild(chip);
                     });
                 }
-                function openModal(room) {
-                    $('#modal-room').textContent = room.number;
-                    const overlay = $('#modal'); overlay.classList.add('show'); overlay.style.display = 'flex';
-                    const modalEl = overlay.querySelector('.modal'); modalEl.classList.add('show');
-                    const keys = appData.roomProducts[room.type] || [];
-                    renderProductButtons($('#modal-products'), keys, room.products, (k, c) => { renderRooms(); }, { allowMaxTwo: true });
-                    $('#modal-ok-order').style.background = ''; $('#modal-ok-order').style.color = '';
+                function openDeadlinesStatsModal() {
+                    const overlay = $('#deadlines-stats-modal');
+                    if (!overlay) return;
+                    deadlinesStatsModalOpen = true;
+                    renderDeadlinesStats();
+                    overlay.classList.add('show');
+                    overlay.style.display = 'flex';
+                    const modalEl = overlay.querySelector('.modal');
+                    if (modalEl) modalEl.classList.add('show');
                 }
-                function closeModal() { const overlay = $('#modal'); const modalEl = overlay.querySelector('.modal'); modalEl.classList.remove('show'); overlay.classList.remove('show'); setTimeout(() => overlay.style.display = 'none', 260); appData.selectedRoom = null; renderRooms(); }
+                function closeDeadlinesStatsModal() {
+                    const overlay = $('#deadlines-stats-modal');
+                    if (!overlay) return;
+                    deadlinesStatsModalOpen = false;
+                    const modalEl = overlay.querySelector('.modal');
+                    if (modalEl) modalEl.classList.remove('show');
+                    overlay.classList.remove('show');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 260);
+                }
+                function updateDeadlinesStatsIfOpen() {
+                    if (!deadlinesStatsModalOpen) return;
+                    renderDeadlinesStats();
+                }
 
                 /* renderProductButtons for forms */
                 function renderProductButtons(container, keys = [], targetObj = {}, onChange = null, options = {}) {
     if (!container) return;
+    
+    // ОЧИЩАЕМ контейнер
     container.innerHTML = '';
+    
     keys.forEach(k => {
         const name = appData.products[k] || k;
         const emoji = (typeof PRODUCT_EMOJIS !== 'undefined' && PRODUCT_EMOJIS[k]) ? PRODUCT_EMOJIS[k] : '';
@@ -3430,7 +4198,6 @@ body.custom-calendar-open input[type="date"] {
         btn.className = 'product-btn';
         btn.dataset.product = k;
         
-        // Используем span для текста для лучшего контроля
         const textSpan = document.createElement('span');
         textSpan.className = 'btn-text';
         textSpan.textContent = emoji ? `${emoji} ${name}` : name;
@@ -3439,32 +4206,35 @@ body.custom-calendar-open input[type="date"] {
         const maxQ = MULTI_LIMITS[k] || 1;
         const cur = targetObj[k] || 0;
         
-        // Всегда создаем элемент для счетчика
         const span = document.createElement('span');
         span.className = 'product-count';
         if (cur > 0) {
             btn.classList.add('active');
             span.textContent = cur;
         }
-        // Если количество 0, span остается пустым - будет показан пустой кружочек
         btn.appendChild(span);
         
         btn.addEventListener('click', () => {
-            const cur = targetObj[k] || 0;
-            const next = (cur + 1) % (maxQ + 1);
-            if (next === 0) delete targetObj[k]; 
-            else targetObj[k] = next;
+            const current = targetObj[k] || 0;
+            const next = (current + 1) % (maxQ + 1);
             
-            // Обновляем счетчик
+            if (next === 0) {
+                delete targetObj[k];
+            } else {
+                targetObj[k] = next;
+            }
+            
+            // ОБНОВЛЯЕМ отображение кнопки
             const countSpan = btn.querySelector('.product-count');
             if (next > 0) {
                 btn.classList.add('active');
                 countSpan.textContent = next;
             } else {
                 btn.classList.remove('active');
-                countSpan.textContent = ''; // Очищаем текст - покажет пустой кружочек
+                countSpan.textContent = '';
             }
             
+            // ВЫЗЫВАЕМ колбек для обновления состояния
             if (typeof onChange === 'function') onChange(k, next);
             saveDebounced();
         });
@@ -3608,6 +4378,7 @@ body.custom-calendar-open input[type="date"] {
                         else record.statusMode = null;
                     }
                     if (!('statusMode' in record)) record.statusMode = null;
+                    if (record.statusMode === '') record.statusMode = null;
                     // If any product non-neutral, clear mode to avoid conflict
                     const anyNon = (record.products || []).some(p => Number(p.status || 0) !== 0);
                     if (anyNon && record.statusMode) record.statusMode = null;
@@ -3617,7 +4388,8 @@ body.custom-calendar-open input[type="date"] {
                 function canSaveCard(rec) {
                     if (!rec) return false;
                     const allNonNeutral = (rec.products || []).length > 0 && (rec.products || []).every(p => Number(p.status || 0) !== 0);
-                    return (rec.statusMode !== null) || allNonNeutral;
+                    const hasMode = rec.statusMode != null && rec.statusMode !== '';
+                    return hasMode || allNonNeutral;
                 }
 
                 /* Format HH:MM */
@@ -3908,6 +4680,7 @@ saveBtn.addEventListener('click', () => {
                     // Determine any non-neutral product
                     const anyNonNeutral = (record.products || []).some(p => Number(p.status || 0) !== 0);
                     const allNonNeutral = (record.products || []).length > 0 && (record.products || []).every(p => Number(p.status || 0) !== 0);
+                    const hasMode = record.statusMode != null && record.statusMode !== '';
 
                     // Mode buttons disabled if any product non-neutral
                     card.querySelectorAll('.mode-btn').forEach(b => {
@@ -3935,7 +4708,7 @@ saveBtn.addEventListener('click', () => {
                     });
 
                     // Save button enabled if mode selected OR all products non-neutral
-                    const enabled = (record.statusMode !== null) || allNonNeutral;
+                    const enabled = hasMode || allNonNeutral;
                     const saveBtn = card.querySelector('.card-save');
                     if (saveBtn) saveBtn.disabled = !enabled;
 
@@ -4107,6 +4880,7 @@ saveBtn.addEventListener('click', () => {
     restoreHistoryIfNeeded();
     
     setupFirebaseListener();
+    setupRoomsRealtimeListener();
     await loadData();
     
     // Дополнительная проверка истории
@@ -4163,7 +4937,12 @@ saveBtn.addEventListener('click', () => {
                 }
 
                 /* Escape closes modal */
-                window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('#modal').classList.contains('show')) closeModal(); } });
+                window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if ($('#modal').classList.contains('show')) closeModal();
+        else if ($('#deadlines-stats-modal').classList.contains('show')) closeDeadlinesStatsModal();
+    }
+});
 
                 /* ==== Calculator: product chips with totals ==== */
                 function initCalculator() {
@@ -6404,10 +7183,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         sortedFloors.forEach(floor => {
             const floorSection = document.createElement('div');
-            floorSection.className = 'floor-section';
+            floorSection.className = 'dispatchers-floor-section';
             
             const floorTitle = document.createElement('div');
-            floorTitle.className = 'floor-title';
+            floorTitle.className = 'dispatchers-floor-title';
             floorTitle.textContent = `${floor} этаж`;
             floorSection.appendChild(floorTitle);
             
@@ -6451,7 +7230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleRoomGridClick(event) {
-        const roomElement = event.target.closest('.dispatchers-room-item');
+                const roomElement = event.target.closest('.dispatchers-room-item');
         if (roomElement) {
             const roomNumber = roomElement.dataset.room;
             toggleRoomSelection(roomNumber);
@@ -6874,18 +7653,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultDiv = document.getElementById('dispatchers-result');
         if (!resultDiv) return;
         
-        const excludedCount = window.selectedRooms.size;
+        const selectedRoomsSet = new Set(Array.from(window.selectedRooms || []).map(String));
+        const excludedStateCount = Math.max(0, totalFound - rooms.length);
+        const effectiveRoomsCount = rooms.length;
         const resultFloors = groupRoomsByFloor(rooms);
         const sortedFloors = Object.keys(resultFloors).sort((a, b) => parseInt(a) - parseInt(b));
         
         let resultsHTML = `
             <div class="dispatchers-stats">
                 <div class="dispatchers-stat-item">
-                    <div class="dispatchers-stat-value">${rooms.length}</div>
+                    <div class="dispatchers-stat-value">${effectiveRoomsCount}</div>
                     <div class="dispatchers-stat-label">Итоговых номеров</div>
                 </div>
                 <div class="dispatchers-stat-item">
-                    <div class="dispatchers-stat-value">${excludedCount}</div>
+                    <div class="dispatchers-stat-value">${excludedStateCount}</div>
                     <div class="dispatchers-stat-label">Исключено номеров</div>
                 </div>
             </div>
@@ -6895,16 +7676,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         sortedFloors.forEach(floor => {
-            resultsHTML += `<div class="floor-section">
-                <div class="floor-title">${floor} этаж</div>
+            resultsHTML += `<div class="dispatchers-floor-section">
+                <div class="dispatchers-floor-title">${floor} этаж</div>
                 <div class="dispatchers-room-list">`;
             
             const sortedRooms = resultFloors[floor].sort((a, b) => parseInt(a) - parseInt(b));
             sortedRooms.forEach(room => {
                 const state = resultRoomStates.get(room) || 0;
+                if (selectedRoomsSet.has(String(room))) {
+                    return;
+                }
                 let classes = 'dispatchers-room-item result-room';
-                if (state === 1) classes += ' excluded';
-                else if (state === 2) classes += ' on-arrival';
+                if (state === 2) classes += ' on-arrival';
                 resultsHTML += `<div class="${classes}" data-room="${room}">${room}</div>`;
             });
             
@@ -7348,3 +8131,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
