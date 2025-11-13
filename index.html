@@ -2604,15 +2604,15 @@ min-height: 18px;
 <nav aria-hidden="false" class="nav">
 <div class="logo"><i class="fas fa-wine-bottle"></i> Minibar</div>
 <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
-<div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
-<div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
 <div class="nav-item" data-tab="dispatchers"><i class="fas fa-file-pdf"></i><span>Депатчеры</span></div>
+<div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
+<div class="nav-item" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
+<div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
 <div class="nav-separator"></div>
 <!-- ADDED: extra desktop tabs (above connection status) -->
 <div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
 <div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
 <div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
-<div class="nav-item extra" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
 <div class="nav-item extra" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
 <div class="nav-separator"></div>
 <!-- Desktop connection status -->
@@ -2629,11 +2629,9 @@ min-height: 18px;
 <!-- сюда перенесём #mobileConnectionIndicator на мобильной ширине -->
 </div>
 <div class="mb-burger-menu" id="mbBurgerMenu" role="menu">
-<div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
-<div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
-<div class="mb-burger-item" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
-<div class="mb-burger-item" data-tab="history"><i class="fas fa-history"></i><span>История</span></div>
-<div class="mb-burger-item" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
+    <div class="mb-burger-item" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
+    <div class="mb-burger-item" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+    <div class="mb-burger-item" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
 </div>
 </div>
 <div class="card" id="accises-section">
@@ -2764,20 +2762,6 @@ min-height: 18px;
 <div class="accordion-subitem">3.3 GIH</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-<!-- ==== Практика ==== -->
-<div class="card hidden" id="practice-section">
-<div style="display:flex; justify-content:space-between; align-items:center;">
-<div style="font-weight:700; font-size:16px">Практика</div>
-</div>
-<div style="margin-top:15px;">
-<p>Практические задания:</p>
-<div class="rooms-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-top:10px">
-<div class="room-item">Тренировка акцизов</div>
-<div class="room-item">Инвентаризация</div>
-<div class="room-item">Тест по продуктам</div>
 </div>
 </div>
 </div>
@@ -2919,9 +2903,10 @@ min-height: 18px;
 <!-- Mobile connection indicator -->
 <div class="mobile-connection-indicator disconnected" id="mobileConnectionIndicator"></div>
 <div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
-<div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
-<div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
 <div class="b-item" data-tab="dispatchers" title="Депатчеры"><i class="fas fa-list"></i><div class="b-label">Депатчеры</div></div>
+<div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
+<div class="b-item" data-tab="history" title="История"><i class="fas fa-history"></i><div class="b-label">История</div></div>
+<div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
 </div>
 <!-- Modal (rooms) -->
 <div aria-hidden="true" class="overlay" id="modal">
