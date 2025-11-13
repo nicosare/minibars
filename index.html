@@ -39,7 +39,7 @@ function updateGIHSummary() {
     // Формируем HTML-список
     const htmlParts = entries.map(([key, count]) => {
         const name = appData.products[key] || key;
-        return `<div><strong>${name}</strong> — ${count}</div>`;
+        return `<div><strong>${name}</strong> x${count}</div>`;
     });
 
     listEl.innerHTML = htmlParts.join("");
@@ -244,7 +244,7 @@ function updateGIHSummary() {
     // Формируем HTML-список
     const htmlParts = entries.map(([key, count]) => {
         const name = appData.products[key] || key;
-        return `<div><strong>${name}</strong> — ${count}</div>`;
+        return `<div><strong>${name}</strong> x${count}</div>`;
     });
 
     listEl.innerHTML = htmlParts.join("");
@@ -623,6 +623,9 @@ function updateGIHRoomsSummary() {
         font-weight: 600;
         font-size: 14px;
         margin-bottom: 10px;
+        cursor: pointer;                /* курсор-рука при наведении */
+    user-select: none;              /* запрет выделения текста */
+    transition: background 0.2s, color 0.2s;
         color: var(--primary-strong);
     }
 
@@ -2601,7 +2604,7 @@ min-height: 18px;
 <div class="app">
 <!-- LEFT NAV (desktop) -->
 <nav aria-hidden="false" class="nav">
-<div class="logo"><i class="fas fa-wine-bottle"></i> Minibar</div>
+<div class="logo"><i class="fas fa-wine-bottle" style="padding-right:10px;"></i>Минибары</div>
 <div class="nav-item active" data-tab="accises"><i class="fas fa-file-invoice"></i><span>Акцизы</span></div>
 <div class="nav-item" data-tab="dispatchers"><i class="fas fa-file-pdf"></i><span>Депатчеры</span></div>
 <div class="nav-item" data-tab="sroki"><i class="fas fa-door-closed"></i><span>Сроки</span></div>
@@ -2609,10 +2612,9 @@ min-height: 18px;
 <div class="nav-item" data-tab="gih"><i class="fas fa-users"></i><span>GIH</span></div>
 <div class="nav-separator"></div>
 <!-- ADDED: extra desktop tabs (above connection status) -->
-<div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
-<div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
-<div class="nav-item extra" data-tab="practice"><i class="fas fa-flask"></i><span>Практика</span></div>
 <div class="nav-item extra" data-tab="calculator"><i class="fas fa-calculator"></i><span>Калькулятор</span></div>
+<div class="nav-item extra" data-tab="learning"><i class="fas fa-book-open"></i><span>Обучение</span></div>
+<div class="nav-item extra" data-tab="settings"><i class="fas fa-cog"></i><span>Настройки</span></div>
 <div class="nav-separator"></div>
 <!-- Desktop connection status -->
 <div class="connection-status disconnected" id="connectionStatus">
@@ -2656,9 +2658,11 @@ min-height: 18px;
 <button class="btn ghost small" id="deadlines-select-mode-btn" title="Режим выбора номеров"><i class="fas fa-check-square"></i> Выбрать номера</button>
 <button class="btn ghost small" id="deadlines-print-btn" title="Печать выбранных номеров" style="display:none;"><i class="fas fa-print"></i> Печать</button>
 <button class="btn small" id="deadlines-stats-btn" title="Статистика по номерам Сроки"><i class="fas fa-chart-pie"></i> Статистика</button>
+<button class="btn ghost small" id="deadlines-reset-btn" title="Сбросить все номера"><i class="fas fa-undo"></i></button>
 </div>
 <div class="row mobile-only" style="gap:8px; align-items:center; justify-content:flex-end;">
 <button class="btn small" id="deadlines-stats-btn-mobile" title="Статистика по номерам Сроки"><i class="fas fa-chart-pie"></i> Статистика</button>
+<button class="btn ghost small" id="deadlines-reset-btn-mobile" title="Сбросить все номера"><i class="fas fa-undo"></i></button>
 </div>
 </div>
 <div class="rooms-grid" id="rooms-grid"></div>
@@ -3195,8 +3199,12 @@ min-height: 18px;
                     if (isRendering) return;
                     isRendering = true;
                     appData.gihRecords.forEach(r => normalizeRecordProducts(r));
-                    $('#accises-list').innerHTML = '';
-                    (appData.accises || []).forEach(renderAcciseItem);
+                    const accisesList = $('#accises-list');
+accisesList.innerHTML = '';
+
+// Рендерим акцизы в правильном порядке (последние добавленные - сверху)
+const accisesToRender = [...(appData.accises || [])];
+accisesToRender.forEach(renderAcciseItem);
                     updateAcciseStats();
                     appData.rooms = appData.rooms || [];
                     renderRooms();
@@ -3389,7 +3397,10 @@ min-height: 18px;
                     bindAcciseInput($('#new-accise'));
                     bindAcciseInput($('#new-accise-mobile'));
                     $('#copy-accises').addEventListener('click', () => {
-                        const v = (appData.accises || []).filter(a => a.isValid).map(a => a.text);
+                        // Для копирования: старые сначала, новые в конце
+const v = [...(appData.accises || [])]// Сортируем от старых к новым
+    .filter(a => a.isValid)
+    .map(a => a.text);
                         if (v.length === 0) {
                             alert("Список пуст");
                             return;
@@ -3418,8 +3429,7 @@ min-height: 18px;
     doCopy(() => {
         // Немедленно очищаем данные
         appData.accises = [];
-        document.querySelector('#accises-list').innerHTML = '';
-        updateAcciseStats();
+        renderAccisesList();
         
         // Принудительно сохраняем изменения в Firebase и localStorage
         clearTimeout(saveTimer); // Очищаем любой отложенный вызов
@@ -3488,53 +3498,123 @@ min-height: 18px;
                     return t;
                 }
                 function addAccise(text) {
-                    if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => {
-                        const conv = convertLayout(p);
-                        // Проверка на дубликаты
-                        if (appData.accises.some(x => x.text === conv)) {
-                            alert("Такой акциз уже добавлен");
-                            return;
-                        } const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); saveDebounced();
-                        updateUIFromData();
-                    }); updateAcciseStats();
-                }
+    if (!text || !text.trim()) return; 
+    
+    const parts = text.split(/[\s\n]+/).filter(Boolean); 
+    let addedAny = false;
+    
+    parts.forEach(p => {
+        const conv = convertLayout(p);
+        // Проверка на дубликаты
+        if (appData.accises.some(x => x.text === conv)) {
+            alert("Такой акциз уже добавлен");
+            return;
+        } 
+        
+        const isValid = conv.length >= 20 && /^\d/.test(conv); 
+        const item = { 
+            id: Date.now() + Math.random(), 
+            text: conv, 
+            isValid, 
+            ts: new Date().toISOString() 
+        }; 
+        
+        // Добавляем в начало массива (новые сверху)
+        appData.accises.unshift(item);
+        addedAny = true;
+    }); 
+    
+    if (addedAny) {
+        // Перерисовываем весь список акцизов
+        renderAccisesList();
+        updateAcciseStats();
+        saveDebounced();
+    }
+}
+function renderAccisesList() {
+    const list = document.querySelector('#accises-list');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    // Сортируем по времени (новые сверху)
+    const sortedAccises = [...(appData.accises || [])].sort((a, b) => 
+        new Date(b.ts) - new Date(a.ts)
+    );
+    
+    sortedAccises.forEach(accise => {
+        const el = document.createElement('div');
+        el.className = 'accise-item ' + (accise.isValid ? 'valid' : 'invalid');
+        el.dataset.id = accise.id;
+        el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
+
+        el.innerHTML = `
+            <button class="btn ghost small accise-remove" title="Удалить"
+                    style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+                <i class="fas fa-trash"></i>
+            </button>
+
+            <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
+                <div class="text" style="font-weight:600; white-space:normal;">${accise.text}</div>
+            </div>
+
+            <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
+                <small class="muted">${new Date(accise.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+            </div>
+        `;
+
+        // Delete handler
+        el.querySelector('.accise-remove').addEventListener('click', () => {
+            appData.accises = appData.accises.filter(x => x.id !== accise.id);
+            renderAccisesList(); // Перерисовываем весь список
+            updateAcciseStats();
+            saveDebounced();
+        });
+
+        list.appendChild(el);
+    });
+}
 
 
-                function renderAcciseItem(a) {
-                    const list = document.querySelector('#accises-list');
-                    // Avoid duplicates
-                    if (list.querySelector(`[data-id="${a.id}"]`)) return;
+function renderAcciseItem(a) {
+    const list = document.querySelector('#accises-list');
+    if (!list) return;
 
-                    const el = document.createElement('div');
-                    el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid');
-                    el.dataset.id = a.id;
-                    el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
+    // Проверяем, не существует ли уже элемент с таким ID
+    const existingEl = list.querySelector(`[data-id="${a.id}"]`);
+    if (existingEl) return;
 
-                    el.innerHTML = `
-                                            <button class="btn ghost small accise-remove" title="Удалить"
-                                                    style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+    const el = document.createElement('div');
+    el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid');
+    el.dataset.id = a.id;
+    el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
 
-                                            <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
-                                                <div class="text" style="font-weight:600; white-space:normal;">${a.text}</div>
-                                            </div>
+    el.innerHTML = `
+        <button class="btn ghost small accise-remove" title="Удалить"
+                style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+            <i class="fas fa-trash"></i>
+        </button>
 
-                                            <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
-                                                <small class="muted">${new Date(a.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-                                            </div>
-                                        `;
+        <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
+            <div class="text" style="font-weight:600; white-space:normal;">${a.text}</div>
+        </div>
 
-                    // Delete handler
-                    el.querySelector('.accise-remove').addEventListener('click', () => {
-                        appData.accises = appData.accises.filter(x => x.id !== a.id);
-                        el.remove();
-                        updateAcciseStats();
-                        saveDebounced();
-                    });
+        <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
+            <small class="muted">${new Date(a.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+        </div>
+    `;
 
-                    list.appendChild(el);
-                }
+    // Delete handler
+    el.querySelector('.accise-remove').addEventListener('click', () => {
+        appData.accises = appData.accises.filter(x => x.id !== a.id);
+        el.remove();
+        updateAcciseStats();
+        saveDebounced();
+    });
+
+    // Добавляем в начало списка
+    list.insertBefore(el, list.firstChild);
+}
                 function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
                 /* ===== ROOMS & MODAL (deadlines) ===== */
@@ -3548,6 +3628,61 @@ min-height: 18px;
     let deadlinesStatsModalOpen = false;
     let deadlinesSelectMode = false;
     let deadlinesSelectedRooms = new Set();
+
+    function resetAllDeadlines() {
+    if (!confirm("Вы уверены, что хотите очистить все сроки? Это действие нельзя отменить.")) {
+        return;
+    }
+    
+    // Сбрасываем все номера
+    (appData.rooms || []).forEach(room => {
+        if (room) {
+            room.products = {};
+            room.deadlinesStatus = DEADLINE_STATUS.NEUTRAL;
+        }
+    });
+    
+    // Сбрасываем выбранные номера если есть
+    deadlinesSelectedRooms.clear();
+    updateDeadlinesSelectedCount();
+    
+    // Обновляем интерфейс
+    renderRooms();
+    saveDebounced();
+    pushRoomsRealtime();
+    
+    // Закрываем модальное окно если открыто
+    if (currentDeadlineRoomNumber != null) {
+        closeModal();
+    }
+    
+    // Обновляем статистику если открыта
+    updateDeadlinesStatsIfOpen();
+    
+    alert("Все сроки очищены!");
+}
+function toggleFloorSelection(floorNumber) {
+    const floorRooms = (appData.rooms || []).filter(r => r && r.floor === floorNumber);
+    if (!floorRooms.length) return;
+
+    // Проверяем, выбраны ли уже все номера этого этажа (сравниваем как строки)
+    const allSelected = floorRooms.every(r => deadlinesSelectedRooms.has(String(r.number)));
+
+    // Переключаем состояние (всегда работаем со строками!)
+    floorRooms.forEach(r => {
+        const numStr = String(r.number);
+        if (allSelected) {
+            deadlinesSelectedRooms.delete(numStr);
+        } else {
+            deadlinesSelectedRooms.add(numStr);
+        }
+    });
+
+    // 🔸 Обновляем счётчик и интерфейс
+    updateDeadlinesSelectedCount();
+    renderRooms();
+}
+
 
                 function initSroki() {
                     renderRooms();
@@ -3566,8 +3701,8 @@ min-height: 18px;
                     const okBtn = $('#modal-ok-order');
                     if (okBtn) okBtn.addEventListener('click', markDeadlinesOk);
 
-                    const resetBtn = $('#modal-reset');
-                    if (resetBtn) resetBtn.addEventListener('click', resetDeadlineSelections);
+                    const resetSelectBtn = $('#modal-reset');
+                    if (resetSelectBtn) resetSelectBtn.addEventListener('click', resetDeadlineSelections);
 
                     const statsBtn = $('#deadlines-stats-btn');
                     if (statsBtn) statsBtn.addEventListener('click', openDeadlinesStatsModal);
@@ -3588,6 +3723,12 @@ min-height: 18px;
                     }
                     const statsClose = $('#deadlines-stats-close');
                     if (statsClose) statsClose.addEventListener('click', closeDeadlinesStatsModal);
+                    const resetBtn = $('#deadlines-reset-btn');
+    const resetBtnMobile = $('#deadlines-reset-btn-mobile');
+    
+    if (resetBtn) resetBtn.addEventListener('click', resetAllDeadlines);
+    if (resetBtnMobile) resetBtnMobile.addEventListener('click', resetAllDeadlines);
+                    
                 }
                 function groupRoomsByFloorForDeadlines(rooms = []) {
                     const floors = {};
@@ -3772,9 +3913,53 @@ min-height: 18px;
                         const section = document.createElement('div');
                         section.className = 'deadlines-floor-section';
                         const title = document.createElement('div');
-                        title.className = 'deadlines-floor-title';
-                        title.textContent = floorLabelFromKey(floorKey);
-                        section.appendChild(title);
+title.className = 'deadlines-floor-title';
+title.textContent = floorLabelFromKey(floorKey);
+
+// 🔸 Добавляем обработчик клика — выбрать/снять все номера этого этажа
+// Заменить существующий title.addEventListener('click', ...) на этот код:
+title.addEventListener('click', () => {
+    // Только в режиме выбора номеров
+    if (!deadlinesSelectMode) return;
+
+    // Получаем номера этажа из того же объекта floors, что использует renderRooms()
+    const roomsOnFloor = Array.isArray(floors[floorKey]) ? floors[floorKey].slice() : [];
+    if (roomsOnFloor.length === 0) {
+        console.warn('toggleFloorSelection: нет номеров на этаже', floorKey);
+        return;
+    }
+
+    // Приводим к строкам для корректного сравнения с Set
+    const roomsOnFloorStr = roomsOnFloor.map(n => String(n));
+
+    // Проверяем, выбраны ли все (строковое сравнение)
+    const allSelected = roomsOnFloorStr.every(numStr => deadlinesSelectedRooms.has(numStr));
+
+    // Лог для отладки — убрать позже
+    console.debug('toggleFloorSelection', { floorKey, roomsOnFloorStr, allSelected, beforeCount: deadlinesSelectedRooms.size });
+
+    // Переключаем: если все выбраны — удаляем, иначе добавляем
+    if (allSelected) {
+        roomsOnFloorStr.forEach(numStr => deadlinesSelectedRooms.delete(numStr));
+    } else {
+        roomsOnFloorStr.forEach(numStr => deadlinesSelectedRooms.add(numStr));
+    }
+
+    // Обновляем счётчик и отрисовку
+    updateDeadlinesSelectedCount();
+    renderRooms();
+
+    // Сохраняем выбор, если нужно (раскомментируй, если у тебя есть save-функция для этого)
+    // if (typeof saveDeadlinesSelection === 'function') saveDeadlinesSelection();
+    // или, если используется saveDebounced():
+    // saveDebounced();
+
+    // Лог для отладки — убрать позже
+    console.debug('toggleFloorSelection after', { floorKey, afterCount: deadlinesSelectedRooms.size });
+});
+
+section.appendChild(title);
+
                         const list = document.createElement('div');
                         list.className = 'deadlines-room-list';
                         const roomsOnFloor = floors[floorKey].slice().sort((a, b) => a - b);
@@ -3900,180 +4085,214 @@ min-height: 18px;
                 }
 
                 function printDeadlinesSelected() {
-                    if (deadlinesSelectedRooms.size === 0) return;
-                    const now = new Date();
-                    const dateString = now.toLocaleDateString('ru-RU');
-                    const selectedRooms = Array.from(deadlinesSelectedRooms).map(Number).sort((a, b) => a - b);
-                    const roomsData = selectedRooms.map(num => {
-                        const room = appData.rooms.find(r => r && r.number === num);
-                        const products = room && room.products ? room.products : {};
-                        const productList = Object.entries(products)
-                            .filter(([, count]) => Number(count) > 0)
-                            .map(([key, count]) => {
-                                const name = appData.products[key] || key;
-                                return count > 1 ? `${name} x${count}` : name;
-                            })
-                            .join(', ');
-                        return { number: num, products: productList };
-                    });
-                    const itemsPerPage = 72;
-                    const pageCount = Math.ceil(roomsData.length / itemsPerPage);
-                    const printWindow = window.open('', '_blank');
-                    let htmlContent = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Expirations ${dateString}</title>
-                            <style>
-                                @page {
-                                    size: A4 landscape;
-                                    margin: 1cm;
-                                }
-                                body { 
-                                    font-family: Times New Roman, sans-serif; 
-                                    margin: 0;
-                                    padding: 0;
-                                }
-                                .page-container {
-                                    display: flex;
-                                    justify-content: space-around;
-                                    width: 100%;
-                                    height: 95vh;
-                                    page-break-after: always;
-                                }
-                                .page-column {
-                                    flex: 1;
-                                    padding-top: 1cm;
-                                    padding-left: 1cm;
-                                    padding-right: 1cm;
-                                    box-sizing: border-box;
-                                }
-                                .print-table { 
-                                    width: 100%; 
-                                    border-collapse: collapse;
-                                    font-size: 10px;
-                                }
-                                .print-table th, .print-table td { 
-                                    border: 1px solid #000; 
-                                    padding: 0px;
-                                    height: 16px;
-                                }
-                                .print-table th { 
-                                    background: #f0f0f0; 
-                                    font-weight: bold; 
-                                    text-align: center;
-                                }
-                                .print-table .number-col { 
-                                    width: 50px; 
-                                    text-align: center; 
-                                }
-                                .print-table .products-col { 
-                                    width: auto; 
-                                    text-align: center;
-                                }
-                                @media print {
-                                    body { 
-                                        margin: 0;
-                                        padding: 0;
-                                    }
-                                    .page-container {
-                                        height: 95vh;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                    `;
-                    for (let pageNum = 0; pageNum < pageCount; pageNum++) {
-                        const pageStart = pageNum * itemsPerPage;
-                        const pageEnd = pageStart + itemsPerPage;
-                        const pageItems = roomsData.slice(pageStart, pageEnd);
-                        const leftPage = pageItems.slice(0, 36);
-                        const rightPage = pageItems.slice(36, 72);
-                        while (leftPage.length < 36) leftPage.push(null);
-                        while (rightPage.length < 36) rightPage.push(null);
-                        htmlContent += `
-                            <div class="page-container">
-                                <div class="page-column">
-                                    <table class="print-table">
-                                        <thead>
-                                            <tr>
-                                                <th class="number-col"><font size="2">№</font></th>
-                                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                        `;
-                        for (let i = 0; i < 36; i++) {
-                            if (leftPage[i]) {
-                                htmlContent += `
-                                    <tr>
-                                        <td class="number-col"><strong><font size="2">${leftPage[i].number}</font></strong></td>
-                                        <td class="products-col"><font size="1">${leftPage[i].products || '&nbsp;'}</font></td>
-                                    </tr>
-                                `;
-                            } else {
-                                htmlContent += `
-                                    <tr>
-                                        <td class="number-col">&nbsp;</td>
-                                        <td class="products-col">&nbsp;</td>
-                                    </tr>
-                                `;
-                            }
-                        }
-                        htmlContent += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="page-column">
-                                    <table class="print-table">
-                                        <thead>
-                                            <tr>
-                                                <th class="number-col"><font size="2">№</font></th>
-                                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                        `;
-                        for (let i = 0; i < 36; i++) {
-                            if (rightPage[i]) {
-                                htmlContent += `
-                                    <tr>
-                                        <td class="number-col"><strong><font size="2">${rightPage[i].number}</font></strong></td>
-                                        <td class="products-col"><font size="1">${rightPage[i].products || '&nbsp;'}</font></td>
-                                    </tr>
-                                `;
-                            } else {
-                                htmlContent += `
-                                    <tr>
-                                        <td class="number-col">&nbsp;</td>
-                                        <td class="products-col">&nbsp;</td>
-                                    </tr>
-                                `;
-                            }
-                        }
-                        htmlContent += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    htmlContent += `
-                        </body>
-                        </html>
-                    `;
-                    printWindow.document.write(htmlContent);
-                    printWindow.document.close();
-                    printWindow.onload = function() {
-                        setTimeout(() => {
-                            printWindow.print();
-                            setTimeout(() => {
-                                printWindow.close();
-                            }, 500);
-                        }, 500);
-                    };
+    if (deadlinesSelectedRooms.size === 0) return;
+    const now = new Date();
+    const dateString = now.toLocaleDateString('ru-RU');
+    const selectedRooms = Array.from(deadlinesSelectedRooms).map(Number).sort((a, b) => a - b);
+    // 🔸 Исключаем номера, у которых статус "OK" (Сроки в порядке)
+const filteredRooms = selectedRooms.filter(num => {
+    const room = (appData.rooms || []).find(r => r && r.number === num);
+    // Если записи о комнате нет — печатаем (пользователь мог просто выбрать номер)
+    if (!room) return true;
+    // room.deadlinesStatus хранит текущее состояние (NEUTRAL / PRODUCTS / OK)
+    return room.deadlinesStatus !== DEADLINE_STATUS.OK;
+});
+
+    const roomsData = filteredRooms.map(num => {
+        const room = appData.rooms.find(r => r && r.number === num);
+        const products = room && room.products ? room.products : {};
+        const productList = Object.entries(products)
+            .filter(([, count]) => Number(count) > 0)
+            .map(([key, count]) => {
+                const name = appData.products[key] || key;
+                return count > 1 ? `${name} x${count}` : name;
+            })
+            .join(', ');
+        return { number: num, products: productList };
+    });
+
+    // 🔸 Собираем суммарное количество каждого продукта по всем выбранным номерам
+    const totalProductCounts = {};
+    selectedRooms.forEach(num => {
+        const room = appData.rooms.find(r => r && r.number === num);
+        if (!room || !room.products) return;
+        Object.entries(room.products).forEach(([key, cnt]) => {
+            const n = Number(cnt) || 0;
+            if (n > 0) totalProductCounts[key] = (totalProductCounts[key] || 0) + n;
+        });
+    });
+    const totalProductsEntries = Object.entries(totalProductCounts)
+        .sort((a, b) => b[1] - a[1]);
+
+    // 🔸 Добавляем в общий список (они просто продолжат идти после номеров)
+    if (totalProductsEntries.length > 0) {
+        roomsData.push({ number: '', products: '' }); // пустая строка
+        roomsData.push({ number: '', products: 'Необходимые продукты' });
+        totalProductsEntries.forEach(([key, cnt]) => {
+            const name = appData.products[key] || key;
+            roomsData.push({ number: '', products: `${name} x${cnt}` });
+        });
+    }
+
+    const itemsPerPage = 72;
+    const pageCount = Math.ceil(roomsData.length / itemsPerPage);
+    const printWindow = window.open('', '_blank');
+    let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Expirations ${dateString}</title>
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 1cm;
                 }
+                body { 
+                    font-family: Times New Roman, sans-serif; 
+                    margin: 0;
+                    padding: 0;
+                }
+                .page-container {
+                    display: flex;
+                    justify-content: space-around;
+                    width: 100%;
+                    height: 95vh;
+                    page-break-after: always;
+                }
+                .page-column {
+                    flex: 1;
+                    padding-top: 1cm;
+                    padding-left: 1cm;
+                    padding-right: 1cm;
+                    box-sizing: border-box;
+                }
+                .print-table { 
+                    width: 100%; 
+                    border-collapse: collapse;
+                    font-size: 10px;
+                }
+                .print-table th, .print-table td { 
+                    border: 1px solid #000; 
+                    padding: 0px;
+                    height: 16px;
+                }
+                .print-table th { 
+                    background: #f0f0f0; 
+                    font-weight: bold; 
+                    text-align: center;
+                }
+                .print-table .number-col { 
+                    width: 50px; 
+                    text-align: center; 
+                }
+                .print-table .products-col { 
+                    width: auto; 
+                    text-align: center;
+                }
+                @media print {
+                    body { 
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .page-container {
+                        height: 95vh;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+    `;
+    for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+        const pageStart = pageNum * itemsPerPage;
+        const pageEnd = pageStart + itemsPerPage;
+        const pageItems = roomsData.slice(pageStart, pageEnd);
+        const leftPage = pageItems.slice(0, 36);
+        const rightPage = pageItems.slice(36, 72);
+        while (leftPage.length < 36) leftPage.push(null);
+        while (rightPage.length < 36) rightPage.push(null);
+        htmlContent += `
+            <div class="page-container">
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        for (let i = 0; i < 36; i++) {
+            if (leftPage[i]) {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong><font size="2">${leftPage[i].number}</font></strong></td>
+                        <td class="products-col" style="text-align: left; padding-left: 5px"><font size="1">${leftPage[i].products || '&nbsp;'}</font></td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="products-col">&nbsp;</td>
+                    </tr>
+                `;
+            }
+        }
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="products-col"><font size="2">Expirations of ${dateString}</font></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        for (let i = 0; i < 36; i++) {
+            if (rightPage[i]) {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong><font size="2">${rightPage[i].number}</font></strong></td>
+                        <td class="products-col"><font size="1">${rightPage[i].products || '&nbsp;'}</font></td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="products-col">&nbsp;</td>
+                    </tr>
+                `;
+            }
+        }
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    htmlContent += `
+        </body>
+        </html>
+    `;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.onload = function() {
+        setTimeout(() => {
+            printWindow.print();
+            setTimeout(() => {
+                printWindow.close();
+            }, 500);
+        }, 500);
+    };
+}
+
 
                 function computeDeadlinesSummary() {
                     const summary = {
@@ -4127,7 +4346,7 @@ min-height: 18px;
                         chip.style.borderRadius = '999px';
                         chip.style.background = 'rgba(15,23,36,0.06)';
                         chip.style.border = '1px solid rgba(15,23,36,0.08)';
-                        chip.textContent = `${name} — ${count}`;
+                        chip.textContent = `${name}  x${count}`;
                         productsContainer.appendChild(chip);
                     });
                 }
@@ -4737,11 +4956,14 @@ saveBtn.addEventListener('click', () => {
     appData.gihHistory = appData.gihHistory || [];
     appData.accises = appData.accises || [];
     appData.rooms = appData.rooms || [];
+    if (appData.accises && appData.accises.length > 0) {
+    appData.accises.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+}
     
     // Обновляем UI
     renderHistory();
     appData.gihRecords.forEach(r => normalizeRecordProducts(r));
-    (appData.accises || []).forEach(renderAcciseItem);
+    renderAccisesList(); 
     updateAcciseStats();
     renderRooms();
     renderAllGIHRecords();
@@ -4922,8 +5144,8 @@ saveBtn.addEventListener('click', () => {
                     const chipsWrap = document.getElementById('calc-chips');
                     const totalEl = document.getElementById('calc-total');
                     const selectedEl = document.getElementById('calc-selected');
-                    const resetBtn = document.getElementById('calc-reset');
-                    if (!chipsWrap || !totalEl || !selectedEl || !resetBtn) return;
+                    const resetSelectBtn = document.getElementById('calc-reset');
+                    if (!chipsWrap || !totalEl || !selectedEl || !resetSelectBtn) return;
 
 
                     const prices = {
@@ -4974,7 +5196,7 @@ saveBtn.addEventListener('click', () => {
         if (c > 0) {
             sum += c * (prices[k] || 0);
             const name = appData.products[k] || k;
-            lines.push(`${name} — ${c} шт.`);
+            lines.push(`${name} - ${c} шт.`);
         }
     });
 
@@ -5058,7 +5280,7 @@ saveBtn.addEventListener('click', () => {
                     });
                     chipsWrap.appendChild(columnsWrap);
 
-                    resetBtn.addEventListener('click', () => {
+                    resetSelectBtn.addEventListener('click', () => {
                         order.forEach(k => counts[k] = 0);
                         recalc();
                     });
@@ -5154,7 +5376,7 @@ saveBtn.addEventListener('click', () => {
                     // Формируем HTML-список
                     const htmlParts = entries.map(([key, count]) => {
                         const name = appData.products[key] || key;
-                        return `<div><strong>${name}</strong> — ${count}</div>`;
+                        return `<div><strong>${name}</strong>  x${count}</div>`;
                     });
 
                     listEl.innerHTML = htmlParts.join("");
@@ -5613,7 +5835,6 @@ function restoreHistoryIfNeeded() {
                         gih: 'GIH',
                         settings: 'Настройки',
                         learning: 'Обучение',
-                        practice: 'Практика',
                         history: 'История'
                     };
 
@@ -5657,7 +5878,7 @@ function restoreHistoryIfNeeded() {
                     // Формируем HTML-список
                     const htmlParts = entries.map(([key, count]) => {
                         const name = appData.products[key] || key;
-                        return `<div><strong>${name}</strong> — ${count}</div>`;
+                        return `<div><strong>${name}</strong>  x${count}</div>`;
                     });
 
                     listEl.innerHTML = htmlParts.join("");
@@ -5793,7 +6014,7 @@ function restoreHistoryIfNeeded() {
                     // Формируем HTML-список
                     const htmlParts = entries.map(([key, count]) => {
                         const name = appData.products[key] || key;
-                        return `<div><strong>${name}</strong> — ${count}</div>`;
+                        return `<div><strong>${name}</strong>  x${count}</div>`;
                     });
 
                     listEl.innerHTML = htmlParts.join("");
@@ -5927,7 +6148,7 @@ function restoreHistoryIfNeeded() {
                     // Формируем HTML-список
                     const htmlParts = entries.map(([key, count]) => {
                         const name = appData.products[key] || key;
-                        return `<div><strong>${name}</strong> — ${count}</div>`;
+                        return `<div><strong>${name}</strong>  x${count}</div>`;
                     });
 
                     listEl.innerHTML = htmlParts.join("");
@@ -6139,7 +6360,7 @@ function restoreHistoryIfNeeded() {
                     const $$ = s => Array.from(document.querySelectorAll(s));
 
                     const sections = [
-                        'accises-section', 'sroki-section', 'gih-section', 'dispatchers-section', 'settings-section', 'learning-section', 'practice-section', 'history-section'
+                        'accises-section', 'sroki-section', 'gih-section', 'dispatchers-section', 'settings-section', 'learning-section', 'history-section'
                     ];
 
                     function hideAll() {
@@ -6379,7 +6600,7 @@ function restoreHistoryIfNeeded() {
                         }
 
                         listEl.innerHTML = entries
-                            .map(([name, count]) => `<div><strong>${name}</strong> — ${count}</div>`)
+                            .map(([name, count]) => `<div><strong>${name}</strong> x${count}</div>`)
                             .join("");
 
                         container.style.display = 'block';
@@ -6418,7 +6639,7 @@ function restoreHistoryIfNeeded() {
                     const STORAGE_KEY = 'minibar-active-tab';
                     const sections = [
                         'accises', 'sroki', 'gih',
-                        'settings', 'learning', 'practice', 'history'
+                        'settings', 'learning', 'history'
                     ];
 
                     function hideAll() {
