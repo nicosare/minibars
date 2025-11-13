@@ -471,6 +471,7 @@ function updateGIHRoomsSummary() {
         min-height: 100vh;
         display: flex;
         align-items: stretch;
+        flex-direction: column;
     }
 
     .app {
@@ -2079,17 +2080,6 @@ function updateGIHRoomsSummary() {
         }
     }
 
-    #add-gih-btn {
-        background: var(--primary-strong) !important;
-        color: white !important;
-        border-color: var(--primary-strong) !important;
-        box-shadow: 0 4px 12px rgba(39, 103, 73, 0.3) !important;
-    }
-
-    #add-gih-btn:hover {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-    }
 
     /* Улучшенные анимации для всех элементов */
     .btn, .product-btn, .room-item, .gih-product, .nav-item, 
@@ -2376,7 +2366,7 @@ body.custom-calendar-open input[type="date"] {
     background: rgba(15,23,36,0.02);
     text-align: center;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 700;
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
     user-select: none;
 }
@@ -2578,12 +2568,7 @@ body.custom-calendar-open input[type="date"] {
     color: var(--text);
   }
 
-  /* уменьшение внутренних отступов, чтобы всё влезало в строку */
-  .dispatchers-header-row .btn.small,
-  .dispatchers-header-row .icon-btn,
-  #dispatchers-room-input-mobile {
-    min-height: 34px;
-  }
+  
 
   /* если заголовок слишком длинный — скрывать переполнение */
   #dispatchers-section > div[style] > div:first-child {
@@ -2605,9 +2590,15 @@ body.custom-calendar-open input[type="date"] {
         display: block !important;
     }
 }
+
+.bottom-line{
+width: 100%;
+min-height: 18px;
+}
 </style>
 </head>
 <body>
+    <div>
 <div class="app">
 <!-- LEFT NAV (desktop) -->
 <nav aria-hidden="false" class="nav">
@@ -2680,7 +2671,7 @@ body.custom-calendar-open input[type="date"] {
 <div id="gih-title-date" style="font-weight:700; font-size:16px">GIH</div>
 <div class="row"><button class="btn ghost small desktop-only" disabled="True" id="print-gih-btn" title="Печать GIH"><i class="fas fa-print"></i></button>
 <button class="btn ghost small" id="gih-sort-btn" title="Сортировать"><i class="fas fa-sort-numeric-down"></i></button>
-<button class="btn secondary small" id="add-gih-btn"><i class="fas fa-plus"></i> Новая запись</button>
+<button class="btn small" id="add-gih-btn"><i class="fas fa-plus"></i> Новая запись</button>
 </div>
 </div>
 <div aria-hidden="true" class="gih-form" id="gih-form">
@@ -2845,9 +2836,7 @@ body.custom-calendar-open input[type="date"] {
     style="padding:6px 10px; border:1px solid rgba(15,23,36,0.1); border-radius:8px; max-width:110px; font-size:13px;"
   />
 
-  <button id="dispatchers-apply-rooms-mobile" class="btn small" style="border-radius: 8px;" title="Внести данные" aria-label="Внести">
-    <i class="fas fa-check" aria-hidden="true"></i>
-  </button>
+  <button class="btn small" id="dispatchers-apply-rooms-mobile" style="white-space: nowrap;"><i class="fas fa-check"></i>Выделить</button>
 
   <button id="dispatchers-clear-rooms-mobile" class="btn ghost small" title="Очистить" aria-label="Очистить">
     <i class="fas fa-refresh" aria-hidden="true"></i>
@@ -2891,7 +2880,7 @@ body.custom-calendar-open input[type="date"] {
         <div style="font-weight:600; font-size:14px; margin-bottom:10px;" class="desktop-only">Таблица номеров комнат</div>
         <div id="dispatchers-roomsGrid"></div>
     <!-- Счетчик выделенных номеров (под таблицей) - для мобильной версии -->
-    <div class="mobile-only" style="text-align: center; padding: 10px; background: rgba(39,103,73,0.05); border-radius: 8px; margin-bottom: 15px;">
+    <div class="mobile-only" style="text-align: center; padding: 10px; background: rgba(39,103,73,0.05); border-radius: 8px; margin-top: 15px;">
         <span id="dispatchers-selectedCount-mobile" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
     </div>
     
@@ -8129,6 +8118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 })();
 </script>
+</div>
+<div class="bottom-line"></div>
 </body>
 </html>
 
