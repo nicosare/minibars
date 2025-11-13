@@ -2029,7 +2029,7 @@ function updateGIHRoomsSummary() {
     @media print {
         nav, .nav, .sidebar, .left-menu, .left-nav,
         .mb-header, .mobile-header,
-        .bottom-nav, #bottomNav, #history-search-btn, #history-next-day, #history-prev-day {
+        .bottom-nav, #print-history-btn, #bottomNav, #history-search-btn, #history-next-day, #history-prev-day {
             display: none !important;
         }
 
@@ -2839,10 +2839,11 @@ min-height: 18px;
             <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
                 <li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
                 <li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
-                <li>Выберите номера комнат или скопируйте номера из чата, которые сегодня уже проверили</li>
+                <li>Выберите номера комнат или скопируйте из чата номера, которые сегодня уже проверили</li>
                 <li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
                 <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
                 <li>Выберите режим печати на одного или для двоих (опционально)</li>
+                <li>Выберите, нужно ли выписывать сроки (опционально)</li>
                 <li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
             </ol>
             <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
@@ -7899,6 +7900,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <span>Разделить на двоих</span>
                 </label>
+                <label class="toggle-switch">
+  <input type="checkbox" id="dispatchers-include-deadlines">
+  <div class="toggle-slider">
+                        <div class="toggle-knob"></div>
+                    </div>
+  <span>Выписать сроки</span>
+</label>
                 
                 <button class="btn ghost small" onclick="window.dispatchersClearResults()">Очистить результаты</button>
             </div>
@@ -7927,240 +7935,279 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function printDepartures() {
-        const now = new Date();
-        const dateString = now.toLocaleDateString('ru-RU');
-        const splitBetweenTwo = document.getElementById('split-between-two').checked;
-        
-        // Собираем все номера из результатов, которые не в состоянии 1 (исключен)
-        const finalRooms = [];
-        document.querySelectorAll('.result-room').forEach(roomEl => {
-            const roomNumber = roomEl.dataset.room;
-            const state = resultRoomStates.get(roomNumber) || 0;
-            if (state !== 1) {
-                // Для состояния 2 добавляем стрелочку
-                const displayNumber = state === 2 ? `→ ${roomNumber}` : roomNumber;
-                finalRooms.push({ number: roomNumber, display: displayNumber });
-            }
-        });
+    function formatDeadlineProductsForRoomNumber(roomNumber) {
+    // находим запись комнаты в appData.rooms (если есть)
+    const room = (appData.rooms || []).find(r => r && String(r.number) === String(roomNumber));
+    if (!room) return 'Проверить сроки'; // нет записи — ничего не пишем (или можно "Проверить сроки" по желанию)
+    if (room.deadlinesStatus === DEADLINE_STATUS.OK) return ''; // сроки в порядке — ничего не дописываем
+    // собираем выбранные продукты
+    const entries = Object.entries(room.products || {}).filter(([, cnt]) => Number(cnt) > 0);
+    if (entries.length === 0) return 'Проверить сроки';
+    // формат: Назв. xN, Назв2 xM
+    return entries.map(([k, cnt]) => {
+        const name = appData.products && (appData.products[k] || k) || k;
+        return Number(cnt) > 1 ? `${name} x${cnt}` : name;
+    }).join(', ');
+}
 
-        // Сортируем по числовому значению номера
-        finalRooms.sort((a, b) => parseInt(a.number) - parseInt(b.number));
-        
-        let pages = [];
-        
-        if (splitBetweenTwo) {
-            // Режим "Разделить на двоих" - делим пополам
-            const half = Math.ceil(finalRooms.length / 2);
-            const leftColumn = finalRooms.slice(0, half);
-            const rightColumn = finalRooms.slice(half);
-            
-            // Разбиваем на страницы (каждая страница = 2 колонки по 36 номеров)
-            const itemsPerPage = 36;
-            const maxPages = Math.ceil(Math.max(leftColumn.length, rightColumn.length) / itemsPerPage);
-            
-            for (let pageNum = 0; pageNum < maxPages; pageNum++) {
-                const pageLeft = leftColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-                const pageRight = rightColumn.slice(pageNum * itemsPerPage, (pageNum + 1) * itemsPerPage);
-                
-                // Добиваем каждую колонку до 36 номеров пустыми строками
-                while (pageLeft.length < itemsPerPage) pageLeft.push(null);
-                while (pageRight.length < itemsPerPage) pageRight.push(null);
-                
-                pages.push([pageLeft, pageRight]);
-            }
-        } else {
-            // Режим без разделения - последовательное заполнение всех колонок на всех страницах
-            const itemsPerPage = 72; // Всего номеров на странице (2 колонки × 36)
-            const pageCount = Math.ceil(finalRooms.length / itemsPerPage);
-            
-            for (let pageNum = 0; pageNum < pageCount; pageNum++) {
-                const pageStart = pageNum * itemsPerPage;
-                const pageEnd = pageStart + itemsPerPage;
-                const pageItems = finalRooms.slice(pageStart, pageEnd);
-                
-                // Разбиваем страницу на две колонки
-                const leftPage = pageItems.slice(0, 36);
-                const rightPage = pageItems.slice(36, 72);
-                
-                // Добиваем каждую колонку до 36 номеров пустыми строками
-                while (leftPage.length < 36) leftPage.push(null);
-                while (rightPage.length < 36) rightPage.push(null);
-                
-                pages.push([leftPage, rightPage]);
+function aggregateDeadlineProductsForRoomNumbers(roomNumbers) {
+    // суммарные количества по списку номеров
+    const tot = {};
+    (roomNumbers || []).forEach(rn => {
+        const room = (appData.rooms || []).find(r => r && String(r.number) === String(rn));
+        if (!room || room.deadlinesStatus === DEADLINE_STATUS.OK) return; // пропускаем OK
+        Object.entries(room.products || {}).forEach(([k, cnt]) => {
+            const n = Number(cnt) || 0;
+            if (n > 0) tot[k] = (tot[k] || 0) + n;
+        });
+    });
+    const entries = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+    if (entries.length === 0) return '';
+    return entries.map(([k, cnt]) => {
+        const name = appData.products && (appData.products[k] || k) || k;
+        return `${name} x${cnt}`;
+    }).join(', ');
+}
+
+function printDepartures() {
+    const now = new Date();
+    const dateString = now.toLocaleDateString('ru-RU');
+
+    const splitBetweenTwo =
+        document.getElementById('split-between-two') &&
+        document.getElementById('split-between-two').checked;
+
+    const includeDeadlines =
+        document.getElementById('dispatchers-include-deadlines') &&
+        document.getElementById('dispatchers-include-deadlines').checked;
+
+    // Собираем все номера, кроме тех, что исключены
+    const finalRooms = [];
+    document.querySelectorAll('.result-room').forEach(roomEl => {
+        const roomNumber = roomEl.dataset.room;
+        const state = resultRoomStates.get(roomNumber) || 0;
+        if (state !== 1) {
+            const displayNumber = state === 2 ? `→ ${roomNumber}` : roomNumber;
+            finalRooms.push({ number: roomNumber, display: displayNumber });
+        }
+    });
+
+    // Сортируем по числовому значению номера
+    finalRooms.sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+
+    // Вспомогательная функция для подписей из вкладки "Сроки"
+    function buildDeadlineSubForRoom(roomNumber) {
+        const room = (appData.rooms || []).find(
+            r => r && String(r.number) === String(roomNumber)
+        );
+
+        // нет данных — просим проверить
+        if (!room) return 'Проверить сроки';
+        // если "Сроки в порядке" — ничего не пишем
+        if (room.deadlinesStatus === DEADLINE_STATUS.OK) return '';
+        // если выбраны продукты — показываем их
+        const entries = Object.entries(room.products || {}).filter(
+            ([, c]) => Number(c) > 0
+        );
+        if (entries.length === 0) return 'Проверить сроки';
+        return entries
+            .map(([k, c]) => {
+                const name = (appData.products && (appData.products[k] || k)) || k;
+                return Number(c) > 1 ? `${name} x${c}` : name;
+            })
+            .join(', ');
+    }
+
+    // Разбиваем на страницы
+    let pages = [];
+    if (splitBetweenTwo) {
+        const half = Math.ceil(finalRooms.length / 2);
+        const leftColumn = finalRooms.slice(0, half);
+        const rightColumn = finalRooms.slice(half);
+
+        const itemsPerPage = 36;
+        const maxPages = Math.ceil(
+            Math.max(leftColumn.length, rightColumn.length) / itemsPerPage
+        );
+
+        for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+            const pageLeft = leftColumn.slice(
+                pageNum * itemsPerPage,
+                (pageNum + 1) * itemsPerPage
+            );
+            const pageRight = rightColumn.slice(
+                pageNum * itemsPerPage,
+                (pageNum + 1) * itemsPerPage
+            );
+            while (pageLeft.length < itemsPerPage) pageLeft.push(null);
+            while (pageRight.length < itemsPerPage) pageRight.push(null);
+            pages.push([pageLeft, pageRight]);
+        }
+    } else {
+        const itemsPerPage = 72;
+        const pageCount = Math.ceil(finalRooms.length / itemsPerPage);
+        for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+            const pageStart = pageNum * itemsPerPage;
+            const pageEnd = pageStart + itemsPerPage;
+            const pageItems = finalRooms.slice(pageStart, pageEnd);
+
+            const left = pageItems.slice(0, 36);
+            const right = pageItems.slice(36, 72);
+
+            while (left.length < 36) left.push(null);
+            while (right.length < 36) right.push(null);
+
+            pages.push([left, right]);
+        }
+    }
+
+    // Создаем окно печати
+    const printWindow = window.open('', '_blank');
+    let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Departures ${dateString}</title>
+            <style>
+                @page { size: A4 landscape; margin: 1cm; }
+                body { font-family: Times New Roman, serif; margin: 0; padding: 0; }
+                .page-container { display:flex; justify-content:space-around; width:100%; height:95vh; page-break-after:always; }
+                .page-column { flex:1; padding-top:1cm; padding-left:1cm; padding-right:1cm; box-sizing:border-box; }
+                .print-table { width:100%; border-collapse:collapse; font-size:10px; }
+                .print-table th, .print-table td { border:1px solid #000; padding:0px; height:16px; vertical-align:middle; }
+                .print-table th { background:#f0f0f0; font-weight:bold; text-align:center; }
+                .print-table .number-col { width:50px; text-align:center; }
+                .print-table .departures-col { width:auto; text-align:left; padding-left:6px; }
+                .subtext { display:block; font-size:10px; color:#111; margin-top:2px; }
+            </style>
+        </head>
+        <body>
+    `;
+
+    // Рисуем все страницы
+    pages.forEach((page, pageIndex) => {
+            let left = page[0];
+            let right = page[1];
+
+        if (splitBetweenTwo && pageIndex % 2 === 1) {
+            [left, right] = [right, left];}
+        htmlContent += `
+            <div class="page-container">
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        for (let i = 0; i < 36; i++) {
+            const item = left[i];
+            if (item) {
+                let sub = '';
+                if (includeDeadlines) {
+                    const one = buildDeadlineSubForRoom(item.number);
+                    sub = one || '';
+                }
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong><font size="2">${item.display}</font></strong></td>
+                        <td class="departures-col">
+                            ${sub ? `<span class="subtext">${escapeHtml(sub)}</span>` : '&nbsp;'}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
             }
         }
 
-        const printWindow = window.open('', '_blank');
-        
-        let htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Departures ${dateString}</title>
-                <style>
-                    @page {
-                        size: A4 landscape;
-                        margin: 1cm;
-                    }
-                    body { 
-                        font-family: Times New Roman, sans-serif; 
-                        margin: 0;
-                        padding: 0;
-                    }
-                    .page-container {
-                        display: flex;
-                        justify-content: space-around;
-                        width: 100%;
-                        height: 95vh;
-                        page-break-after: always;
-                    }
-                    .page-column {
-                        flex: 1;
-                        padding-top: 1cm;
-                        padding-left: 1cm;
-                        padding-right: 1cm;
-                        box-sizing: border-box;
-                    }
-                    .print-table { 
-                        width: 100%; 
-                        border-collapse: collapse;
-                        font-size: 10px;
-                    }
-                    .print-table th, .print-table td { 
-                        border: 1px solid #000; 
-                        padding: 0px;
-                        height: 16px;
-                    }
-                    .print-table th { 
-                        background: #f0f0f0; 
-                        font-weight: bold; 
-                        text-align: center;
-                    }
-                    .print-table .number-col { 
-                        width: 50px; 
-                        text-align: center; 
-                    }
-                    .print-table .departures-col { 
-                        width: auto; 
-                        text-align: center;
-                    }
-                    @media print {
-                        body { 
-                            margin: 0;
-                            padding: 0;
-                        }
-                        .page-container {
-                            height: 95vh;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-        `;
-        
-        // Для каждой страницы
-        pages.forEach((page, pageIndex) => {
-            let left = page[0];
-            let right = page[1];
-            
-            // В режиме "Разделить на двоих" на четных страницах меняем колонки местами
-            if (splitBetweenTwo && pageIndex % 2 === 1) {
-                [left, right] = [right, left];
-            }
-
-            htmlContent += `
-                <div class="page-container">
-                    <div class="page-column">
-                        <table class="print-table">
-                            <thead>
-                                <tr>
-                                    <th class="number-col"><font size="2">№</font></th>
-                                    <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-            
-            // Левая колонка - 36 строк
-            for (let i = 0; i < 36; i++) {
-                if (left[i]) {
-                    htmlContent += `
-                        <tr>
-                            <td class="number-col"><strong><font size="2">${left[i].display}</font></strong></td>
-                            <td class="departures-col">&nbsp;</td>
-                        </tr>
-                    `;
-                } else {
-                    htmlContent += `
-                        <tr>
-                            <td class="number-col">&nbsp;</td>
-                            <td class="departures-col">&nbsp;</td>
-                        </tr>
-                    `;
-                }
-            }
-            
-            htmlContent += `
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="page-column">
-                        <table class="print-table">
-                            <thead>
-                                <tr>
-                                    <th class="number-col"><font size="2">№</font></th>
-                                    <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-            
-            // Правая колонка - 36 строк
-            for (let i = 0; i < 36; i++) {
-                if (right[i]) {
-                    htmlContent += `
-                        <tr>
-                            <td class="number-col"><strong><font size="2">${right[i].display}</font></strong></td>
-                            <td class="departures-col">&nbsp;</td>
-                        </tr>
-                    `;
-                } else {
-                    htmlContent += `
-                        <tr>
-                            <td class="number-col">&nbsp;</td>
-                            <td class="departures-col">&nbsp;</td>
-                        </tr>
-                    `;
-                }
-            }
-            
-            htmlContent += `
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        });
-        
         htmlContent += `
-            </body>
-            </html>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="page-column">
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th class="number-col"><font size="2">№</font></th>
+                                <th class="departures-col"><font size="2">Departures of ${dateString}</font></th>
+                            </tr>
+                        </thead>
+                        <tbody>
         `;
-        
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
 
-        printWindow.onload = function() {
+        for (let i = 0; i < 36; i++) {
+            const item = right[i];
+            if (item) {
+                let sub = '';
+                if (includeDeadlines) {
+                    const one = buildDeadlineSubForRoom(item.number);
+                    sub = one || '';
+                }
+                htmlContent += `
+                    <tr>
+                        <td class="number-col"><strong><font size="2">${item.display}</font></strong></td>
+                        <td class="departures-col">
+                            ${sub ? `<span class="subtext">${escapeHtml(sub)}</span>` : '&nbsp;'}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                htmlContent += `
+                    <tr>
+                        <td class="number-col">&nbsp;</td>
+                        <td class="departures-col">&nbsp;</td>
+                    </tr>
+                `;
+            }
+        }
+
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    });
+
+    htmlContent += `
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    printWindow.onload = function() {
         setTimeout(() => {
             printWindow.print();
-            // Закрываем окно после печати
             setTimeout(() => {
                 printWindow.close();
             }, 500);
-        }, 500);
+        }, 300);
     };
-    }
+}
+
+// Защита от вставки HTML
+function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 
     function clearResults() {
         const resultDiv = document.getElementById('dispatchers-result');
