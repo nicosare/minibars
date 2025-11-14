@@ -2839,7 +2839,7 @@ min-height: 18px;
             <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
                 <li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
                 <li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
-                <li>Выберите номера комнат или скопируйте из чата номера, которые сегодня уже проверили</li>
+                <li>Выберите номера комнат, которые сегодня уже проверили</li>
                 <li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
                 <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
                 <li>Выберите режим печати на одного или для двоих (опционально)</li>
@@ -2855,12 +2855,12 @@ min-height: 18px;
     <!-- Блок управления для десктопной версии (между инструкцией и таблицей) -->
     <div class="desktop-only">
         <div class="selection-controls" style="display: flex; justify-content: space-between; align-items: center; margin:10px 0; padding:10px; background:rgba(39,103,73,0.05); border-radius:8px;">
+            <span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px; margin: 0px 15px;">Выбрано: 0 номеров</span>
             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                <input type="text" id="dispatchers-room-input" placeholder="Вставьте текст из чата с номерами комнат" style="padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; font-size: 14px;">
-                <button class="btn small" id="dispatchers-apply-rooms" style="white-space: nowrap;">Внести данные</button>
+                <input type="text" id="dispatchers-room-input" placeholder="Вставьте текст из чата с номерами комнат" style="display: none; padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; font-size: 14px;">
+                <button class="btn small" id="dispatchers-apply-rooms" style="display: none;white-space: nowrap;">Внести данные</button>
                 <button class="btn ghost small" id="dispatchers-clear-rooms" style="white-space: nowrap;">Сбросить</button>
             </div>
-            <span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px; margin-left: 15px;">Выбрано: 0 номеров</span>
         </div>
     </div>
     
@@ -3235,7 +3235,6 @@ accisesToRender.forEach(renderAcciseItem);
                     updateGIHRoomsSummary();
                     
     renderDispatchersRooms();
-    updateDispatchersSelectedCount();
                     isRendering = false;
                 }
 
@@ -3398,52 +3397,40 @@ accisesToRender.forEach(renderAcciseItem);
                     bindAcciseInput($('#new-accise'));
                     bindAcciseInput($('#new-accise-mobile'));
                     $('#copy-accises').addEventListener('click', () => {
-                        // Для копирования: старые сначала, новые в конце
-const v = [...(appData.accises || [])]// Сортируем от старых к новым
-    .filter(a => a.isValid)
-    .map(a => a.text);
+                        const v = (appData.accises || []).filter(a => a.isValid).map(a => a.text);
                         if (v.length === 0) {
                             alert("Список пуст");
                             return;
                         }
 
-                        const textToCopy = v.join('\n');
+                        // Разворачиваем массив и объединяем строки
+const textToCopy = v.slice().reverse().join('\n');
 
-                        function doCopy(callback) {
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(textToCopy)
-                                    .then(() => {
-                                        alert('Скопировано');
-                                        if (callback) callback();
-                                    })
-                                    .catch(() => {
-                                        fallbackCopy(textToCopy);
-                                        if (callback) callback();
-                                    });
-                            } else {
-                                fallbackCopy(textToCopy);
-                                if (callback) callback();
-                            }
-                        }
+function doCopy(callback) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        alert('Скопировано');
+        if (callback) callback();
+      })
+      .catch(() => {
+        fallbackCopy(textToCopy);
+        if (callback) callback();
+      });
+  } else {
+    fallbackCopy(textToCopy);
+    if (callback) callback();
+  }
+}
 
                         if (confirm("Очистить список акциз после копирования?")) {
-    doCopy(() => {
-        // Немедленно очищаем данные
-        appData.accises = [];
-        renderAccisesList();
-        
-        // Принудительно сохраняем изменения в Firebase и localStorage
-        clearTimeout(saveTimer); // Очищаем любой отложенный вызов
-        try {
-            // Сразу сохраняем в localStorage
-            localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
-            // Немедленно сохраняем в Firebase
-            saveToFirebase();
-        } catch (e) {
-            console.warn('Ошибка при сохранении:', e);
-        }
-    });
-} else {
+                            doCopy(() => {
+                                appData.accises = [];
+                                document.querySelector('#accises-list').innerHTML = '';
+                                updateAcciseStats();
+                                saveDebounced();
+                            });
+                        } else {
                             doCopy();
                         }
                     });
@@ -3499,123 +3486,53 @@ const v = [...(appData.accises || [])]// Сортируем от старых к
                     return t;
                 }
                 function addAccise(text) {
-    if (!text || !text.trim()) return; 
-    
-    const parts = text.split(/[\s\n]+/).filter(Boolean); 
-    let addedAny = false;
-    
-    parts.forEach(p => {
-        const conv = convertLayout(p);
-        // Проверка на дубликаты
-        if (appData.accises.some(x => x.text === conv)) {
-            alert("Такой акциз уже добавлен");
-            return;
-        } 
-        
-        const isValid = conv.length >= 20 && /^\d/.test(conv); 
-        const item = { 
-            id: Date.now() + Math.random(), 
-            text: conv, 
-            isValid, 
-            ts: new Date().toISOString() 
-        }; 
-        
-        // Добавляем в начало массива (новые сверху)
-        appData.accises.unshift(item);
-        addedAny = true;
-    }); 
-    
-    if (addedAny) {
-        // Перерисовываем весь список акцизов
-        renderAccisesList();
-        updateAcciseStats();
-        saveDebounced();
-    }
-}
-function renderAccisesList() {
-    const list = document.querySelector('#accises-list');
-    if (!list) return;
-    
-    list.innerHTML = '';
-    
-    // Сортируем по времени (новые сверху)
-    const sortedAccises = [...(appData.accises || [])].sort((a, b) => 
-        new Date(b.ts) - new Date(a.ts)
-    );
-    
-    sortedAccises.forEach(accise => {
-        const el = document.createElement('div');
-        el.className = 'accise-item ' + (accise.isValid ? 'valid' : 'invalid');
-        el.dataset.id = accise.id;
-        el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
-
-        el.innerHTML = `
-            <button class="btn ghost small accise-remove" title="Удалить"
-                    style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
-                <i class="fas fa-trash"></i>
-            </button>
-
-            <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
-                <div class="text" style="font-weight:600; white-space:normal;">${accise.text}</div>
-            </div>
-
-            <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
-                <small class="muted">${new Date(accise.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-            </div>
-        `;
-
-        // Delete handler
-        el.querySelector('.accise-remove').addEventListener('click', () => {
-            appData.accises = appData.accises.filter(x => x.id !== accise.id);
-            renderAccisesList(); // Перерисовываем весь список
-            updateAcciseStats();
-            saveDebounced();
-        });
-
-        list.appendChild(el);
-    });
-}
+                    if (!text || !text.trim()) return; const parts = text.split(/[\s\n]+/).filter(Boolean); parts.forEach(p => {
+                        const conv = convertLayout(p);
+                        // Проверка на дубликаты
+                        if (appData.accises.some(x => x.text === conv)) {
+                            alert("Такой акциз уже добавлен");
+                            return;
+                        } const isValid = conv.length >= 20 && /^\d/.test(conv); const item = { id: Date.now() + Math.random(), text: conv, isValid, ts: new Date().toISOString() }; appData.accises.unshift(item); saveDebounced();
+                        updateUIFromData();
+                    }); updateAcciseStats();
+                }
 
 
-function renderAcciseItem(a) {
-    const list = document.querySelector('#accises-list');
-    if (!list) return;
+                function renderAcciseItem(a) {
+                    const list = document.querySelector('#accises-list');
+                    // Avoid duplicates
+                    if (list.querySelector(`[data-id="${a.id}"]`)) return;
 
-    // Проверяем, не существует ли уже элемент с таким ID
-    const existingEl = list.querySelector(`[data-id="${a.id}"]`);
-    if (existingEl) return;
+                    const el = document.createElement('div');
+                    el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid');
+                    el.dataset.id = a.id;
+                    el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
 
-    const el = document.createElement('div');
-    el.className = 'accise-item ' + (a.isValid ? 'valid' : 'invalid');
-    el.dataset.id = a.id;
-    el.style = 'position:relative; box-sizing:border-box; padding:12px 44px 28px 12px; border-radius:10px; margin-bottom:8px; background:var(--card); min-height:64px;';
+                    el.innerHTML = `
+                                            <button class="btn ghost small accise-remove" title="Удалить"
+                                                    style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
 
-    el.innerHTML = `
-        <button class="btn ghost small accise-remove" title="Удалить"
-                style="position:absolute; top:8px; right:8px; width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
-            <i class="fas fa-trash"></i>
-        </button>
+                                            <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
+                                                <div class="text" style="font-weight:600; white-space:normal;">${a.text}</div>
+                                            </div>
 
-        <div class="accise-content" style="word-break:break-word; overflow-wrap:anywhere; padding-right:8px;">
-            <div class="text" style="font-weight:600; white-space:normal;">${a.text}</div>
-        </div>
+                                            <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
+                                                <small class="muted">${new Date(a.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+                                            </div>
+                                        `;
 
-        <div class="accise-footer" style="position:absolute; left:12px; bottom:8px;">
-            <small class="muted">${new Date(a.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-        </div>
-    `;
+                    // Delete handler
+                    el.querySelector('.accise-remove').addEventListener('click', () => {
+                        appData.accises = appData.accises.filter(x => x.id !== a.id);
+                        el.remove();
+                        updateAcciseStats();
+                        saveDebounced();
+                    });
 
-    // Delete handler
-    el.querySelector('.accise-remove').addEventListener('click', () => {
-        appData.accises = appData.accises.filter(x => x.id !== a.id);
-        el.remove();
-        updateAcciseStats();
-        saveDebounced();
-    });
-
-    // Добавляем в начало списка
-    list.insertBefore(el, list.firstChild);
-}
+                    list.appendChild(el);
+                }
                 function updateAcciseStats() { $('#total-accises').textContent = appData.accises.length; $('#total-chars').textContent = appData.accises.reduce((s, i) => s + (i.text ? i.text.length : 0), 0); }
 
                 /* ===== ROOMS & MODAL (deadlines) ===== */
@@ -4873,7 +4790,6 @@ saveBtn.addEventListener('click', () => {
                     // Determine any non-neutral product
                     const anyNonNeutral = (record.products || []).some(p => Number(p.status || 0) !== 0);
                     const allNonNeutral = (record.products || []).length > 0 && (record.products || []).every(p => Number(p.status || 0) !== 0);
-                    const hasMode = record.statusMode != null && record.statusMode !== '';
 
                     // Mode buttons disabled if any product non-neutral
                     card.querySelectorAll('.mode-btn').forEach(b => {
@@ -4901,7 +4817,7 @@ saveBtn.addEventListener('click', () => {
                     });
 
                     // Save button enabled if mode selected OR all products non-neutral
-                    const enabled = hasMode || allNonNeutral;
+                    const enabled = (record.statusMode !== null) || allNonNeutral;
                     const saveBtn = card.querySelector('.card-save');
                     if (saveBtn) saveBtn.disabled = !enabled;
 
@@ -4924,7 +4840,6 @@ saveBtn.addEventListener('click', () => {
             Object.assign(appData, firebaseData);
             localStorage.setItem('hotelMinibarData', JSON.stringify(appData));
             isUpdatingFromFirebase = false;
-        loadDispatchersSelectionFromFirebase();
         } else {
             // Firebase пуст - пробуем локальные данные
             console.log('Firebase пуст, загружаем из localStorage');
@@ -4957,14 +4872,11 @@ saveBtn.addEventListener('click', () => {
     appData.gihHistory = appData.gihHistory || [];
     appData.accises = appData.accises || [];
     appData.rooms = appData.rooms || [];
-    if (appData.accises && appData.accises.length > 0) {
-    appData.accises.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-}
     
     // Обновляем UI
     renderHistory();
     appData.gihRecords.forEach(r => normalizeRecordProducts(r));
-    renderAccisesList(); 
+    (appData.accises || []).forEach(renderAcciseItem);
     updateAcciseStats();
     renderRooms();
     renderAllGIHRecords();
@@ -7938,11 +7850,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDeadlineProductsForRoomNumber(roomNumber) {
     // находим запись комнаты в appData.rooms (если есть)
     const room = (appData.rooms || []).find(r => r && String(r.number) === String(roomNumber));
-    if (!room) return 'Проверить сроки'; // нет записи — ничего не пишем (или можно "Проверить сроки" по желанию)
+    if (!room) return 'check'; // нет записи — ничего не пишем (или можно "Проверить сроки" по желанию)
     if (room.deadlinesStatus === DEADLINE_STATUS.OK) return ''; // сроки в порядке — ничего не дописываем
     // собираем выбранные продукты
     const entries = Object.entries(room.products || {}).filter(([, cnt]) => Number(cnt) > 0);
-    if (entries.length === 0) return 'Проверить сроки';
+    if (entries.length === 0) return 'check';
     // формат: Назв. xN, Назв2 xM
     return entries.map(([k, cnt]) => {
         const name = appData.products && (appData.products[k] || k) || k;
@@ -8002,14 +7914,14 @@ function printDepartures() {
         );
 
         // нет данных — просим проверить
-        if (!room) return 'Проверить сроки';
+        if (!room) return 'check';
         // если "Сроки в порядке" — ничего не пишем
         if (room.deadlinesStatus === DEADLINE_STATUS.OK) return '';
         // если выбраны продукты — показываем их
         const entries = Object.entries(room.products || {}).filter(
             ([, c]) => Number(c) > 0
         );
-        if (entries.length === 0) return 'Проверить сроки';
+        if (entries.length === 0) return 'check';
         return entries
             .map(([k, c]) => {
                 const name = (appData.products && (appData.products[k] || k)) || k;
