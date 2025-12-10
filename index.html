@@ -2459,6 +2459,84 @@ body.custom-calendar-open input[type="date"] {
     color: #fff !important;
     border-color: var(--primary-strong) !important;
 }
+
+/* Стили для автоматически загружаемых номеров из беседы */
+#dispatchers-today-rooms {
+    margin-top: 16px;
+}
+
+#dispatchers-today-rooms-status {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+#dispatchers-today-rooms-list {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Стили для группировки по этажам */
+#dispatchers-today-rooms-list.floor-mode {
+    display: block;
+    flex-direction: column;
+}
+
+#dispatchers-today-rooms-list.floor-mode > .dispatchers-floor-section {
+    width: 100%;
+    margin-bottom: 16px;
+    display: block;
+}
+
+#dispatchers-today-rooms-list.floor-mode > .dispatchers-floor-section:last-child {
+    margin-bottom: 0;
+}
+
+.dispatchers-today-room-card {
+    min-width: 72px;
+    min-height: 50px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(15,23,36,0.08);
+    background: rgba(15,23,36,0.02);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    text-align: center;
+    font-weight: 700;
+}
+
+.dispatchers-today-room-number {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    text-align: center;
+    user-select: none;
+}
+
+.dispatchers-today-room-time {
+    font-size: 8px;
+    color: var(--muted);
+    font-weight: 700;
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    user-select: none;
+}
+
+.dispatchers-today-rooms-error {
+    color: #c00;
+    background: rgba(229,62,62,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border-left: 3px solid #e53e3e;
+}
+
 /* Стили для переключателя "Разделить на двоих" */
 .toggle-switch {
     display: flex;
@@ -2597,6 +2675,17 @@ body.custom-calendar-open input[type="date"] {
 width: 100%;
 min-height: 18px;
 }
+.copy-text{
+    background-color: transparent; 
+    border: none; 
+    cursor: pointer; 
+}
+.copy-text:hover{
+    background-color: transparent; 
+    border: none; 
+    cursor: pointer;
+    text-decoration-line: underline;
+    }
 </style>
 </head>
 <body>
@@ -2804,32 +2893,18 @@ min-height: 18px;
     <!-- Заголовок и кнопка выбора файла (для десктопной версии) -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
         <div style="font-weight:700; font-size:16px">Депатчеры</div>
-        <!-- Кнопка выбора файла только для десктопной версии -->
-        <div class="desktop-only" style="display:flex; gap:8px; align-items:center;">
-            <input type="file" id="dispatchers-pdfFile" accept=".pdf" style="display:none;"/>
-            <span id="dispatchers-fileName" class="muted" style="font-size:13px; margin-right:8px;"></span>
-            <button class="btn" id="dispatchers-selectFileBtn"><i class="fas fa-upload"></i> Выбрать файл</button>
-        </div>
+        <!-- Кнопка сортировки (для всех версий) -->
+        <divstyle="display:flex; gap:8px; align-items:center;">
+            <button class="mobile-only btn ghost small" id="dispatchers-sort-toggle" style="white-space: nowrap;">
+                <i class="fas fa-sort"></i> <span id="dispatchers-sort-label">По времени</span>
+            </button>
+            <!-- Кнопка выбора файла только для десктопной версии -->
+            <div class="desktop-only" style="display:flex; gap:8px; align-items:center;">
+                <input type="file" id="dispatchers-pdfFile" accept=".pdf" style="display:none;"/>
+                <span id="dispatchers-fileName" class="muted" style="font-size:13px; margin-right:8px;"></span>
+                <button class="btn" id="dispatchers-selectFileBtn"><i class="fas fa-upload"></i> Выбрать файл</button>
+            </div>
         
-        <!-- Поле ввода и кнопки для мобильной версии (в строке с заголовком) -->
-        <!-- Compact mobile controls (заменяет старый блок mobile-only в заголовке) -->
-<div class="mobile-only dispatchers-header-row" role="group" style="align-items:center; gap:8px; flex:1; justify-content:flex-end;">
-  <!-- Выровнено рядом с заголовком, input компактный, кнопки — иконки -->
-  <input
-    type="text"
-    id="dispatchers-room-input-mobile"
-    placeholder="Номера"
-    aria-label="Вставить номера"
-    style="padding:6px 10px; border:1px solid rgba(15,23,36,0.1); border-radius:8px; max-width:110px; font-size:13px;"
-  />
-
-  <button class="btn small" id="dispatchers-apply-rooms-mobile" style="white-space: nowrap;"><i class="fas fa-check"></i>Выделить</button>
-
-  <button id="dispatchers-clear-rooms-mobile" class="btn ghost small" title="Очистить" aria-label="Очистить">
-    <i class="fas fa-refresh" aria-hidden="true"></i>
-  </button>
-</div>
-
     </div>
     
     <!-- Инструкции (только для десктопной версии) -->
@@ -2839,7 +2914,6 @@ min-height: 18px;
             <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.6;">
                 <li>Выгрузите депатчеры в Opera и сохраните файл в папке 04 MB</li>
                 <li>Нажмите кнопку "Выбрать файл" и выберите файл OperaPrint.pdf</li>
-                <li>Выберите номера комнат, которые сегодня уже проверили</li>
                 <li>Нажмите "Получить депатчеры" - будут показаны только номера, которые необходимо проверить</li>
                 <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
                 <li>Выберите режим печати на одного или для двоих (опционально)</li>
@@ -2847,29 +2921,31 @@ min-height: 18px;
                 <li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
             </ol>
             <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
-                <strong>Путь к файлу:</strong> G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
+                <div style="margin-bottom: 8px; font-weight: 600;">Путь к файлу:</div>
+                <button class="copy-text onclick="copyText('G:\\Food and Beverage\\F&B Service\\Outlets\\Room Service\\04 MB\\OperaPrint.pdf')">
+                    G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
+                  </button>
             </div>
         </div>
     </div>
     
-    <!-- Блок управления для десктопной версии (между инструкцией и таблицей) -->
-    <div class="desktop-only">
-        <div class="selection-controls" style="display: flex; justify-content: space-between; align-items: center; margin:10px 0; padding:10px; background:rgba(39,103,73,0.05); border-radius:8px;">
-            <span id="dispatchers-selectedCount" style="font-weight:600; font-size:13px; margin: 0px 15px;">Выбрано: 0 номеров</span>
-            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                <input type="text" id="dispatchers-room-input" placeholder="Вставьте текст из чата с номерами комнат" style="display: none; padding: 8px 12px; border: 1px solid rgba(15,23,36,0.1); border-radius: 8px; flex: 1; font-size: 14px;">
-                <button class="btn small" id="dispatchers-apply-rooms" style="display: none;white-space: nowrap;">Внести данные</button>
-                <button class="btn ghost small" id="dispatchers-clear-rooms" style="white-space: nowrap;">Сбросить</button>
-            </div>
+    
+    <!-- Автоматически загружаемые номера из беседы -->
+    <div class="card" style="margin-bottom:15px;" id="dispatchers-today-rooms">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+        <div id="dispatchers-today-rooms-title" style="font-weight:600; font-size:14px; margin-bottom:10px;">Проверенные номера (0):</div>
+        <button class="desktop-only btn ghost small" id="dispatchers-sort-toggle-mobile" style="white-space: nowrap;">
+            <i class="fas fa-sort"></i> <span id="dispatchers-sort-label">По времени</span>
+        </button>
         </div>
+        <div id="dispatchers-today-rooms-status">Загрузка текущего списка...</div>
+        <div id="dispatchers-today-rooms-list"></div>
     </div>
     
-    <!-- Таблица номеров комнат -->
-        <div style="font-weight:600; font-size:14px; margin-bottom:10px;" class="desktop-only">Таблица номеров комнат</div>
+    <!-- Таблица номеров комнат (только для мобильной версии, скрыта) -->
+    <div class="mobile-only" style="display:none;">
+        <div style="font-weight:600; font-size:14px; margin-bottom:10px;">Таблица номеров комнат</div>
         <div id="dispatchers-roomsGrid"></div>
-    <!-- Счетчик выделенных номеров (под таблицей) - для мобильной версии -->
-    <div class="mobile-only" style="text-align: center; padding: 10px; background: rgba(39,103,73,0.05); border-radius: 8px; margin-top: 15px;">
-        <span id="dispatchers-selectedCount-mobile" style="font-weight:600; font-size:13px;">Выбрано: 0 номеров</span>
     </div>
     
     <!-- Счетчик выделенных номеров для десктопной версии (уже есть в selection-controls) -->
@@ -2967,6 +3043,11 @@ min-height: 18px;
 </div>
 </div>
 </div>
+<script>
+    function copyText(textToCopy) {
+      navigator.clipboard.writeText(textToCopy)
+    }
+    </script>
 <script>
                 // ===== FIREBASE CONFIGURATION =====
                 // ЗАМЕНИТЕ НА СВОЮ КОНФИГУРАЦИЮ FIREBASE
@@ -7256,6 +7337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Функция для обновления выделения номеров в DOM
     function updateRoomsSelectionInDOM() {
+        // Обновляем выделение в таблице номеров (мобильная версия)
         document.querySelectorAll('.dispatchers-room-item').forEach(item => {
             const roomNumber = item.dataset.room;
             if (window.selectedRooms.has(roomNumber)) {
@@ -7264,6 +7346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.remove('selected');
             }
         });
+        
         updateDispatchersSelectedCount();
     }
     
@@ -7383,12 +7466,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDispatchersSelectedCount() {
         const countEl = document.getElementById('dispatchers-selectedCount');
         if (countEl) {
-            countEl.textContent = `Выбрано: ${window.selectedRooms.size} номеров`;
-        }
-        
-        const countMobileEl = document.getElementById('dispatchers-selectedCount-mobile');
-        if (countMobileEl) {
-            countMobileEl.textContent = `Выбрано: ${window.selectedRooms.size} номеров`;
+            const loadedCount = window.todayLoadedRooms ? window.todayLoadedRooms.size : 0;
+            countEl.textContent = `Загружено: ${loadedCount} номеров`;
         }
     }
     
@@ -7644,10 +7723,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // ИСПРАВЛЕНИЕ: Используем актуальные данные из window.selectedRooms
-            const filteredRooms = Array.from(foundRoomNumbers).filter(room => 
-                !window.selectedRooms.has(room)
-            );
+            // Исключаем номера из выделенных И из загруженных из беседы
+            const filteredRooms = Array.from(foundRoomNumbers).filter(room => {
+                const roomStr = String(room);
+                // Исключаем если номер выделен вручную ИЛИ загружен из беседы
+                return !window.selectedRooms.has(roomStr) && 
+                       !(window.todayLoadedRooms && window.todayLoadedRooms.has(roomStr));
+            });
             
             const sortedRooms = filteredRooms.sort((a, b) => parseInt(a) - parseInt(b));
             
@@ -8143,12 +8225,226 @@ function escapeHtml(str) {
         resultRoomStates.clear();
     }
 
+    // Глобальная переменная для хранения загруженных номеров из беседы
+    window.todayLoadedRooms = new Set();
+    
+    // Режим сортировки: 'time' или 'floor'
+    let todayRoomsSortMode = localStorage.getItem('dispatchersTodayRoomsSortMode') || 'time';
+    
+    // Функция для группировки номеров по этажам
+    function groupTodayRoomsByFloor(rooms) {
+        const floors = {};
+        rooms.forEach(r => {
+            const room = String(r.room);
+            let floor;
+            if (room.length === 3) {
+                floor = room.charAt(0);
+            } else {
+                floor = room.substring(0, 2);
+            }
+            if (!floors[floor]) {
+                floors[floor] = [];
+            }
+            floors[floor].push(r);
+        });
+        return floors;
+    }
+    
+    // Функция для отображения номеров в зависимости от режима сортировки
+    function renderTodayRooms(rooms, roomsEl) {
+        roomsEl.innerHTML = '';
+        
+        if (todayRoomsSortMode === 'floor') {
+            // Группировка по этажам
+            roomsEl.classList.add('floor-mode');
+            const floors = groupTodayRoomsByFloor(rooms);
+            const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            sortedFloors.forEach(floor => {
+                const floorSection = document.createElement('div');
+                floorSection.className = 'dispatchers-floor-section';
+                
+                const floorTitle = document.createElement('div');
+                floorTitle.className = 'dispatchers-floor-title';
+                floorTitle.textContent = `${floor} этаж`;
+                floorSection.appendChild(floorTitle);
+                
+                const roomList = document.createElement('div');
+                roomList.className = 'dispatchers-room-list';
+                
+                const sortedRooms = floors[floor].sort((a, b) => parseInt(a.room) - parseInt(b.room));
+                
+                sortedRooms.forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'dispatchers-today-room-card';
+                    card.dataset.room = r.room;
+                    
+                    card.innerHTML = `
+                        <div class="dispatchers-today-room-number">${r.room}</div>
+                        <div class="dispatchers-today-room-time">${r.time}</div>
+                    `;
+                    
+                    roomList.appendChild(card);
+                });
+                
+                floorSection.appendChild(roomList);
+                roomsEl.appendChild(floorSection);
+            });
+        } else {
+            // Сортировка по времени (как сейчас)
+            roomsEl.classList.remove('floor-mode');
+            rooms.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'dispatchers-today-room-card';
+                card.dataset.room = r.room;
+                
+                card.innerHTML = `
+                    <div class="dispatchers-today-room-number">${r.room}</div>
+                    <div class="dispatchers-today-room-time">${r.time}</div>
+                `;
+                
+                roomsEl.appendChild(card);
+            });
+        }
+    }
+    
+    // Функция для переключения режима сортировки
+    function toggleTodayRoomsSortMode() {
+        todayRoomsSortMode = todayRoomsSortMode === 'time' ? 'floor' : 'time';
+        localStorage.setItem('dispatchersTodayRoomsSortMode', todayRoomsSortMode);
+        
+        // Обновляем метку кнопки
+        const sortLabel = document.getElementById('dispatchers-sort-label');
+        if (sortLabel) {
+            sortLabel.textContent = todayRoomsSortMode === 'time' ? 'По времени' : 'По этажам';
+        }
+        
+        // Перерисовываем номера
+        const roomsEl = document.getElementById('dispatchers-today-rooms-list');
+        if (roomsEl && window.todayRoomsData) {
+            renderTodayRooms(window.todayRoomsData, roomsEl);
+        }
+    }
+    
+    // Функция для загрузки номеров из беседы (автоматически)
+    function loadTodayRooms() {
+        const statusEl = document.getElementById('dispatchers-today-rooms-status');
+        const roomsEl = document.getElementById('dispatchers-today-rooms-list');
+        
+        if (!statusEl || !roomsEl) {
+            // Элементы не найдены
+            return;
+        }
+        
+        // Инициализируем кнопку сортировки для десктопной версии
+        const sortToggleDesktop = document.getElementById('dispatchers-sort-toggle');
+        if (sortToggleDesktop) {
+            sortToggleDesktop.addEventListener('click', toggleTodayRoomsSortMode);
+
+            // Устанавливаем начальную метку
+            const sortLabelDesktop = document.getElementById('dispatchers-sort-label');
+            if (sortLabelDesktop) {
+                sortLabelDesktop.textContent = todayRoomsSortMode === 'time' ? 'По времени' : 'По этажам';
+            }
+        }
+
+        // Инициализируем кнопку сортировки для мобильной версии
+        const sortToggleMobile = document.getElementById('dispatchers-sort-toggle-mobile');
+        if (sortToggleMobile) {
+            sortToggleMobile.addEventListener('click', toggleTodayRoomsSortMode);
+
+            // Устанавливаем начальную метку
+            const sortLabelMobile = document.getElementById('dispatchers-sort-label-mobile');
+            if (sortLabelMobile) {
+                sortLabelMobile.textContent = todayRoomsSortMode === 'time' ? 'По времени' : 'По этажам';
+            }
+        }
+        
+        // Базовый URL вашего бэкенда
+        const API_BASE = 'https://minibarbot.onrender.com';
+        const TODAY_URL = API_BASE + '/today-rooms';
+        
+        async function fetchTodayRooms() {
+            try {
+                const resp = await fetch(TODAY_URL);
+                const data = await resp.json();
+                
+                if (!resp.ok) {
+                    statusEl.innerHTML = '<span class="dispatchers-today-rooms-error">Ошибка сервера: ' + (data.message || data.error || resp.status) + '</span>';
+                    roomsEl.innerHTML = '';
+                    window.todayLoadedRooms.clear();
+                    
+                    // Обновляем заголовок с количеством номеров
+                    const titleEl = document.getElementById('dispatchers-today-rooms-title');
+                    if (titleEl) {
+                        titleEl.textContent = 'Проверенные номера (0):';
+                    }
+                    
+                    updateDispatchersSelectedCount();
+                    return;
+                }
+                
+                const rooms = data.rooms || [];
+                
+                // Сохраняем загруженные номера в глобальную переменную
+                window.todayLoadedRooms.clear();
+                rooms.forEach(r => {
+                    window.todayLoadedRooms.add(String(r.room));
+                });
+                
+                // Обновляем заголовок с количеством номеров
+                const titleEl = document.getElementById('dispatchers-today-rooms-title');
+                if (titleEl) {
+                    titleEl.textContent = `Проверенные номера (${rooms.length}):`;
+                }
+                
+                // Сохраняем данные для перерисовки при смене режима сортировки
+                window.todayRoomsData = rooms;
+                
+                if (!rooms.length) {
+                    statusEl.textContent = 'За сегодня пока нет номеров. Ждём новые сообщения...';
+                    roomsEl.innerHTML = '';
+                } else {
+                    statusEl.textContent = '';
+                    
+                    // Отображаем номера в зависимости от режима сортировки
+                    renderTodayRooms(rooms, roomsEl);
+                }
+                
+                // Обновляем счетчик загруженных номеров
+                updateDispatchersSelectedCount();
+                
+            } catch (e) {
+                statusEl.innerHTML = '<span class="dispatchers-today-rooms-error">Ошибка при запросе к бэкенду: ' + e.message + '</span>';
+                roomsEl.innerHTML = '';
+                window.todayLoadedRooms.clear();
+                
+                // Обновляем заголовок с количеством номеров
+                const titleEl = document.getElementById('dispatchers-today-rooms-title');
+                if (titleEl) {
+                    titleEl.textContent = 'Проверенные номера (0):';
+                }
+                
+                updateDispatchersSelectedCount();
+            }
+        }
+        
+        // Загружаем сразу
+        fetchTodayRooms();
+        
+        // Обновляем каждые 3 секунды
+        if (window.dispatchersTodayRoomsInterval) {
+            clearInterval(window.dispatchersTodayRoomsInterval);
+        }
+        window.dispatchersTodayRoomsInterval = setInterval(fetchTodayRooms, 3000);
+    }
+
     // Основная функция инициализации депатчеров
     function initDispatchers() {
         console.log('Инициализация депатчеров...');
         
-        // Всегда инициализируем таблицу номеров при вызове initDispatchers
-        initializeRoomGrid();
+        // Загружаем номера из беседы (для всех версий)
+        loadTodayRooms();
         
         // Инициализируем обработчики событий для обеих версий
         initDispatchersEventHandlers();
@@ -8286,4 +8582,5 @@ function escapeHtml(str) {
 <div class="bottom-line"></div>
 </body>
 </html>
+
 
