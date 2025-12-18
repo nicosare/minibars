@@ -690,14 +690,28 @@ function updateGIHRoomsSummary() {
     }
 
     .deadlines-room-item.status-ok {
+        /* Зелёный цвет для ручной установки OK */
         background: rgba(39,103,73,0.14);
         border-color: rgba(39,103,73,0.45);
         color: #215c40;
     }
 
+    .deadlines-room-item.status-auto-ok {
+        /* Голубой цвет для автоматической установки OK (после опустошения) */
+        background: rgba(13,110,253,0.12);
+        border-color: rgba(13,110,253,0.4);
+        color: #0a58ca;
+    }
+
     .deadlines-room-item.selected {
         border: 2px solid var(--primary);
         box-shadow: 0 0 0 2px rgba(39,103,73,0.2);
+    }
+
+    .deadlines-room-item.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     #modal-ok-order.deadlines-applied {
@@ -3693,7 +3707,8 @@ function doCopy(callback) {
                 const DEADLINE_STATUS = {
                     NEUTRAL: 'neutral',
                     PRODUCTS: 'products',
-                    OK: 'ok'
+                    OK: 'ok',           // Ручная установка OK (зелёный)
+                    AUTO_OK: 'auto_ok'  // Автоматическая установка после опустошения (голубой)
                 };
                 let currentDeadlineRoomNumber = null;
     let deadlineModalState = null;
@@ -4041,8 +4056,12 @@ section.appendChild(title);
                             roomEl.className = 'deadlines-room-item';
                             const status = room.deadlinesStatus;
                             roomEl.classList.toggle('status-ok', status === DEADLINE_STATUS.OK);
+                            roomEl.classList.toggle('status-auto-ok', status === DEADLINE_STATUS.AUTO_OK);
                             roomEl.classList.toggle('status-alert', status === DEADLINE_STATUS.PRODUCTS);
                             roomEl.classList.toggle('status-empty', status === DEADLINE_STATUS.NEUTRAL);
+                            // Номера со статусом AUTO_OK неактивны (нельзя нажать)
+                            // Ручной OK остается активным
+                            roomEl.classList.toggle('disabled', status === DEADLINE_STATUS.AUTO_OK);
                             roomEl.classList.toggle('selected', deadlinesSelectedRooms.has(String(room.number)));
                             roomEl.dataset.room = String(room.number);
                             const numberEl = document.createElement('div');
@@ -4052,7 +4071,7 @@ section.appendChild(title);
                             roomEl.appendChild(numberEl);
                             if (status === DEADLINE_STATUS.PRODUCTS && summary) {
                                 roomEl.title = summary;
-                            } else if (status === DEADLINE_STATUS.OK) {
+                            } else if (status === DEADLINE_STATUS.OK || status === DEADLINE_STATUS.AUTO_OK) {
                                 roomEl.title = 'Сроки в порядке';
                             } else {
                                 roomEl.removeAttribute('title');
@@ -4076,7 +4095,7 @@ section.appendChild(title);
                     const hasProducts = hasSelectedDeadlineProducts(room);
 
                     // Не понижаем статус OK, даже если есть продукты (для внешних сигналов типа "опустош")
-                    if (room.deadlinesStatus === DEADLINE_STATUS.OK) {
+                    if (room.deadlinesStatus === DEADLINE_STATUS.OK || room.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) {
                         return room;
                     }
 
@@ -4170,8 +4189,9 @@ const filteredRooms = selectedRooms.filter(num => {
     const room = (appData.rooms || []).find(r => r && r.number === num);
     // Если записи о комнате нет — печатаем (пользователь мог просто выбрать номер)
     if (!room) return true;
-    // room.deadlinesStatus хранит текущее состояние (NEUTRAL / PRODUCTS / OK)
-    return room.deadlinesStatus !== DEADLINE_STATUS.OK;
+    // room.deadlinesStatus хранит текущее состояние (NEUTRAL / PRODUCTS / OK / AUTO_OK)
+    // Исключаем только AUTO_OK (автоматически опустошённые номера)
+    return room.deadlinesStatus !== DEADLINE_STATUS.AUTO_OK;
 });
 
     const roomsData = filteredRooms.map(num => {
@@ -4381,7 +4401,7 @@ const filteredRooms = selectedRooms.filter(num => {
                         if (!room) return;
                         normalizeRoomDeadlineStatus(room);
                         const status = room.deadlinesStatus || DEADLINE_STATUS.NEUTRAL;
-                        if (status === DEADLINE_STATUS.OK) summary.ok += 1;
+                        if (status === DEADLINE_STATUS.OK || status === DEADLINE_STATUS.AUTO_OK) summary.ok += 1;
                         else if (status === DEADLINE_STATUS.PRODUCTS) summary.products += 1;
                         else summary.neutral += 1;
 
@@ -8058,7 +8078,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // находим запись комнаты в appData.rooms (если есть)
     const room = (appData.rooms || []).find(r => r && String(r.number) === String(roomNumber));
     if (!room) return 'check'; // нет записи — ничего не пишем (или можно "Проверить сроки" по желанию)
-    if (room.deadlinesStatus === DEADLINE_STATUS.OK) return ''; // сроки в порядке — ничего не дописываем
+    if (room.deadlinesStatus === DEADLINE_STATUS.OK || room.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) return ''; // сроки в порядке — ничего не дописываем
     // собираем выбранные продукты
     const entries = Object.entries(room.products || {}).filter(([, cnt]) => Number(cnt) > 0);
     if (entries.length === 0) return 'check';
@@ -8074,7 +8094,7 @@ function aggregateDeadlineProductsForRoomNumbers(roomNumbers) {
     const tot = {};
     (roomNumbers || []).forEach(rn => {
         const room = (appData.rooms || []).find(r => r && String(r.number) === String(rn));
-        if (!room || room.deadlinesStatus === DEADLINE_STATUS.OK) return; // пропускаем OK
+        if (!room || room.deadlinesStatus === DEADLINE_STATUS.OK || room.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) return; // пропускаем OK
         Object.entries(room.products || {}).forEach(([k, cnt]) => {
             const n = Number(cnt) || 0;
             if (n > 0) tot[k] = (tot[k] || 0) + n;
@@ -8125,7 +8145,7 @@ function printDepartures() {
         // нет данных — просим проверить
         if (!room) return 'check';
         // если "Сроки в порядке" — ничего не пишем
-        if (room.deadlinesStatus === DEADLINE_STATUS.OK) return '';
+        if (room.deadlinesStatus === DEADLINE_STATUS.OK || room.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) return '';
         // если выбраны продукты — показываем их
         const entries = Object.entries(room.products || {}).filter(
             ([, c]) => Number(c) > 0

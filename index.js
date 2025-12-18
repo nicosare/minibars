@@ -72,7 +72,7 @@ const VK_EMPTIED_ROOT = 'vkEmptiedRooms';
 // vkCheckedRoomsByDate/<YYYY-MM-DD>/<room>: { ts: <unix> }
 const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 
-// Set для отслеживания обработанных сообщений (conversation_message_id)
+// Set для отслеживания обработанных сообщений (peer_id + text + date)
 const processedMessages = new Set();
 
 // Обновление статуса сроков для номера в ветке minibarData/rooms
@@ -89,8 +89,8 @@ async function setDeadlineStatusForRoom(roomNumber, status) {
         // Устанавливаем статус
         await db.ref(`minibarData/rooms/${i}/deadlinesStatus`).set(status);
         
-        // Если устанавливаем статус 'ok' (опустошение), очищаем продукты
-        if (status === 'ok') {
+        // Если устанавливаем статус OK (опустошение), очищаем продукты
+        if (status === 'ok' || status === 'auto_ok') {
           await db.ref(`minibarData/rooms/${i}/products`).set({});
         }
         
@@ -345,13 +345,17 @@ function parseMessage(text) {
 async function upsertMessageRooms(msg) {
   if (!msg) return;
 
-  // Проверяем, не обрабатывали ли уже это сообщение
-  const messageId = msg.conversation_message_id;
+  // Создаем уникальный идентификатор сообщения (peer_id + text + date)
+  // Это защитит от дублирования даже если conversation_message_id разный для message_new/message_edit
+  const messageId = `${msg.peer_id}_${msg.text}_${msg.date}`;
+  console.log('Checking message ID:', messageId, 'processedMessages size:', processedMessages.size);
+
   if (processedMessages.has(messageId)) {
-    console.log('Message already processed, skipping:', messageId);
+    console.log('❌ Message already processed, skipping:', messageId);
     return;
   }
 
+  console.log('✅ Processing new message:', messageId);
   // Добавляем сообщение в обработанные
   processedMessages.add(messageId);
 
@@ -430,7 +434,7 @@ async function upsertMessageRooms(msg) {
         }
 
         // Устанавливаем статус 'ok' ПОСЛЕ проверки
-        await setDeadlineStatusForRoom(room, 'ok');
+        await setDeadlineStatusForRoom(room, 'auto_ok');
         console.log(`Added room ${room} as emptied at ${msgTs}, had products status: ${hasProductsStatus}`);
       } else {
         // Проверяем, был ли номер ранее в списке опустошённых
@@ -455,8 +459,9 @@ async function upsertMessageRooms(msg) {
     if (parsed.type === 'add' && parsed.emptied && roomsWithProducts.length > 0) {
       const message = formatExpiryNotificationMessage(roomsWithProducts);
       if (message) {
-        console.log('Sending expiry notification:', message);
-        await sendVKMessage(PEER_ID, message);
+        console.log('📤 Sending expiry notification to', PEER_ID, ':', message);
+        const result = await sendVKMessage(PEER_ID, message);
+        console.log('📤 Send result:', result ? 'SUCCESS' : 'FAILED');
       }
     }
   }
@@ -539,6 +544,7 @@ for (const upd of updates) {
 
   if (upd.type === 'message_new' || upd.type === 'message_edit') {
     const msg = upd.object && (upd.object.message || upd.object);
+    console.log('Processing message event:', upd.type, 'conversation_message_id:', msg?.conversation_message_id, 'text:', msg?.text);
     try {
       await upsertMessageRooms(msg);
     } catch (e) {
