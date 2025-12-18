@@ -72,6 +72,9 @@ const VK_EMPTIED_ROOT = 'vkEmptiedRooms';
 // vkCheckedRoomsByDate/<YYYY-MM-DD>/<room>: { ts: <unix> }
 const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 
+// Set для отслеживания обработанных сообщений (conversation_message_id)
+const processedMessages = new Set();
+
 // Обновление статуса сроков для номера в ветке minibarData/rooms
 async function setDeadlineStatusForRoom(roomNumber, status) {
   try {
@@ -140,6 +143,40 @@ async function getRoomStatusAndProducts(roomNumber) {
   }
 }
 
+// Маппинг английских названий продуктов на русские (из index.html)
+const PRODUCT_NAME_MAPPING = {
+  twix: 'Твикс',
+  jager: 'Ягер',
+  gin: 'Джин',
+  rum: 'Ром',
+  cognac: 'Коньяк',
+  whiskey: 'Виски',
+  vodka: 'Водка',
+  pepper: 'Пеппер',
+  redbull: 'Ред Булл',
+  cola: 'Кола',
+  baikal: 'Байкал',
+  borjomi: 'Боржоми',
+  white_wine: 'Белое вино',
+  red_wine: 'Красное вино',
+  apple: 'Яблоко',
+  tomato: 'Томат',
+  corona: 'Корона',
+  stella: 'Стелла',
+  gancha: 'Ганча',
+  martini: 'Мартини',
+  orange: 'Апельсин',
+  cherry: 'Вишня',
+  loriot: 'Лориот',
+  whiskey02: 'Виски 0.2'
+};
+
+// Преобразовать название продукта из английского в русский
+function getRussianProductName(englishName) {
+  const lowerName = englishName.toLowerCase();
+  return PRODUCT_NAME_MAPPING[lowerName] || englishName; // Если нет маппинга, возвращаем оригинал
+}
+
 // Сформировать сообщение о продуктах с истекающими сроками
 function formatExpiryNotificationMessage(roomsWithProducts) {
   if (!roomsWithProducts || roomsWithProducts.length === 0) return null;
@@ -159,7 +196,8 @@ function formatExpiryNotificationMessage(roomsWithProducts) {
     const products = [];
     for (const [productName, quantity] of Object.entries(item.products)) {
       if (quantity > 0) {
-        products.push(`${productName} x${quantity}`);
+        const russianName = getRussianProductName(productName);
+        products.push(`${russianName} x${quantity}`);
       }
     }
 
@@ -306,6 +344,24 @@ function parseMessage(text) {
 // === обработка (нового или отредактированного) сообщения ===
 async function upsertMessageRooms(msg) {
   if (!msg) return;
+
+  // Проверяем, не обрабатывали ли уже это сообщение
+  const messageId = msg.conversation_message_id;
+  if (processedMessages.has(messageId)) {
+    console.log('Message already processed, skipping:', messageId);
+    return;
+  }
+
+  // Добавляем сообщение в обработанные
+  processedMessages.add(messageId);
+
+  // Очищаем старые сообщения из Set (чтобы не рос бесконечно)
+  if (processedMessages.size > 1000) {
+    // Оставляем только последние 500 сообщений
+    const tempSet = new Set([...processedMessages].slice(-500));
+    processedMessages.clear();
+    tempSet.forEach(id => processedMessages.add(id));
+  }
 
   console.log('Message:', msg.peer_id, msg.conversation_message_id, msg.text);
 
