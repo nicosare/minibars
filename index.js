@@ -56,17 +56,40 @@ async function setDeadlineStatusForRoom(roomNumber, status) {
       if (String(r.number) === String(roomNumber)) {
         // Устанавливаем статус
         await db.ref(`minibarData/rooms/${i}/deadlinesStatus`).set(status);
-        
+
         // Если устанавливаем статус 'ok' (опустошение), очищаем продукты
         if (status === 'ok') {
           await db.ref(`minibarData/rooms/${i}/products`).set({});
         }
-        
+
         break;
       }
     }
   } catch (e) {
     console.error('Failed to update deadline status for room', roomNumber, e.message);
+  }
+}
+
+// Получение статуса и продуктов для номера из ветки minibarData/rooms
+async function getRoomDeadlineInfo(roomNumber) {
+  try {
+    const snap = await db.ref('minibarData/rooms').once('value');
+    const rooms = snap.val();
+    if (!Array.isArray(rooms)) return null;
+
+    for (const r of rooms) {
+      if (!r || typeof r !== 'object') continue;
+      if (String(r.number) === String(roomNumber)) {
+        return {
+          deadlinesStatus: r.deadlinesStatus,
+          products: r.products || {}
+        };
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error('Failed to get room deadline info for', roomNumber, e.message);
+    return null;
   }
 }
 
@@ -254,6 +277,19 @@ async function upsertMessageRooms(msg) {
       if (parsed.emptied) {
         // Помечаем как опустошённый с timestamp (такая же логика, как для vkCheckedRoomsByDate)
         await emptiedRef.set({ ts: msgTs });
+
+        // Проверяем статус номера перед опустошением
+        const roomInfo = await getRoomDeadlineInfo(room);
+        if (roomInfo && roomInfo.deadlinesStatus === 'products') {
+          // Получаем список продуктов
+          const products = Object.keys(roomInfo.products || {}).filter(p => roomInfo.products[p]);
+          if (products.length > 0) {
+            // Отправляем сообщение в беседу PEER_ID = 2000000001
+            const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${products.join(', ')}`;
+            await sendVKMessage(PEER_ID, message);
+          }
+        }
+
         await setDeadlineStatusForRoom(room, 'ok');
         console.log(`Added room ${room} as emptied at ${msgTs}`);
       } else {
@@ -273,6 +309,38 @@ async function upsertMessageRooms(msg) {
         }
       }
     }
+  }
+}
+
+// === VK API функции ===
+
+// Функция для отправки сообщения в VK
+async function sendVKMessage(peerId, message) {
+  try {
+    const params = new URLSearchParams({
+      peer_id: peerId.toString(),
+      message: message,
+      access_token: VK_BOT_TOKEN,
+      v: '5.199',
+      random_id: Math.floor(Math.random() * 1000000)
+    });
+
+    const res = await fetch(
+      'https://api.vk.com/method/messages.send?' + params.toString(),
+      { method: 'POST' }
+    );
+    const data = await res.json();
+
+    if (data.error) {
+      console.error('VK send message error:', data.error.error_msg);
+      return false;
+    }
+
+    console.log('Message sent successfully to peer', peerId);
+    return true;
+  } catch (e) {
+    console.error('Failed to send VK message:', e.message);
+    return false;
   }
 }
 
