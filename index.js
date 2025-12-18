@@ -102,20 +102,37 @@ async function setDeadlineStatusForRoom(roomNumber, status) {
 // Получить статус и продукты номера
 async function getRoomStatusAndProducts(roomNumber) {
   try {
+    console.log(`Getting data for room ${roomNumber}...`);
     const snap = await db.ref('minibarData/rooms').once('value');
     const rooms = snap.val();
-    if (!Array.isArray(rooms)) return null;
+    console.log(`Rooms data type: ${typeof rooms}, isArray: ${Array.isArray(rooms)}`);
+
+    if (!Array.isArray(rooms)) {
+      console.log(`Rooms is not an array, value:`, rooms);
+      return null;
+    }
+
+    console.log(`Searching for room ${roomNumber} in ${rooms.length} rooms...`);
 
     for (let i = 0; i < rooms.length; i++) {
       const r = rooms[i];
-      if (!r || typeof r !== 'object') continue;
+      if (!r || typeof r !== 'object') {
+        console.log(`Room ${i}: invalid data`, r);
+        continue;
+      }
+
+      console.log(`Room ${i}: number=${r.number}, deadlinesStatus=${r.deadlinesStatus}, has products: ${!!r.products}`);
+
       if (String(r.number) === String(roomNumber)) {
+        console.log(`Found room ${roomNumber}! status: ${r.deadlinesStatus}, products:`, r.products);
         return {
           status: r.deadlinesStatus || null,
           products: r.products || {}
         };
       }
     }
+
+    console.log(`Room ${roomNumber} not found in database`);
     return null;
   } catch (e) {
     console.error('Failed to get room status and products for', roomNumber, e.message);
@@ -637,12 +654,12 @@ app.post('/migrate-emptied-rooms', async (req, res) => {
 // стартуем HTTP и Long Poll
 app.listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
-  
+
   // Запускаем миграцию при старте сервера
   migrateEmptiedRooms().catch(err => {
     console.error('Failed to run migration:', err);
   });
-  
+
   startLongPoll().catch(err => {
     console.error('Failed to start Long Poll:', err);
   });
