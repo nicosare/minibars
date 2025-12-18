@@ -47,6 +47,10 @@ const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 // Формат: { peerId: { messageId: true } }
 const sentMessages = {};
 
+// Отслеживание обработанных сообщений для предотвращения дублирования
+// Формат: { peerId: { conversationMessageId: true } }
+const processedMessages = {};
+
 // Обновление статуса сроков для номера в ветке minibarData/rooms
 async function setDeadlineStatusForRoom(roomNumber, status) {
   try {
@@ -241,7 +245,24 @@ function parseMessage(text) {
 async function upsertMessageRooms(msg) {
   if (!msg) return;
 
-  console.log('Processing message:', msg.peer_id, msg.conversation_message_id, msg.text);
+  const peerId = msg.peer_id;
+  const conversationMessageId = msg.conversation_message_id;
+
+  // Проверяем, не обрабатывали ли уже это сообщение
+  if (processedMessages[peerId] && processedMessages[peerId][conversationMessageId]) {
+    console.log('Message already processed, skipping:', peerId, conversationMessageId);
+    return;
+  }
+
+  // Помечаем сообщение как обработанное
+  if (!processedMessages[peerId]) {
+    processedMessages[peerId] = {};
+  }
+  processedMessages[peerId][conversationMessageId] = true;
+
+  console.log('Marked message as processed:', peerId, conversationMessageId);
+  console.log('Processing message:', peerId, conversationMessageId, msg.text);
+  console.log('Message date:', msg.date, 'current time:', Math.floor(Date.now() / 1000));
 
 
   const text = msg.text || '';
@@ -294,7 +315,9 @@ async function upsertMessageRooms(msg) {
 
         // Проверяем статус номера перед опустошением
         const roomInfo = await getRoomDeadlineInfo(room);
+        console.log('Room info for', room, ':', JSON.stringify(roomInfo));
         if (roomInfo && roomInfo.deadlinesStatus === 'products') {
+          console.log('Room', room, 'has products status, processing products...');
           // Получаем список продуктов с учётом количества
           const productCounts = {};
           const roomProducts = roomInfo.products || {};
@@ -314,9 +337,11 @@ async function upsertMessageRooms(msg) {
             return count > 1 ? `${name} x${count}` : name;
           });
 
+          console.log('Product strings for room', room, ':', productStrings);
           if (productStrings.length > 0) {
             // Отправляем сообщение в беседу PEER_ID = 2000000001
             const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${productStrings.join(', ')}`;
+            console.log('About to send message to peer', PEER_ID, ':', message);
             const messageId = await sendVKMessage(PEER_ID, message);
             console.log('Sent message with ID:', messageId, 'to peer:', PEER_ID);
             if (messageId) {
@@ -327,7 +352,11 @@ async function upsertMessageRooms(msg) {
               sentMessages[PEER_ID][messageId] = true;
               console.log('Saved message ID in sentMessages:', JSON.stringify(sentMessages));
             }
+          } else {
+            console.log('No products found for room', room);
           }
+        } else {
+          console.log('Room', room, 'does not have products status or no room info');
         }
 
         await setDeadlineStatusForRoom(room, 'ok');
@@ -691,12 +720,14 @@ app.post('/migrate-emptied-rooms', async (req, res) => {
 // стартуем HTTP и Long Poll
 app.listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
-  
+  console.log('Initial sentMessages state:', JSON.stringify(sentMessages));
+  console.log('Initial processedMessages state:', JSON.stringify(processedMessages));
+
   // Запускаем миграцию при старте сервера
   migrateEmptiedRooms().catch(err => {
     console.error('Failed to run migration:', err);
   });
-  
+
   startLongPoll().catch(err => {
     console.error('Failed to start Long Poll:', err);
   });
