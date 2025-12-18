@@ -43,10 +43,6 @@ const VK_EMPTIED_ROOT = 'vkEmptiedRooms';
 // vkCheckedRoomsByDate/<YYYY-MM-DD>/<room>: { ts: <unix> }
 const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 
-// Антидубли уведомлений о продукции со сроками (на случай message_edit):
-// vkExpiringProductsNotified/<room>: { ts: <unix>, cmid: <conversation_message_id> }
-const VK_EXPIRING_NOTIFIED_ROOT = 'vkExpiringProductsNotified';
-
 // Обновление статуса сроков для номера в ветке minibarData/rooms
 async function setDeadlineStatusForRoom(roomNumber, status) {
   try {
@@ -60,17 +56,124 @@ async function setDeadlineStatusForRoom(roomNumber, status) {
       if (String(r.number) === String(roomNumber)) {
         // Устанавливаем статус
         await db.ref(`minibarData/rooms/${i}/deadlinesStatus`).set(status);
-
+        
         // Если устанавливаем статус 'ok' (опустошение), очищаем продукты
         if (status === 'ok') {
           await db.ref(`minibarData/rooms/${i}/products`).set({});
         }
-
+        
         break;
       }
     }
   } catch (e) {
     console.error('Failed to update deadline status for room', roomNumber, e.message);
+  }
+}
+
+// Функция для отправки сообщения в VK
+async function sendVkMessage(peerId, message) {
+  try {
+    const params = new URLSearchParams({
+      access_token: VK_BOT_TOKEN,
+      peer_id: peerId.toString(),
+      message: message,
+      random_id: Math.floor(Math.random() * 1000000),
+      v: '5.199'
+    });
+
+    const res = await fetch('https://api.vk.com/method/messages.send?' + params.toString());
+    const data = await res.json();
+    
+    if (data.error) {
+      console.error('VK send message error:', data.error);
+    } else {
+      console.log('Message sent to peer', peerId, 'with id', data.response);
+    }
+  } catch (e) {
+    console.error('Failed to send VK message:', e.message);
+  }
+}
+
+// Функция для получения списка продуктов из номера
+async function getRoomProducts(roomNumber) {
+  try {
+    const snap = await db.ref('minibarData/rooms').once('value');
+    const rooms = snap.val();
+    if (!Array.isArray(rooms)) return [];
+
+    for (let i = 0; i < rooms.length; i++) {
+      const r = rooms[i];
+      if (!r || typeof r !== 'object') continue;
+      if (String(r.number) === String(roomNumber)) {
+        const products = r.products || {};
+        
+        // Если продуктов нет, возвращаем пустой массив
+        if (Object.keys(products).length === 0) return [];
+        
+        // Получаем информацию о продуктах
+        const productSnap = await db.ref('minibarData/products').once('value');
+        const allProducts = productSnap.val() || [];
+        
+        // Формируем список продуктов с названиями
+        const productList = [];
+        
+        for (const [productId, quantity] of Object.entries(products)) {
+          const productInfo = allProducts.find(p => p && String(p.id) === productId);
+          if (productInfo && productInfo.name) {
+            // Форматируем как "Кола x2"
+            const displayName = quantity > 1 ? `${productInfo.name} x${quantity}` : productInfo.name;
+            productList.push(displayName);
+          } else {
+            // Если продукт не найден, добавляем с ID
+            const displayName = quantity > 1 ? `Продукт ${productId} x${quantity}` : `Продукт ${productId}`;
+            productList.push(displayName);
+          }
+        }
+        
+        return productList;
+      }
+    }
+    return [];
+  } catch (e) {
+    console.error('Failed to get room products for room', roomNumber, e.message);
+    return [];
+  }
+}
+
+// Проверка номера на наличие продуктов с истекающими сроками
+async function checkAndNotifyExpiringProducts(roomNumber) {
+  try {
+    // Проверяем статус номера
+    const snap = await db.ref('minibarData/rooms').once('value');
+    const rooms = snap.val();
+    if (!Array.isArray(rooms)) return;
+
+    for (let i = 0; i < rooms.length; i++) {
+      const r = rooms[i];
+      if (!r || typeof r !== 'object') continue;
+      if (String(r.number) === String(roomNumber)) {
+        // Проверяем статус deadlinesStatus
+        const status = r.deadlinesStatus || 'neutral';
+        
+        if (status === 'products') {
+          // Получаем список продуктов
+          const productList = await getRoomProducts(roomNumber);
+          
+          if (productList.length > 0) {
+            // Формируем сообщение
+            const productsString = productList.join(', ');
+            const message = `В номере ${roomNumber} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${productsString}`;
+            
+            // Отправляем сообщение в беседу
+            await sendVkMessage(PEER_ID, message);
+            console.log(`Sent notification for room ${roomNumber} with products: ${productsString}`);
+          }
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to check and notify expiring products for room', roomNumber, e.message);
   }
 }
 
@@ -136,22 +239,22 @@ function timeStringFromUnix(tsSec) {
 // Новая логика парсинга сообщений
 function parseMessage(text) {
   if (!text || typeof text !== 'string') return null;
-
+  
   const trimmed = text.trim();
   if (trimmed.length === 0) return null;
-
+  
   // Проверяем, начинается ли сообщение с "-"
   if (trimmed.startsWith('-')) {
     // Удаление - более строгая проверка
     const withoutMinus = trimmed.slice(1).trim();
     if (withoutMinus.length === 0) return null;
-
+    
     // Ищем все номера
     const roomMatches = withoutMinus.match(/\d{3,4}/g) || [];
     const validRooms = roomMatches.filter(room => ALLOWED_SET.has(room));
-
+    
     if (validRooms.length === 0) return null;
-
+    
     // Для удаления: проверяем, что после удаления всех номеров и разделителей ничего не осталось
     // Разрешаем только номера и разделители (пробелы, запятые, точки, тире)
     const textWithoutRooms = withoutMinus.replace(/\d{3,4}/g, '').replace(/[\s,\-\.;:!?]/g, '');
@@ -159,162 +262,49 @@ function parseMessage(text) {
       // Есть посторонние символы/слова - игнорируем
       return null;
     }
-
+    
     return { type: 'delete', rooms: validRooms };
   }
-
+  
   // Ищем первое число в сообщении
   const firstMatch = trimmed.match(/^\d{3,4}/);
   if (!firstMatch) return null;
-
+  
   const firstRoom = firstMatch[0];
   if (!ALLOWED_SET.has(firstRoom)) return null;
-
+  
   // Находим все номера в сообщении
   const roomMatches = trimmed.match(/\d{3,4}/g) || [];
   const validRooms = roomMatches.filter(room => ALLOWED_SET.has(room));
-
+  
   if (validRooms.length === 0) return null;
-
+  
   // Проверяем, что нет слов между номерами
   // Для этого проверяем часть текста до последнего номера
   const lastRoom = validRooms[validRooms.length - 1];
   const lastIndex = trimmed.lastIndexOf(lastRoom) + lastRoom.length;
-
+  
   // Текст до последнего номера (включая разделители)
   const beforeLastRoom = trimmed.slice(0, lastIndex);
-
+  
   // Удаляем все номера и разрешенные разделители
   const beforeCleaned = beforeLastRoom.replace(/\d{3,4}/g, '').replace(/[\s,\-\.;:!?]/g, '');
   if (beforeCleaned.length > 0) {
     // Есть слова между номерами - игнорируем
     return null;
   }
-
+  
   // Текст после последнего номера
   const afterLastRoom = trimmed.slice(lastIndex).trim().toLowerCase();
-
+  
   // Проверяем, есть ли "опустош" после последнего номера
+  // Ищем "опустош" в любом месте после номеров
   const опустошIndex = afterLastRoom.indexOf('опустош');
   const hasEmptyMark = опустошIndex !== -1;
-
+  
+  // Для добавления: если есть слово "опустош", то помечаем как опустошённый
+  // Не важно, что после "опустош" (могут быть другие слова)
   return { type: 'add', rooms: validRooms, emptied: hasEmptyMark };
-}
-
-// === VK: отправка сообщений ===
-async function vkSendMessage(peerId, message) {
-  const params = new URLSearchParams({
-    peer_id: String(peerId),
-    message: String(message),
-    random_id: String(Math.floor(Math.random() * 2 ** 31)),
-    access_token: VK_BOT_TOKEN,
-    v: '5.199'
-  });
-
-  const res = await fetch('https://api.vk.com/method/messages.send?' + params.toString());
-  const data = await res.json();
-
-  if (data.error) {
-    throw new Error('VK messages.send error: ' + data.error.error_msg);
-  }
-
-  return data.response;
-}
-
-function formatProducts(products) {
-  if (!products) return '';
-
-  // если вдруг строкой
-  if (typeof products === 'string') return products.trim();
-
-  const parts = [];
-
-  // если вдруг массивом
-  if (Array.isArray(products)) {
-    for (const item of products) {
-      if (typeof item === 'string' && item.trim()) {
-        parts.push(item.trim());
-        continue;
-      }
-      if (item && typeof item === 'object') {
-        const name = item.name || item.title;
-        const qty = item.count ?? item.qty ?? item.quantity;
-        if (name) parts.push(qty > 1 ? `${name} x${qty}` : `${name}`);
-      }
-    }
-    return parts.join(', ');
-  }
-
-  // основной ожидаемый вариант: объект { "Кола": 2, "Твикс": 1 }
-  if (typeof products === 'object') {
-    for (const [name, raw] of Object.entries(products)) {
-      if (!name) continue;
-
-      let qty = 1;
-
-      if (typeof raw === 'number') qty = raw;
-      else if (typeof raw === 'string' && raw.trim() !== '' && !Number.isNaN(Number(raw))) qty = Number(raw);
-      else if (raw && typeof raw === 'object') {
-        const c = raw.count ?? raw.qty ?? raw.quantity ?? raw.amount;
-        if (typeof c === 'number') qty = c;
-        else if (typeof c === 'string' && !Number.isNaN(Number(c))) qty = Number(c);
-      }
-
-      if (!Number.isFinite(qty) || qty <= 0) continue;
-
-      parts.push(qty > 1 ? `${name} x${qty}` : `${name}`);
-    }
-
-    return parts.join(', ');
-  }
-
-  return '';
-}
-
-async function notifyExpiringProductsIfNeeded(roomNumber, msgTs, cmid) {
-  try {
-    const snap = await db.ref('minibarData/rooms').once('value');
-    const rooms = snap.val();
-    if (!Array.isArray(rooms)) return;
-
-    let roomObj = null;
-    for (const r of rooms) {
-      if (!r || typeof r !== 'object') continue;
-      if (String(r.number) === String(roomNumber)) {
-        roomObj = r;
-        break;
-      }
-    }
-    if (!roomObj) return;
-
-    // Нужен именно статус products
-    if (String(roomObj.deadlinesStatus) !== 'products') return;
-
-    // Антидубль: если это тот же conversation_message_id (например, message_edit)
-    const notifiedRef = db.ref(`${VK_EXPIRING_NOTIFIED_ROOT}/${roomNumber}`);
-    const prevSnap = await notifiedRef.once('value');
-    const prev = prevSnap.val();
-
-    if (prev && typeof prev === 'object') {
-      if (cmid != null && prev.cmid != null && String(prev.cmid) === String(cmid)) return;
-      if (cmid == null && typeof prev.ts === 'number' && prev.ts === msgTs) return;
-    }
-
-    const list = formatProducts(roomObj.products);
-
-    const text = list
-      ? `В номере ${roomNumber} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${list}`
-      : `В номере ${roomNumber} была продукция с истекающим сроком годности. Проверь и убери, если это так (список продуктов не найден).`;
-
-    await vkSendMessage(PEER_ID, text);
-
-    await notifiedRef.set({
-      ts: msgTs,
-      cmid: cmid ?? null
-    });
-  } catch (e) {
-    console.error('notifyExpiringProductsIfNeeded error:', roomNumber, e.message);
-  }
 }
 
 // === обработка (нового или отредактированного) сообщения ===
@@ -323,8 +313,9 @@ async function upsertMessageRooms(msg) {
 
   console.log('Message:', msg.peer_id, msg.conversation_message_id, msg.text);
 
-  const text = msg.text || '';
 
+  const text = msg.text || '';
+  
   // Парсим сообщение
   const parsed = parseMessage(text);
   if (!parsed) {
@@ -338,20 +329,20 @@ async function upsertMessageRooms(msg) {
   if (parsed.type === 'delete') {
     // Удаление номеров
     const checkedDayRef = db.ref(`${VK_CHECKED_ROOT}/${key}`);
-
+    
     for (const room of parsed.rooms) {
       // Проверяем, есть ли номер в checked (на сегодня)
       const roomInCheckedSnap = await checkedDayRef.child(room).once('value');
       const isInChecked = roomInCheckedSnap.exists();
-
+      
       if (isInChecked) {
         // Удаляем из списка проверенных на сегодня
         await checkedDayRef.child(room).remove();
-
+        
         // Удаляем из списка опустошённых (только если был в checked)
         const emptiedRef = db.ref(`${VK_EMPTIED_ROOT}/${room}`);
         await emptiedRef.remove();
-
+        
         console.log(`Deleted room ${room} from checked and emptied (was in checked)`);
       } else {
         console.log(`Room ${room} not in checked, skipping deletion`);
@@ -360,32 +351,32 @@ async function upsertMessageRooms(msg) {
   } else {
     // Добавление номеров
     const checkedDayRef = db.ref(`${VK_CHECKED_ROOT}/${key}`);
-
+    
     for (const room of parsed.rooms) {
       // Добавляем/обновляем в списке проверенных на сегодня
       await checkedDayRef.child(room).set({ ts: msgTs });
-
+      
       const emptiedRef = db.ref(`${VK_EMPTIED_ROOT}/${room}`);
-
+      
       if (parsed.emptied) {
-        // ВАЖНО: сначала, если в "Сроках" deadlinesStatus=products, отправляем уведомление со списком products
-        await notifyExpiringProductsIfNeeded(room, msgTs, msg.conversation_message_id);
-
-        // Помечаем как опустошённый с timestamp
+        // Помечаем как опустошённый с timestamp (такая же логика, как для vkCheckedRoomsByDate)
         await emptiedRef.set({ ts: msgTs });
-
-        // Ставим ok и очищаем продукты
+        
+        // Проверяем наличие продуктов с истекающими сроками ДО обновления статуса
+        await checkAndNotifyExpiringProducts(room);
+        
+        // Устанавливаем статус 'ok' (опустошение)
         await setDeadlineStatusForRoom(room, 'ok');
-
+        
         console.log(`Added room ${room} as emptied at ${msgTs}`);
       } else {
         // Проверяем, был ли номер ранее в списке опустошённых
         const snap = await emptiedRef.once('value');
         const wasEmptied = snap.exists();
-
+        
         // Убираем из списка опустошённых (если был)
         await emptiedRef.remove();
-
+        
         // Если был опустошён ранее, а теперь пришёл без пометки, сбрасываем статус
         if (wasEmptied) {
           await setDeadlineStatusForRoom(room, 'neutral');
@@ -399,6 +390,7 @@ async function upsertMessageRooms(msg) {
 }
 
 // === Bots Long Poll API ===
+
 async function getLongPollServer() {
   const params = new URLSearchParams({
     group_id: VK_GROUP_ID.toString(),
@@ -406,7 +398,9 @@ async function getLongPollServer() {
     v: '5.199'
   });
 
-  const res = await fetch('https://api.vk.com/method/groups.getLongPollServer?' + params.toString());
+  const res = await fetch(
+    'https://api.vk.com/method/groups.getLongPollServer?' + params.toString()
+  );
   const data = await res.json();
 
   if (data.error) {
@@ -429,17 +423,17 @@ async function startLongPoll() {
       while (true) {
         const baseUrl = server.startsWith('http') ? server : 'https://' + server;
 
-        const lpURL =
-          baseUrl +
-          '?' +
-          new URLSearchParams({
-            act: 'a_check',
-            key,
-            ts: String(tsCur),
-            wait: '25',
-            mode: '2',
-            version: '3'
-          }).toString();
+const lpURL =
+  baseUrl +
+  '?' +
+  new URLSearchParams({
+    act: 'a_check',
+    key,
+    ts: String(tsCur),
+    wait: '25',
+    mode: '2',
+    version: '3'
+  }).toString();
 
         const res = await fetch(lpURL);
         const data = await res.json();
@@ -456,35 +450,36 @@ async function startLongPoll() {
         }
 
         tsCur = data.ts;
+        
+// ЛОГИРУЕМ ВСЕ ОБНОВЛЕНИЯ ДЛЯ ОТЛАДКИ
+const updates = data.updates || [];
 
-        // ЛОГИРУЕМ ВСЕ ОБНОВЛЕНИЯ ДЛЯ ОТЛАДКИ
-        const updates = data.updates || [];
+for (const upd of updates) {
+  // Логируем абсолютно все апдейты как есть
+  console.log('VK update RAW:', JSON.stringify(upd));
 
-        for (const upd of updates) {
-          // Логируем абсолютно все апдейты как есть
-          console.log('VK update RAW:', JSON.stringify(upd));
+  // Дополнительно выведем только тип и peer_id, если есть
+  if (upd.object && (upd.object.message || upd.object)) {
+    const m = upd.object.message || upd.object;
+    console.log('VK update TYPE:', upd.type, 'PEER_ID:', m.peer_id, 'TEXT:', m.text);
+  }
 
-          // Дополнительно выведем только тип и peer_id, если есть
-          if (upd.object && (upd.object.message || upd.object)) {
-            const m = upd.object.message || upd.object;
-            console.log('VK update TYPE:', upd.type, 'PEER_ID:', m.peer_id, 'TEXT:', m.text);
-          }
-
-          if (upd.type === 'message_new' || upd.type === 'message_edit') {
-            const msg = upd.object && (upd.object.message || upd.object);
-            try {
-              await upsertMessageRooms(msg);
-            } catch (e) {
-              console.error('upsertMessageRooms error:', e);
-            }
-          }
-        }
+  if (upd.type === 'message_new' || upd.type === 'message_edit') {
+    const msg = upd.object && (upd.object.message || upd.object);
+    try {
+      await upsertMessageRooms(msg);
+    } catch (e) {
+      console.error('upsertMessageRooms error:', e);
+    }
+  }
+}
       }
 
       // Цикл по серверу вышел → запрашиваем новый сервер
       console.log('Restarting Long Poll server...');
     } catch (e) {
       console.error('Long Poll error:', e.message);
+      // подождём и попробуем снова
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
@@ -504,16 +499,16 @@ async function migrateEmptiedRooms() {
     const data = snap.val() || {};
     const updates = {};
     let migratedCount = 0;
-
+    
     // Получаем все даты из vkCheckedRoomsByDate для поиска timestamp
     const checkedSnap = await db.ref(VK_CHECKED_ROOT).once('value');
     const checkedData = checkedSnap.val() || {};
-
+    
     for (const [room, roomData] of Object.entries(data)) {
       // Если запись в старом формате (true), обновляем на новый формат
       if (roomData === true || roomData === 'true') {
         let ts = null;
-
+        
         // Пытаемся найти timestamp из vkCheckedRoomsByDate
         for (const [dateKey, dateData] of Object.entries(checkedData)) {
           if (dateData && typeof dateData === 'object' && dateData[room]) {
@@ -524,18 +519,18 @@ async function migrateEmptiedRooms() {
             }
           }
         }
-
+        
         // Если не нашли в истории проверок, используем текущее время
         if (!ts) {
           ts = Math.floor(Date.now() / 1000);
         }
-
+        
         updates[room] = { ts };
         migratedCount++;
         console.log(`Migrating room ${room} from true to { ts: ${ts} }`);
       }
     }
-
+    
     if (migratedCount > 0) {
       await db.ref(VK_EMPTIED_ROOT).update(updates);
       console.log(`Migration completed: ${migratedCount} rooms migrated`);
@@ -557,10 +552,9 @@ app.get('/emptied-rooms', async (req, res) => {
     const rooms = Object.keys(data).map(room => {
       const roomData = data[room];
       // Поддержка старого формата (true) и нового формата ({ ts: ... })
-      const ts =
-        typeof roomData === 'object' && roomData !== null && typeof roomData.ts === 'number'
-          ? roomData.ts
-          : null;
+      const ts = typeof roomData === 'object' && roomData !== null && typeof roomData.ts === 'number' 
+        ? roomData.ts 
+        : null;
       return { room, ts };
     });
     res.json({ rooms });
@@ -604,7 +598,8 @@ app.get('/today-rooms', async (req, res) => {
 
     const rooms = Array.from(roomToInfo.entries())
       .map(([room, info]) => {
-        const globallyEmptied = emptiedGlobal && Object.prototype.hasOwnProperty.call(emptiedGlobal, room);
+        const globallyEmptied =
+          emptiedGlobal && Object.prototype.hasOwnProperty.call(emptiedGlobal, room);
         return {
           room,
           time: timeStringFromUnix(info.ts),
@@ -639,15 +634,31 @@ app.post('/migrate-emptied-rooms', async (req, res) => {
   }
 });
 
+// Тестовый endpoint для проверки уведомления
+app.post('/test-notification/:roomNumber', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  try {
+    const roomNumber = req.params.roomNumber;
+    await checkAndNotifyExpiringProducts(roomNumber);
+    res.json({ success: true, message: `Notification test for room ${roomNumber}` });
+  } catch (e) {
+    console.error('Test notification error:', e.message);
+    res.status(500).json({
+      error: 'TEST_ERROR',
+      message: e.message
+    });
+  }
+});
+
 // стартуем HTTP и Long Poll
 app.listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
-
+  
   // Запускаем миграцию при старте сервера
   migrateEmptiedRooms().catch(err => {
     console.error('Failed to run migration:', err);
   });
-
+  
   startLongPoll().catch(err => {
     console.error('Failed to start Long Poll:', err);
   });
