@@ -43,6 +43,10 @@ const VK_EMPTIED_ROOT = 'vkEmptiedRooms';
 // vkCheckedRoomsByDate/<YYYY-MM-DD>/<room>: { ts: <unix> }
 const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 
+// Хранение ID отправленных ботом сообщений для возможности удаления
+// Формат: { peerId: { messageId: true } }
+const sentMessages = {};
+
 // Обновление статуса сроков для номера в ветке minibarData/rooms
 async function setDeadlineStatusForRoom(roomNumber, status) {
   try {
@@ -121,6 +125,16 @@ const ALLOWED_ROOMS = [
 ];
 
 const ALLOWED_SET = new Set(ALLOWED_ROOMS);
+
+// Маппинг продуктов на русские названия
+const PRODUCT_NAMES = {
+    twix: 'Твикс', jager: 'Ягер', gin: 'Джин', rum: 'Ром', cognac: 'Коньяк',
+    whiskey: 'Виски', vodka: 'Водка', pepper: 'Пеппер', redbull: 'Ред Булл',
+    cola: 'Кола', baikal: 'Байкал', borjomi: 'Боржоми', white_wine: 'Белое вино',
+    red_wine: 'Красное вино', apple: 'Яблоко', tomato: 'Томат', corona: 'Корона',
+    stella: 'Стелла', gancha: 'Ганча', martini: 'Мартини', orange: 'Апельсин',
+    cherry: 'Вишня', loriot: 'Лориот', whiskey02: 'Виски 0.2'
+};
 
 // === утилиты времени (UTC+5, Екатеринбург) ===
 function localDateFromUnix(tsSec) {
@@ -281,12 +295,36 @@ async function upsertMessageRooms(msg) {
         // Проверяем статус номера перед опустошением
         const roomInfo = await getRoomDeadlineInfo(room);
         if (roomInfo && roomInfo.deadlinesStatus === 'products') {
-          // Получаем список продуктов
-          const products = Object.keys(roomInfo.products || {}).filter(p => roomInfo.products[p]);
-          if (products.length > 0) {
+          // Получаем список продуктов с учётом количества
+          const productCounts = {};
+          const roomProducts = roomInfo.products || {};
+
+          // Группируем продукты по названиям
+          Object.keys(roomProducts).forEach(key => {
+            const count = roomProducts[key];
+            if (count && count > 0) {
+              const name = PRODUCT_NAMES[key] || key; // Используем русское название или ключ, если не найдено
+              productCounts[name] = (productCounts[name] || 0) + count;
+            }
+          });
+
+          // Формируем строку продуктов
+          const productStrings = Object.keys(productCounts).map(name => {
+            const count = productCounts[name];
+            return count > 1 ? `${name} x${count}` : name;
+          });
+
+          if (productStrings.length > 0) {
             // Отправляем сообщение в беседу PEER_ID = 2000000001
-            const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${products.join(', ')}`;
-            await sendVKMessage(PEER_ID, message);
+            const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${productStrings.join(', ')}`;
+            const messageId = await sendVKMessage(PEER_ID, message);
+            if (messageId) {
+              // Сохраняем ID сообщения для возможности удаления
+              if (!sentMessages[PEER_ID]) {
+                sentMessages[PEER_ID] = {};
+              }
+              sentMessages[PEER_ID][messageId] = true;
+            }
           }
         }
 
@@ -336,10 +374,41 @@ async function sendVKMessage(peerId, message) {
       return false;
     }
 
-    console.log('Message sent successfully to peer', peerId);
-    return true;
+    console.log('Message sent successfully to peer', peerId, 'message_id:', data.response);
+    // Возвращаем ID отправленного сообщения для возможности удаления
+    return data.response;
   } catch (e) {
     console.error('Failed to send VK message:', e.message);
+    return false;
+  }
+}
+
+// Функция для удаления сообщения в VK
+async function deleteVKMessage(peerId, messageId) {
+  try {
+    const params = new URLSearchParams({
+      peer_id: peerId.toString(),
+      message_ids: messageId.toString(),
+      delete_for_all: '1', // Удалить для всех
+      access_token: VK_BOT_TOKEN,
+      v: '5.199'
+    });
+
+    const res = await fetch(
+      'https://api.vk.com/method/messages.delete?' + params.toString(),
+      { method: 'POST' }
+    );
+    const data = await res.json();
+
+    if (data.error) {
+      console.error('VK delete message error:', data.error.error_msg);
+      return false;
+    }
+
+    console.log('Message deleted successfully, peer:', peerId, 'message_id:', messageId);
+    return true;
+  } catch (e) {
+    console.error('Failed to delete VK message:', e.message);
     return false;
   }
 }
@@ -425,6 +494,27 @@ for (const upd of updates) {
       await upsertMessageRooms(msg);
     } catch (e) {
       console.error('upsertMessageRooms error:', e);
+    }
+  }
+
+  // Обработка добавления реакции на сообщение
+  if (upd.type === 'message_reaction_add') {
+    const reaction = upd.object;
+    if (reaction && reaction.peer_id && reaction.message_id) {
+      const peerId = reaction.peer_id;
+      const messageId = reaction.message_id;
+
+      // Проверяем, является ли это реакцией на наше сообщение
+      if (sentMessages[peerId] && sentMessages[peerId][messageId]) {
+        console.log('Reaction added to our message, deleting it:', messageId);
+        try {
+          await deleteVKMessage(peerId, messageId);
+          // Удаляем из списка отправленных сообщений
+          delete sentMessages[peerId][messageId];
+        } catch (e) {
+          console.error('Failed to delete message after reaction:', e);
+        }
+      }
     }
   }
 }
