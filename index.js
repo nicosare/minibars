@@ -497,15 +497,15 @@ for (const upd of updates) {
     }
   }
 
-  // Обработка добавления реакции на сообщение
-  if (upd.type === 'message_reaction_add') {
+  // Обработка реакции на сообщение (добавление/удаление)
+  if (upd.type === 'message_reaction_event') {
     const reaction = upd.object;
-    if (reaction && reaction.peer_id && reaction.message_id) {
+    if (reaction && reaction.peer_id && reaction.cmid) {
       const peerId = reaction.peer_id;
-      const messageId = reaction.message_id;
+      const messageId = reaction.cmid; // conversation message id
 
-      // Проверяем, является ли это реакцией на наше сообщение
-      if (sentMessages[peerId] && sentMessages[peerId][messageId]) {
+      // Проверяем, является ли это реакцией на наше сообщение и что это добавление реакции
+      if (sentMessages[peerId] && sentMessages[peerId][messageId] && reaction.reaction_id > 0) {
         console.log('Reaction added to our message, deleting it:', messageId);
         try {
           await deleteVKMessage(peerId, messageId);
