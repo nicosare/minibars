@@ -241,7 +241,7 @@ function parseMessage(text) {
 async function upsertMessageRooms(msg) {
   if (!msg) return;
 
-  console.log('Message:', msg.peer_id, msg.conversation_message_id, msg.text);
+  console.log('Processing message:', msg.peer_id, msg.conversation_message_id, msg.text);
 
 
   const text = msg.text || '';
@@ -318,12 +318,14 @@ async function upsertMessageRooms(msg) {
             // Отправляем сообщение в беседу PEER_ID = 2000000001
             const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${productStrings.join(', ')}`;
             const messageId = await sendVKMessage(PEER_ID, message);
+            console.log('Sent message with ID:', messageId, 'to peer:', PEER_ID);
             if (messageId) {
               // Сохраняем ID сообщения для возможности удаления
               if (!sentMessages[PEER_ID]) {
                 sentMessages[PEER_ID] = {};
               }
               sentMessages[PEER_ID][messageId] = true;
+              console.log('Saved message ID in sentMessages:', JSON.stringify(sentMessages));
             }
           }
         }
@@ -374,8 +376,9 @@ async function sendVKMessage(peerId, message) {
       return false;
     }
 
-    console.log('Message sent successfully to peer', peerId, 'message_id:', data.response);
+    console.log('Message sent successfully to peer', peerId, 'full response:', JSON.stringify(data));
     // Возвращаем ID отправленного сообщения для возможности удаления
+    // Для бесед используем conversation_message_id если доступен
     return data.response;
   } catch (e) {
     console.error('Failed to send VK message:', e.message);
@@ -500,12 +503,16 @@ for (const upd of updates) {
   // Обработка реакции на сообщение (добавление/удаление)
   if (upd.type === 'message_reaction_event') {
     const reaction = upd.object;
+    console.log('Processing reaction event:', JSON.stringify(reaction));
     if (reaction && reaction.peer_id && reaction.cmid) {
       const peerId = reaction.peer_id;
       const messageId = reaction.cmid; // conversation message id
 
-      // Проверяем, является ли это реакцией на наше сообщение и что это добавление реакции
-      if (sentMessages[peerId] && sentMessages[peerId][messageId] && reaction.reaction_id > 0) {
+      console.log('Checking sent messages for peer', peerId, 'message', messageId);
+      console.log('Available sent messages:', JSON.stringify(sentMessages));
+
+      // Проверяем, является ли это реакцией на наше сообщение
+      if (sentMessages[peerId] && sentMessages[peerId][messageId]) {
         console.log('Reaction added to our message, deleting it:', messageId);
         try {
           await deleteVKMessage(peerId, messageId);
@@ -514,6 +521,8 @@ for (const upd of updates) {
         } catch (e) {
           console.error('Failed to delete message after reaction:', e);
         }
+      } else {
+        console.log('Message not found in sent messages');
       }
     }
   }
