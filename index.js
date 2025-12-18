@@ -43,13 +43,9 @@ const VK_EMPTIED_ROOT = 'vkEmptiedRooms';
 // vkCheckedRoomsByDate/<YYYY-MM-DD>/<room>: { ts: <unix> }
 const VK_CHECKED_ROOT = 'vkCheckedRoomsByDate';
 
-// Хранение ID отправленных ботом сообщений для возможности удаления
-// Формат: { peerId: { messageId: true } }
-const sentMessages = {};
-
-// Отслеживание обработанных сообщений для предотвращения дублирования
-// Формат: { peerId: { conversationMessageId: true } }
-const processedMessages = {};
+// Антидубли уведомлений о продукции со сроками (на случай message_edit):
+// vkExpiringProductsNotified/<room>: { ts: <unix>, cmid: <conversation_message_id> }
+const VK_EXPIRING_NOTIFIED_ROOT = 'vkExpiringProductsNotified';
 
 // Обновление статуса сроков для номера в ветке minibarData/rooms
 async function setDeadlineStatusForRoom(roomNumber, status) {
@@ -75,29 +71,6 @@ async function setDeadlineStatusForRoom(roomNumber, status) {
     }
   } catch (e) {
     console.error('Failed to update deadline status for room', roomNumber, e.message);
-  }
-}
-
-// Получение статуса и продуктов для номера из ветки minibarData/rooms
-async function getRoomDeadlineInfo(roomNumber) {
-  try {
-    const snap = await db.ref('minibarData/rooms').once('value');
-    const rooms = snap.val();
-    if (!Array.isArray(rooms)) return null;
-
-    for (const r of rooms) {
-      if (!r || typeof r !== 'object') continue;
-      if (String(r.number) === String(roomNumber)) {
-        return {
-          deadlinesStatus: r.deadlinesStatus,
-          products: r.products || {}
-        };
-      }
-    }
-    return null;
-  } catch (e) {
-    console.error('Failed to get room deadline info for', roomNumber, e.message);
-    return null;
   }
 }
 
@@ -129,16 +102,6 @@ const ALLOWED_ROOMS = [
 ];
 
 const ALLOWED_SET = new Set(ALLOWED_ROOMS);
-
-// Маппинг продуктов на русские названия
-const PRODUCT_NAMES = {
-    twix: 'Твикс', jager: 'Ягер', gin: 'Джин', rum: 'Ром', cognac: 'Коньяк',
-    whiskey: 'Виски', vodka: 'Водка', pepper: 'Пеппер', redbull: 'Ред Булл',
-    cola: 'Кола', baikal: 'Байкал', borjomi: 'Боржоми', white_wine: 'Белое вино',
-    red_wine: 'Красное вино', apple: 'Яблоко', tomato: 'Томат', corona: 'Корона',
-    stella: 'Стелла', gancha: 'Ганча', martini: 'Мартини', orange: 'Апельсин',
-    cherry: 'Вишня', loriot: 'Лориот', whiskey02: 'Виски 0.2'
-};
 
 // === утилиты времени (UTC+5, Екатеринбург) ===
 function localDateFromUnix(tsSec) {
@@ -173,22 +136,22 @@ function timeStringFromUnix(tsSec) {
 // Новая логика парсинга сообщений
 function parseMessage(text) {
   if (!text || typeof text !== 'string') return null;
-  
+
   const trimmed = text.trim();
   if (trimmed.length === 0) return null;
-  
+
   // Проверяем, начинается ли сообщение с "-"
   if (trimmed.startsWith('-')) {
     // Удаление - более строгая проверка
     const withoutMinus = trimmed.slice(1).trim();
     if (withoutMinus.length === 0) return null;
-    
+
     // Ищем все номера
     const roomMatches = withoutMinus.match(/\d{3,4}/g) || [];
     const validRooms = roomMatches.filter(room => ALLOWED_SET.has(room));
-    
+
     if (validRooms.length === 0) return null;
-    
+
     // Для удаления: проверяем, что после удаления всех номеров и разделителей ничего не осталось
     // Разрешаем только номера и разделители (пробелы, запятые, точки, тире)
     const textWithoutRooms = withoutMinus.replace(/\d{3,4}/g, '').replace(/[\s,\-\.;:!?]/g, '');
@@ -196,77 +159,172 @@ function parseMessage(text) {
       // Есть посторонние символы/слова - игнорируем
       return null;
     }
-    
+
     return { type: 'delete', rooms: validRooms };
   }
-  
+
   // Ищем первое число в сообщении
   const firstMatch = trimmed.match(/^\d{3,4}/);
   if (!firstMatch) return null;
-  
+
   const firstRoom = firstMatch[0];
   if (!ALLOWED_SET.has(firstRoom)) return null;
-  
+
   // Находим все номера в сообщении
   const roomMatches = trimmed.match(/\d{3,4}/g) || [];
   const validRooms = roomMatches.filter(room => ALLOWED_SET.has(room));
-  
+
   if (validRooms.length === 0) return null;
-  
+
   // Проверяем, что нет слов между номерами
   // Для этого проверяем часть текста до последнего номера
   const lastRoom = validRooms[validRooms.length - 1];
   const lastIndex = trimmed.lastIndexOf(lastRoom) + lastRoom.length;
-  
+
   // Текст до последнего номера (включая разделители)
   const beforeLastRoom = trimmed.slice(0, lastIndex);
-  
+
   // Удаляем все номера и разрешенные разделители
   const beforeCleaned = beforeLastRoom.replace(/\d{3,4}/g, '').replace(/[\s,\-\.;:!?]/g, '');
   if (beforeCleaned.length > 0) {
     // Есть слова между номерами - игнорируем
     return null;
   }
-  
+
   // Текст после последнего номера
   const afterLastRoom = trimmed.slice(lastIndex).trim().toLowerCase();
-  
+
   // Проверяем, есть ли "опустош" после последнего номера
-  // Ищем "опустош" в любом месте после номеров
   const опустошIndex = afterLastRoom.indexOf('опустош');
   const hasEmptyMark = опустошIndex !== -1;
-  
-  // Для добавления: если есть слово "опустош", то помечаем как опустошённый
-  // Не важно, что после "опустош" (могут быть другие слова)
+
   return { type: 'add', rooms: validRooms, emptied: hasEmptyMark };
+}
+
+// === VK: отправка сообщений ===
+async function vkSendMessage(peerId, message) {
+  const params = new URLSearchParams({
+    peer_id: String(peerId),
+    message: String(message),
+    random_id: String(Math.floor(Math.random() * 2 ** 31)),
+    access_token: VK_BOT_TOKEN,
+    v: '5.199'
+  });
+
+  const res = await fetch('https://api.vk.com/method/messages.send?' + params.toString());
+  const data = await res.json();
+
+  if (data.error) {
+    throw new Error('VK messages.send error: ' + data.error.error_msg);
+  }
+
+  return data.response;
+}
+
+function formatProducts(products) {
+  if (!products) return '';
+
+  // если вдруг строкой
+  if (typeof products === 'string') return products.trim();
+
+  const parts = [];
+
+  // если вдруг массивом
+  if (Array.isArray(products)) {
+    for (const item of products) {
+      if (typeof item === 'string' && item.trim()) {
+        parts.push(item.trim());
+        continue;
+      }
+      if (item && typeof item === 'object') {
+        const name = item.name || item.title;
+        const qty = item.count ?? item.qty ?? item.quantity;
+        if (name) parts.push(qty > 1 ? `${name} x${qty}` : `${name}`);
+      }
+    }
+    return parts.join(', ');
+  }
+
+  // основной ожидаемый вариант: объект { "Кола": 2, "Твикс": 1 }
+  if (typeof products === 'object') {
+    for (const [name, raw] of Object.entries(products)) {
+      if (!name) continue;
+
+      let qty = 1;
+
+      if (typeof raw === 'number') qty = raw;
+      else if (typeof raw === 'string' && raw.trim() !== '' && !Number.isNaN(Number(raw))) qty = Number(raw);
+      else if (raw && typeof raw === 'object') {
+        const c = raw.count ?? raw.qty ?? raw.quantity ?? raw.amount;
+        if (typeof c === 'number') qty = c;
+        else if (typeof c === 'string' && !Number.isNaN(Number(c))) qty = Number(c);
+      }
+
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+
+      parts.push(qty > 1 ? `${name} x${qty}` : `${name}`);
+    }
+
+    return parts.join(', ');
+  }
+
+  return '';
+}
+
+async function notifyExpiringProductsIfNeeded(roomNumber, msgTs, cmid) {
+  try {
+    const snap = await db.ref('minibarData/rooms').once('value');
+    const rooms = snap.val();
+    if (!Array.isArray(rooms)) return;
+
+    let roomObj = null;
+    for (const r of rooms) {
+      if (!r || typeof r !== 'object') continue;
+      if (String(r.number) === String(roomNumber)) {
+        roomObj = r;
+        break;
+      }
+    }
+    if (!roomObj) return;
+
+    // Нужен именно статус products
+    if (String(roomObj.deadlinesStatus) !== 'products') return;
+
+    // Антидубль: если это тот же conversation_message_id (например, message_edit)
+    const notifiedRef = db.ref(`${VK_EXPIRING_NOTIFIED_ROOT}/${roomNumber}`);
+    const prevSnap = await notifiedRef.once('value');
+    const prev = prevSnap.val();
+
+    if (prev && typeof prev === 'object') {
+      if (cmid != null && prev.cmid != null && String(prev.cmid) === String(cmid)) return;
+      if (cmid == null && typeof prev.ts === 'number' && prev.ts === msgTs) return;
+    }
+
+    const list = formatProducts(roomObj.products);
+
+    const text = list
+      ? `В номере ${roomNumber} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${list}`
+      : `В номере ${roomNumber} была продукция с истекающим сроком годности. Проверь и убери, если это так (список продуктов не найден).`;
+
+    await vkSendMessage(PEER_ID, text);
+
+    await notifiedRef.set({
+      ts: msgTs,
+      cmid: cmid ?? null
+    });
+  } catch (e) {
+    console.error('notifyExpiringProductsIfNeeded error:', roomNumber, e.message);
+  }
 }
 
 // === обработка (нового или отредактированного) сообщения ===
 async function upsertMessageRooms(msg) {
   if (!msg) return;
 
-  const peerId = msg.peer_id;
-  const conversationMessageId = msg.conversation_message_id;
-
-  // Проверяем, не обрабатывали ли уже это сообщение
-  if (processedMessages[peerId] && processedMessages[peerId][conversationMessageId]) {
-    console.log('Message already processed, skipping:', peerId, conversationMessageId);
-    return;
-  }
-
-  // Помечаем сообщение как обработанное
-  if (!processedMessages[peerId]) {
-    processedMessages[peerId] = {};
-  }
-  processedMessages[peerId][conversationMessageId] = true;
-
-  console.log('Marked message as processed:', peerId, conversationMessageId);
-  console.log('Processing message:', peerId, conversationMessageId, msg.text);
-  console.log('Message date:', msg.date, 'current time:', Math.floor(Date.now() / 1000));
-
+  console.log('Message:', msg.peer_id, msg.conversation_message_id, msg.text);
 
   const text = msg.text || '';
-  
+
   // Парсим сообщение
   const parsed = parseMessage(text);
   if (!parsed) {
@@ -280,20 +338,20 @@ async function upsertMessageRooms(msg) {
   if (parsed.type === 'delete') {
     // Удаление номеров
     const checkedDayRef = db.ref(`${VK_CHECKED_ROOT}/${key}`);
-    
+
     for (const room of parsed.rooms) {
       // Проверяем, есть ли номер в checked (на сегодня)
       const roomInCheckedSnap = await checkedDayRef.child(room).once('value');
       const isInChecked = roomInCheckedSnap.exists();
-      
+
       if (isInChecked) {
         // Удаляем из списка проверенных на сегодня
         await checkedDayRef.child(room).remove();
-        
+
         // Удаляем из списка опустошённых (только если был в checked)
         const emptiedRef = db.ref(`${VK_EMPTIED_ROOT}/${room}`);
         await emptiedRef.remove();
-        
+
         console.log(`Deleted room ${room} from checked and emptied (was in checked)`);
       } else {
         console.log(`Room ${room} not in checked, skipping deletion`);
@@ -302,73 +360,32 @@ async function upsertMessageRooms(msg) {
   } else {
     // Добавление номеров
     const checkedDayRef = db.ref(`${VK_CHECKED_ROOT}/${key}`);
-    
+
     for (const room of parsed.rooms) {
       // Добавляем/обновляем в списке проверенных на сегодня
       await checkedDayRef.child(room).set({ ts: msgTs });
-      
+
       const emptiedRef = db.ref(`${VK_EMPTIED_ROOT}/${room}`);
-      
+
       if (parsed.emptied) {
-        // Помечаем как опустошённый с timestamp (такая же логика, как для vkCheckedRoomsByDate)
+        // ВАЖНО: сначала, если в "Сроках" deadlinesStatus=products, отправляем уведомление со списком products
+        await notifyExpiringProductsIfNeeded(room, msgTs, msg.conversation_message_id);
+
+        // Помечаем как опустошённый с timestamp
         await emptiedRef.set({ ts: msgTs });
 
-        // Проверяем статус номера перед опустошением
-        const roomInfo = await getRoomDeadlineInfo(room);
-        console.log('Room info for', room, ':', JSON.stringify(roomInfo));
-        if (roomInfo && roomInfo.deadlinesStatus === 'products') {
-          console.log('Room', room, 'has products status, processing products...');
-          // Получаем список продуктов с учётом количества
-          const productCounts = {};
-          const roomProducts = roomInfo.products || {};
-
-          // Группируем продукты по названиям
-          Object.keys(roomProducts).forEach(key => {
-            const count = roomProducts[key];
-            if (count && count > 0) {
-              const name = PRODUCT_NAMES[key] || key; // Используем русское название или ключ, если не найдено
-              productCounts[name] = (productCounts[name] || 0) + count;
-            }
-          });
-
-          // Формируем строку продуктов
-          const productStrings = Object.keys(productCounts).map(name => {
-            const count = productCounts[name];
-            return count > 1 ? `${name} x${count}` : name;
-          });
-
-          console.log('Product strings for room', room, ':', productStrings);
-          if (productStrings.length > 0) {
-            // Отправляем сообщение в беседу PEER_ID = 2000000001
-            const message = `В номере ${room} была продукция с истекающим сроком годности. Проверь и убери, если это так: ${productStrings.join(', ')}`;
-            console.log('About to send message to peer', PEER_ID, ':', message);
-            const messageId = await sendVKMessage(PEER_ID, message);
-            console.log('Sent message with ID:', messageId, 'to peer:', PEER_ID);
-            if (messageId) {
-              // Сохраняем ID сообщения для возможности удаления
-              if (!sentMessages[PEER_ID]) {
-                sentMessages[PEER_ID] = {};
-              }
-              sentMessages[PEER_ID][messageId] = true;
-              console.log('Saved message ID in sentMessages:', JSON.stringify(sentMessages));
-            }
-          } else {
-            console.log('No products found for room', room);
-          }
-        } else {
-          console.log('Room', room, 'does not have products status or no room info');
-        }
-
+        // Ставим ok и очищаем продукты
         await setDeadlineStatusForRoom(room, 'ok');
+
         console.log(`Added room ${room} as emptied at ${msgTs}`);
       } else {
         // Проверяем, был ли номер ранее в списке опустошённых
         const snap = await emptiedRef.once('value');
         const wasEmptied = snap.exists();
-        
+
         // Убираем из списка опустошённых (если был)
         await emptiedRef.remove();
-        
+
         // Если был опустошён ранее, а теперь пришёл без пометки, сбрасываем статус
         if (wasEmptied) {
           await setDeadlineStatusForRoom(room, 'neutral');
@@ -381,72 +398,7 @@ async function upsertMessageRooms(msg) {
   }
 }
 
-// === VK API функции ===
-
-// Функция для отправки сообщения в VK
-async function sendVKMessage(peerId, message) {
-  try {
-    const params = new URLSearchParams({
-      peer_id: peerId.toString(),
-      message: message,
-      access_token: VK_BOT_TOKEN,
-      v: '5.199',
-      random_id: Math.floor(Math.random() * 1000000)
-    });
-
-    const res = await fetch(
-      'https://api.vk.com/method/messages.send?' + params.toString(),
-      { method: 'POST' }
-    );
-    const data = await res.json();
-
-    if (data.error) {
-      console.error('VK send message error:', data.error.error_msg);
-      return false;
-    }
-
-    console.log('Message sent successfully to peer', peerId, 'full response:', JSON.stringify(data));
-    // Возвращаем ID отправленного сообщения для возможности удаления
-    // Для бесед используем conversation_message_id если доступен
-    return data.response;
-  } catch (e) {
-    console.error('Failed to send VK message:', e.message);
-    return false;
-  }
-}
-
-// Функция для удаления сообщения в VK
-async function deleteVKMessage(peerId, messageId) {
-  try {
-    const params = new URLSearchParams({
-      peer_id: peerId.toString(),
-      message_ids: messageId.toString(),
-      delete_for_all: '1', // Удалить для всех
-      access_token: VK_BOT_TOKEN,
-      v: '5.199'
-    });
-
-    const res = await fetch(
-      'https://api.vk.com/method/messages.delete?' + params.toString(),
-      { method: 'POST' }
-    );
-    const data = await res.json();
-
-    if (data.error) {
-      console.error('VK delete message error:', data.error.error_msg);
-      return false;
-    }
-
-    console.log('Message deleted successfully, peer:', peerId, 'message_id:', messageId);
-    return true;
-  } catch (e) {
-    console.error('Failed to delete VK message:', e.message);
-    return false;
-  }
-}
-
 // === Bots Long Poll API ===
-
 async function getLongPollServer() {
   const params = new URLSearchParams({
     group_id: VK_GROUP_ID.toString(),
@@ -454,9 +406,7 @@ async function getLongPollServer() {
     v: '5.199'
   });
 
-  const res = await fetch(
-    'https://api.vk.com/method/groups.getLongPollServer?' + params.toString()
-  );
+  const res = await fetch('https://api.vk.com/method/groups.getLongPollServer?' + params.toString());
   const data = await res.json();
 
   if (data.error) {
@@ -479,17 +429,17 @@ async function startLongPoll() {
       while (true) {
         const baseUrl = server.startsWith('http') ? server : 'https://' + server;
 
-const lpURL =
-  baseUrl +
-  '?' +
-  new URLSearchParams({
-    act: 'a_check',
-    key,
-    ts: String(tsCur),
-    wait: '25',
-    mode: '2',
-    version: '3'
-  }).toString();
+        const lpURL =
+          baseUrl +
+          '?' +
+          new URLSearchParams({
+            act: 'a_check',
+            key,
+            ts: String(tsCur),
+            wait: '25',
+            mode: '2',
+            version: '3'
+          }).toString();
 
         const res = await fetch(lpURL);
         const data = await res.json();
@@ -506,63 +456,35 @@ const lpURL =
         }
 
         tsCur = data.ts;
-        
-// ЛОГИРУЕМ ВСЕ ОБНОВЛЕНИЯ ДЛЯ ОТЛАДКИ
-const updates = data.updates || [];
 
-for (const upd of updates) {
-  // Логируем абсолютно все апдейты как есть
-  console.log('VK update RAW:', JSON.stringify(upd));
+        // ЛОГИРУЕМ ВСЕ ОБНОВЛЕНИЯ ДЛЯ ОТЛАДКИ
+        const updates = data.updates || [];
 
-  // Дополнительно выведем только тип и peer_id, если есть
-  if (upd.object && (upd.object.message || upd.object)) {
-    const m = upd.object.message || upd.object;
-    console.log('VK update TYPE:', upd.type, 'PEER_ID:', m.peer_id, 'TEXT:', m.text);
-  }
+        for (const upd of updates) {
+          // Логируем абсолютно все апдейты как есть
+          console.log('VK update RAW:', JSON.stringify(upd));
 
-  if (upd.type === 'message_new' || upd.type === 'message_edit') {
-    const msg = upd.object && (upd.object.message || upd.object);
-    try {
-      await upsertMessageRooms(msg);
-    } catch (e) {
-      console.error('upsertMessageRooms error:', e);
-    }
-  }
+          // Дополнительно выведем только тип и peer_id, если есть
+          if (upd.object && (upd.object.message || upd.object)) {
+            const m = upd.object.message || upd.object;
+            console.log('VK update TYPE:', upd.type, 'PEER_ID:', m.peer_id, 'TEXT:', m.text);
+          }
 
-  // Обработка реакции на сообщение (добавление/удаление)
-  if (upd.type === 'message_reaction_event') {
-    const reaction = upd.object;
-    console.log('Processing reaction event:', JSON.stringify(reaction));
-    if (reaction && reaction.peer_id && reaction.cmid) {
-      const peerId = reaction.peer_id;
-      const messageId = reaction.cmid; // conversation message id
-
-      console.log('Checking sent messages for peer', peerId, 'message', messageId);
-      console.log('Available sent messages:', JSON.stringify(sentMessages));
-
-      // Проверяем, является ли это реакцией на наше сообщение
-      if (sentMessages[peerId] && sentMessages[peerId][messageId]) {
-        console.log('Reaction added to our message, deleting it:', messageId);
-        try {
-          await deleteVKMessage(peerId, messageId);
-          // Удаляем из списка отправленных сообщений
-          delete sentMessages[peerId][messageId];
-        } catch (e) {
-          console.error('Failed to delete message after reaction:', e);
+          if (upd.type === 'message_new' || upd.type === 'message_edit') {
+            const msg = upd.object && (upd.object.message || upd.object);
+            try {
+              await upsertMessageRooms(msg);
+            } catch (e) {
+              console.error('upsertMessageRooms error:', e);
+            }
+          }
         }
-      } else {
-        console.log('Message not found in sent messages');
-      }
-    }
-  }
-}
       }
 
       // Цикл по серверу вышел → запрашиваем новый сервер
       console.log('Restarting Long Poll server...');
     } catch (e) {
       console.error('Long Poll error:', e.message);
-      // подождём и попробуем снова
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
@@ -582,16 +504,16 @@ async function migrateEmptiedRooms() {
     const data = snap.val() || {};
     const updates = {};
     let migratedCount = 0;
-    
+
     // Получаем все даты из vkCheckedRoomsByDate для поиска timestamp
     const checkedSnap = await db.ref(VK_CHECKED_ROOT).once('value');
     const checkedData = checkedSnap.val() || {};
-    
+
     for (const [room, roomData] of Object.entries(data)) {
       // Если запись в старом формате (true), обновляем на новый формат
       if (roomData === true || roomData === 'true') {
         let ts = null;
-        
+
         // Пытаемся найти timestamp из vkCheckedRoomsByDate
         for (const [dateKey, dateData] of Object.entries(checkedData)) {
           if (dateData && typeof dateData === 'object' && dateData[room]) {
@@ -602,18 +524,18 @@ async function migrateEmptiedRooms() {
             }
           }
         }
-        
+
         // Если не нашли в истории проверок, используем текущее время
         if (!ts) {
           ts = Math.floor(Date.now() / 1000);
         }
-        
+
         updates[room] = { ts };
         migratedCount++;
         console.log(`Migrating room ${room} from true to { ts: ${ts} }`);
       }
     }
-    
+
     if (migratedCount > 0) {
       await db.ref(VK_EMPTIED_ROOT).update(updates);
       console.log(`Migration completed: ${migratedCount} rooms migrated`);
@@ -635,9 +557,10 @@ app.get('/emptied-rooms', async (req, res) => {
     const rooms = Object.keys(data).map(room => {
       const roomData = data[room];
       // Поддержка старого формата (true) и нового формата ({ ts: ... })
-      const ts = typeof roomData === 'object' && roomData !== null && typeof roomData.ts === 'number' 
-        ? roomData.ts 
-        : null;
+      const ts =
+        typeof roomData === 'object' && roomData !== null && typeof roomData.ts === 'number'
+          ? roomData.ts
+          : null;
       return { room, ts };
     });
     res.json({ rooms });
@@ -681,8 +604,7 @@ app.get('/today-rooms', async (req, res) => {
 
     const rooms = Array.from(roomToInfo.entries())
       .map(([room, info]) => {
-        const globallyEmptied =
-          emptiedGlobal && Object.prototype.hasOwnProperty.call(emptiedGlobal, room);
+        const globallyEmptied = emptiedGlobal && Object.prototype.hasOwnProperty.call(emptiedGlobal, room);
         return {
           room,
           time: timeStringFromUnix(info.ts),
@@ -720,8 +642,6 @@ app.post('/migrate-emptied-rooms', async (req, res) => {
 // стартуем HTTP и Long Poll
 app.listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
-  console.log('Initial sentMessages state:', JSON.stringify(sentMessages));
-  console.log('Initial processedMessages state:', JSON.stringify(processedMessages));
 
   // Запускаем миграцию при старте сервера
   migrateEmptiedRooms().catch(err => {
