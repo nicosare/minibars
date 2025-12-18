@@ -330,7 +330,10 @@ async function upsertMessageRooms(msg) {
   } else {
     // Добавление номеров
     const checkedDayRef = db.ref(`${VK_CHECKED_ROOT}/${key}`);
-    
+
+    // Собираем номера с продуктами для уведомлений
+    const roomsWithProducts = [];
+
     for (const room of parsed.rooms) {
       // Добавляем/обновляем в списке проверенных на сегодня
       await checkedDayRef.child(room).set({ ts: msgTs });
@@ -340,8 +343,22 @@ async function upsertMessageRooms(msg) {
       if (parsed.emptied) {
         // Помечаем как опустошённый с timestamp (такая же логика, как для vkCheckedRoomsByDate)
         await emptiedRef.set({ ts: msgTs });
+
+        // Проверяем статус ДО изменения на 'ok'
+        const roomData = await getRoomStatusAndProducts(room);
+        const hasProductsStatus = roomData && roomData.status === 'products';
+
+        // Если статус 'products', сохраняем информацию для уведомления
+        if (hasProductsStatus) {
+          roomsWithProducts.push({
+            room: room,
+            products: roomData.products
+          });
+        }
+
+        // Устанавливаем статус 'ok' ПОСЛЕ проверки
         await setDeadlineStatusForRoom(room, 'ok');
-        console.log(`Added room ${room} as emptied at ${msgTs}`);
+        console.log(`Added room ${room} as emptied at ${msgTs}, had products status: ${hasProductsStatus}`);
       } else {
         // Проверяем, был ли номер ранее в списке опустошённых
         const snap = await emptiedRef.once('value');
@@ -361,24 +378,12 @@ async function upsertMessageRooms(msg) {
     }
 
     // Проверяем и отправляем уведомления о продуктах с истекающими сроками
-    if (parsed.type === 'add' && parsed.emptied) {
-      const roomsWithProducts = [];
-      for (const room of parsed.rooms) {
-        const roomData = await getRoomStatusAndProducts(room);
-        if (roomData && roomData.status === 'products') {
-          roomsWithProducts.push({
-            room: room,
-            products: roomData.products
-          });
-        }
-      }
-
-      if (roomsWithProducts.length > 0) {
-        const message = formatExpiryNotificationMessage(roomsWithProducts);
-        if (message) {
-          console.log('Sending expiry notification:', message);
-          await sendVKMessage(PEER_ID, message);
-        }
+    // Используем информацию, собранную в цикле выше
+    if (parsed.type === 'add' && parsed.emptied && roomsWithProducts.length > 0) {
+      const message = formatExpiryNotificationMessage(roomsWithProducts);
+      if (message) {
+        console.log('Sending expiry notification:', message);
+        await sendVKMessage(PEER_ID, message);
       }
     }
   }
