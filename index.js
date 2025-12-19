@@ -698,6 +698,27 @@ app.get('/today-rooms', async (req, res) => {
   }
 });
 
+// Получить список проверенных номеров на сегодня
+app.get('/checked-rooms-today', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  const key = todayKey();
+
+  try {
+    const checkedSnap = await db.ref(`${VK_CHECKED_ROOT}/${key}`).once('value');
+    const checkedData = checkedSnap.val() || {};
+
+    const checkedRooms = Object.keys(checkedData).map(room => room.toString());
+    res.json({ checkedRooms });
+  } catch (e) {
+    console.error('Firebase read error (checked rooms):', e.message);
+    res.status(500).json({
+      error: 'DB_ERROR',
+      message: e.message
+    });
+  }
+});
+
 // Endpoint для запуска миграции вручную
 app.post('/migrate-emptied-rooms', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

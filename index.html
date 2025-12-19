@@ -3114,6 +3114,10 @@ min-height: 18px;
 <div style="font-size:24px; font-weight:700;color:#1b7a2b" id="deadlines-count-ok">0</div>
 </div>
 <div class="card" style="flex:1; min-width:160px; padding:12px;">
+<div class="muted" style="font-size:12px;">Пустых номеров</div>
+<div style="font-size:24px; font-weight:700;color:#0a58ca" id="deadlines-count-auto-ok">0</div>
+</div>
+<div class="card" style="flex:1; min-width:160px; padding:12px;">
 <div class="muted" style="font-size:12px;">Номеров заменить</div>
 <div style="font-size:24px; font-weight:700; color:#c12a35;" id="deadlines-count-products">0</div>
 </div>
@@ -4189,9 +4193,8 @@ const filteredRooms = selectedRooms.filter(num => {
     const room = (appData.rooms || []).find(r => r && r.number === num);
     // Если записи о комнате нет — печатаем (пользователь мог просто выбрать номер)
     if (!room) return true;
-    // room.deadlinesStatus хранит текущее состояние (NEUTRAL / PRODUCTS / OK / AUTO_OK)
-    // Исключаем только AUTO_OK (автоматически опустошённые номера)
-    return room.deadlinesStatus !== DEADLINE_STATUS.AUTO_OK;
+    // room.deadlinesStatus хранит текущее состояние (NEUTRAL / PRODUCTS / OK)
+    return room.deadlinesStatus !== DEADLINE_STATUS.OK && room.deadlinesStatus !== DEADLINE_STATUS.AUTO_OK;
 });
 
     const roomsData = filteredRooms.map(num => {
@@ -4393,6 +4396,7 @@ const filteredRooms = selectedRooms.filter(num => {
                 function computeDeadlinesSummary() {
                     const summary = {
                         ok: 0,
+                        auto_ok: 0,  // Пустые номера (опустошённые)
                         products: 0,
                         neutral: 0,
                         productTotals: {}
@@ -4401,7 +4405,8 @@ const filteredRooms = selectedRooms.filter(num => {
                         if (!room) return;
                         normalizeRoomDeadlineStatus(room);
                         const status = room.deadlinesStatus || DEADLINE_STATUS.NEUTRAL;
-                        if (status === DEADLINE_STATUS.OK || status === DEADLINE_STATUS.AUTO_OK) summary.ok += 1;
+                        if (status === DEADLINE_STATUS.OK) summary.ok += 1;
+                        else if (status === DEADLINE_STATUS.AUTO_OK) summary.auto_ok += 1;
                         else if (status === DEADLINE_STATUS.PRODUCTS) summary.products += 1;
                         else summary.neutral += 1;
 
@@ -4417,9 +4422,11 @@ const filteredRooms = selectedRooms.filter(num => {
                 function renderDeadlinesStats() {
                     const data = computeDeadlinesSummary();
                     const okEl = $('#deadlines-count-ok');
+                    const autoOkEl = $('#deadlines-count-auto-ok');
                     const prodEl = $('#deadlines-count-products');
                     const neutralEl = $('#deadlines-count-neutral');
                     if (okEl) okEl.textContent = data.ok;
+                    if (autoOkEl) autoOkEl.textContent = data.auto_ok;
                     if (prodEl) prodEl.textContent = data.products;
                     if (neutralEl) neutralEl.textContent = data.neutral;
 
@@ -8143,20 +8150,54 @@ function printDepartures() {
         );
 
         // нет данных — просим проверить
-        if (!room) return 'check';
-        // если "Сроки в порядке" — ничего не пишем
-        if (room.deadlinesStatus === DEADLINE_STATUS.OK || room.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) return '';
-        // если выбраны продукты — показываем их
-        const entries = Object.entries(room.products || {}).filter(
-            ([, c]) => Number(c) > 0
-        );
-        if (entries.length === 0) return 'check';
-        return entries
-            .map(([k, c]) => {
-                const name = (appData.products && (appData.products[k] || k)) || k;
-                return Number(c) > 1 ? `${name} x${c}` : name;
-            })
-            .join(', ');
+        if (!room) {
+            console.log(`Room ${roomNumber}: no data in appData.rooms`);
+            return 'check';
+        }
+
+        const status = room.deadlinesStatus;
+        console.log(`Room ${roomNumber}: status = ${status}, includeDeadlines = ${includeDeadlines}`);
+
+        if (status === DEADLINE_STATUS.PRODUCTS) {
+            console.log(`Room ${roomNumber}: PRODUCTS branch`);
+            // Печатаем продукты, если выбран переключатель "Выписать сроки"
+            if (includeDeadlines) {
+                const entries = Object.entries(room.products || {}).filter(
+                    ([, c]) => Number(c) > 0
+                );
+                if (entries.length === 0) return 'check';
+                const result = entries
+                    .map(([k, c]) => {
+                        const name = (appData.products && (appData.products[k] || k)) || k;
+                        return Number(c) > 1 ? `${name} x${c}` : name;
+                    })
+                    .join(', ');
+                console.log(`Room ${roomNumber}: returning products: ${result}`);
+                return result;
+            } else {
+                // Если переключатель не выбран, ничего не печатаем
+                console.log(`Room ${roomNumber}: PRODUCTS but includeDeadlines=false, returning empty`);
+                return '';
+            }
+        } else if (status === DEADLINE_STATUS.AUTO_OK) {
+            console.log(`Room ${roomNumber}: AUTO_OK branch, returning 'пустой'`);
+            // Всегда печатаем "пустой" независимо от переключателя
+            return 'пустой';
+        } else if (status === DEADLINE_STATUS.OK) {
+            console.log(`Room ${roomNumber}: OK branch, returning empty`);
+            // Для ручного OK ничего не печатаем
+            return '';
+        } else if (status === DEADLINE_STATUS.NEUTRAL) {
+            console.log(`Room ${roomNumber}: NEUTRAL branch`);
+            // Печатаем "сроки", если выбран переключатель "Выписать сроки"
+            const result = includeDeadlines ? 'сроки' : '';
+            console.log(`Room ${roomNumber}: returning ${result ? 'сроки' : 'empty'}`);
+            return result;
+        }
+
+        // По умолчанию — проверка
+        console.log(`Room ${roomNumber}: default branch, returning 'check'`);
+        return 'check';
     }
 
     // Разбиваем на страницы
