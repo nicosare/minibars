@@ -2834,6 +2834,7 @@ min-height: 18px;
 <div class="row desktop-only" style="gap:12px; align-items:center;">
 <span id="deadlines-selected-count" style="font-size:13px; color:var(--muted); display:none;">Выбрано номеров: <strong id="deadlines-selected-number">0</strong></span>
 <button class="btn ghost small" id="deadlines-select-mode-btn" title="Режим выбора номеров"><i class="fas fa-check-square"></i> Выбрать номера</button>
+<button class="btn secondary small" id="deadlines-ok-selected-btn" title="Сроки в порядке для выбранных номеров" style="display:none;"><i class="fas fa-check"></i> Сроки в порядке</button>
 <button class="btn ghost small" id="deadlines-print-btn" title="Печать выбранных номеров" style="display:none;"><i class="fas fa-print"></i> Печать</button>
 <button class="btn small" id="deadlines-stats-btn" title="Статистика по номерам Сроки"><i class="fas fa-chart-pie"></i> Статистика</button>
 <button class="btn ghost small" id="deadlines-reset-btn" title="Сбросить все номера"><i class="fas fa-undo"></i></button>
@@ -3813,6 +3814,9 @@ function toggleFloorSelection(floorNumber) {
                     const selectModeBtn = $('#deadlines-select-mode-btn');
                     if (selectModeBtn) selectModeBtn.addEventListener('click', toggleDeadlinesSelectMode);
 
+                    const okSelectedBtn = $('#deadlines-ok-selected-btn');
+                    if (okSelectedBtn) okSelectedBtn.addEventListener('click', markSelectedDeadlinesOk);
+
                     const printBtn = $('#deadlines-print-btn');
                     if (printBtn) printBtn.addEventListener('click', printDeadlinesSelected);
 
@@ -3972,6 +3976,23 @@ function toggleFloorSelection(floorNumber) {
                     const room = ensureRoomRecord(currentDeadlineRoomNumber);
                     commitDeadlineChanges(room, {}, DEADLINE_STATUS.OK);
                     closeModal();
+                }
+                function markSelectedDeadlinesOk() {
+                    if (deadlinesSelectedRooms.size === 0) return;
+                    const selectedRooms = Array.from(deadlinesSelectedRooms);
+                    selectedRooms.forEach(roomStr => {
+                        const roomNumber = Number(roomStr);
+                        const room = ensureRoomRecord(roomNumber);
+                        room.products = {};
+                        room.deadlinesStatus = DEADLINE_STATUS.OK;
+                        normalizeRoomDeadlineStatus(room);
+                    });
+                    deadlinesSelectedRooms.clear();
+                    saveDebounced();
+                    renderRooms();
+                    pushRoomsRealtime();
+                    updateDeadlinesSelectedCount();
+                    updateDeadlinesStatsIfOpen();
                 }
                 function resetDeadlineSelections() {
                     if (!deadlineModalState) return;
@@ -4158,6 +4179,7 @@ section.appendChild(title);
                     const btn = $('#deadlines-select-mode-btn');
                     const countEl = $('#deadlines-selected-count');
                     const printBtn = $('#deadlines-print-btn');
+                    const okSelectedBtn = $('#deadlines-ok-selected-btn');
                     if (btn) {
                         if (deadlinesSelectMode) {
                             btn.classList.add('active');
@@ -4172,6 +4194,7 @@ section.appendChild(title);
                     }
                     if (countEl) countEl.style.display = deadlinesSelectMode ? 'inline' : 'none';
                     if (printBtn) printBtn.style.display = deadlinesSelectMode && deadlinesSelectedRooms.size > 0 ? 'inline-flex' : 'none';
+                    if (okSelectedBtn) okSelectedBtn.style.display = deadlinesSelectMode && deadlinesSelectedRooms.size > 0 ? 'inline-flex' : 'none';
                 }
 
                 function toggleDeadlineRoomSelection(roomNumber) {
@@ -4189,8 +4212,10 @@ section.appendChild(title);
                     const count = deadlinesSelectedRooms.size;
                     const countEl = $('#deadlines-selected-number');
                     const printBtn = $('#deadlines-print-btn');
+                    const okSelectedBtn = $('#deadlines-ok-selected-btn');
                     if (countEl) countEl.textContent = String(count);
-                    if (printBtn) printBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+                    if (printBtn) printBtn.style.display = deadlinesSelectMode && count > 0 ? 'inline-flex' : 'none';
+                    if (okSelectedBtn) okSelectedBtn.style.display = deadlinesSelectMode && count > 0 ? 'inline-flex' : 'none';
                 }
 
                 function printDeadlinesSelected() {
