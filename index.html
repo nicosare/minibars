@@ -1937,6 +1937,22 @@ function updateGIHRoomsSummary() {
         margin-top: 12px;
     }
 
+    /* Стили для отображения ежедневных проверок по этажам (как в Депатчерах) */
+    #history-list.floor-mode {
+        display: block;
+        flex-direction: column;
+    }
+
+    #history-list.floor-mode > .dispatchers-floor-section {
+        width: 100%;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    #history-list.floor-mode > .dispatchers-floor-section:last-child {
+        margin-bottom: 0;
+    }
+
     #history-list .gih-card {
         position: relative;
         overflow: hidden;
@@ -2962,6 +2978,11 @@ min-height: 18px;
 </div><button class="btn ghost small desktop-only" id="print-history-btn" title="Печать"><i class="fas fa-print"></i></button></div>
 <!-- Блок поиска -->
 </div>
+<!-- Кнопки переключения подразделов -->
+<div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:8px;">
+<button class="btn ghost small" id="history-subtab-gih" style="flex:1;">GIH</button>
+<button class="btn ghost small" id="history-subtab-daily" style="flex:1;">Ежедневные</button>
+</div>
 <!-- Контроллер даты -->
 <div id="history-date-row" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; gap:8px; width: 100%;">
 <button class="btn ghost small" id="history-prev-day" style="min-width:32px; padding:6px;">
@@ -3098,6 +3119,7 @@ min-height: 18px;
 <div class="products-wrap" id="modal-products"></div>
 <div class="modal-foot" style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
 <button class="btn ghost small" id="modal-reset">Сброс</button>
+<button class="btn ghost small" id="modal-empty">Опустошён</button>
 <button class="btn secondary small" id="modal-ok-order">Сроки в порядке</button>
 <button class="btn small" id="modal-save"><i class="fas fa-check"></i> Завершить</button>
 </div>
@@ -3116,6 +3138,9 @@ min-height: 18px;
 </div>
 </div>
 <div id="deadlines-stats-content" style="display:flex; flex-direction:column; gap:16px;">
+<div style="text-align:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.1); margin-bottom:8px;">
+<div style="font-weight:600; color:#666;" id="deadlines-daily-goal">Цель на сегодня: 0/0 номеров</div>
+</div>
 <div style="display:flex; gap:12px; flex-wrap:wrap;">
 <div class="card" style="flex:1; min-width:160px; padding:12px;">
 <div class="muted" style="font-size:12px;">Номеров в порядке</div>
@@ -3138,6 +3163,11 @@ min-height: 18px;
 <div style="font-weight:600; margin-bottom:8px;">Статистика по продуктам</div>
 <div class="muted" style="font-size:12px; margin-bottom:8px;">Суммарное количество продуктов с истекающим сроком</div>
 <div id="deadlines-products-stats" style="display:flex; flex-wrap:wrap; gap:8px; font-size:13px;"></div>
+</div>
+<div class="card" style="padding:12px;">
+<div style="font-weight:600; margin-bottom:8px;">📊 Динамика проверки минибаров</div>
+<div class="muted" style="font-size:12px; margin-bottom:12px;">Количество номеров, переведенных в каждый статус по дням (последние 30 дней)</div>
+<canvas id="deadlines-activity-chart" width="100%" height="250" style="width:100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display:block;"></canvas>
 </div>
 </div>
 </div>
@@ -3208,6 +3238,7 @@ min-height: 18px;
                     },
                     gihRecords: [],
                     gihHistory: [],
+                    deadlinesDailyStats: {}, // { 'YYYY-MM-DD': { ok: count, products: count } }
                     products: {
                         twix: 'Твикс', jager: 'Ягер', gin: 'Джин', rum: 'Ром', cognac: 'Коньяк',
                         whiskey: 'Виски', vodka: 'Водка', pepper: 'Пеппер', redbull: 'Ред Булл',
@@ -3339,7 +3370,10 @@ min-height: 18px;
             const currentHistory = appData.gihHistory || [];
             
             Object.assign(appData, data);
-            
+
+            // Синхронизируем deadlinesDailyStats
+            deadlinesDailyStats = appData.deadlinesDailyStats || {};
+
             // Восстанавливаем историю если новая версия её потеряла
             if (currentHistory.length > 0 && (!appData.gihHistory || appData.gihHistory.length < currentHistory.length)) {
                 console.log('Восстанавливаем историю из локальной копии');
@@ -3354,6 +3388,17 @@ min-height: 18px;
         }
     });
 }
+
+                // Функция для загрузки статистики из Firebase (одноразово)
+                function loadDeadlinesStatsFromFirebase() {
+                    return database.ref('deadlinesDailyStats').once('value').then(snapshot => {
+                        const data = snapshot.val() || {};
+                        deadlinesDailyStats = data;
+                        appData.deadlinesDailyStats = data;
+                        console.log('Загружена статистика сроков из Firebase:', data);
+                        return data;
+                    });
+                }
 
                 // Update UI when data changes
                 function updateUIFromData() {
@@ -3731,36 +3776,47 @@ function doCopy(callback) {
     let deadlinesSelectMode = false;
     let deadlinesSelectedRooms = new Set();
 
+    // Статистика переходов номеров по дням (загружается из Firebase)
+    let deadlinesDailyStats = {}; // { 'YYYY-MM-DD': { ok: count, products: count } }
+
     function resetAllDeadlines() {
     if (!confirm("Вы уверены, что хотите очистить все сроки? Это действие нельзя отменить.")) {
         return;
     }
-    
-    // Сбрасываем все номера
+
+    // Сбрасываем все номера, кроме пустых (AUTO_OK)
     (appData.rooms || []).forEach(room => {
-        if (room) {
+        if (room && room.deadlinesStatus !== DEADLINE_STATUS.AUTO_OK) {
             room.products = {};
             room.deadlinesStatus = DEADLINE_STATUS.NEUTRAL;
         }
     });
-    
+
     // Сбрасываем выбранные номера если есть
     deadlinesSelectedRooms.clear();
     updateDeadlinesSelectedCount();
-    
+
+    // Очищаем статистику переходов локально и в Firebase
+    deadlinesDailyStats = {};
+    appData.deadlinesDailyStats = {};
+
+    database.ref('deadlinesDailyStats').set({}).catch(error => {
+        console.error('Ошибка очистки статистики в Firebase:', error);
+    });
+
     // Обновляем интерфейс
     renderRooms();
     saveDebounced();
     pushRoomsRealtime();
-    
+
     // Закрываем модальное окно если открыто
     if (currentDeadlineRoomNumber != null) {
         closeModal();
     }
-    
+
     // Обновляем статистику если открыта
     updateDeadlinesStatsIfOpen();
-    
+
     alert("Все сроки очищены!");
 }
 function toggleFloorSelection(floorNumber) {
@@ -3802,6 +3858,9 @@ function toggleFloorSelection(floorNumber) {
 
                     const okBtn = $('#modal-ok-order');
                     if (okBtn) okBtn.addEventListener('click', markDeadlinesOk);
+
+                    const emptyBtn = $('#modal-empty');
+                    if (emptyBtn) emptyBtn.addEventListener('click', markDeadlinesEmpty);
 
                     const resetSelectBtn = $('#modal-reset');
                     if (resetSelectBtn) resetSelectBtn.addEventListener('click', resetDeadlineSelections);
@@ -3977,15 +4036,29 @@ function toggleFloorSelection(floorNumber) {
                     commitDeadlineChanges(room, {}, DEADLINE_STATUS.OK);
                     closeModal();
                 }
+                function markDeadlinesEmpty() {
+                    if (currentDeadlineRoomNumber == null) return;
+                    const room = ensureRoomRecord(currentDeadlineRoomNumber);
+                    commitDeadlineChanges(room, {}, DEADLINE_STATUS.AUTO_OK);
+                    closeModal();
+                }
                 function markSelectedDeadlinesOk() {
+                    console.log('=== markSelectedDeadlinesOk called ===');
                     if (deadlinesSelectedRooms.size === 0) return;
                     const selectedRooms = Array.from(deadlinesSelectedRooms);
+                    console.log('Processing rooms:', selectedRooms);
                     selectedRooms.forEach(roomStr => {
                         const roomNumber = Number(roomStr);
                         const room = ensureRoomRecord(roomNumber);
+                        console.log(`Processing room ${roomNumber}, current status: ${room.deadlinesStatus}`);
                         room.products = {};
                         room.deadlinesStatus = DEADLINE_STATUS.OK;
+                        console.log(`Set status to OK: ${room.deadlinesStatus}`);
                         normalizeRoomDeadlineStatus(room);
+                        console.log(`After normalize: ${room.deadlinesStatus}`);
+
+                        // Записываем статистику для финального статуса
+                        recordDeadlineStatusChange(room.deadlinesStatus);
                     });
                     deadlinesSelectedRooms.clear();
                     saveDebounced();
@@ -3993,6 +4066,7 @@ function toggleFloorSelection(floorNumber) {
                     pushRoomsRealtime();
                     updateDeadlinesSelectedCount();
                     updateDeadlinesStatsIfOpen();
+                    console.log('=== markSelectedDeadlinesOk finished ===');
                 }
                 function resetDeadlineSelections() {
                     if (!deadlineModalState) return;
@@ -4003,13 +4077,101 @@ function toggleFloorSelection(floorNumber) {
                     updateModalOkButton();
                 }
                 function commitDeadlineChanges(room, products, status) {
+                    console.log(`commitDeadlineChanges: room ${room.number}, requested status: ${status}`);
                     room.products = JSON.parse(JSON.stringify(products || {}));
                     room.deadlinesStatus = status;
+                    console.log(`Before normalize: room ${room.number} status = ${room.deadlinesStatus}`);
                     normalizeRoomDeadlineStatus(room);
+                    console.log(`After normalize: room ${room.number} final status = ${room.deadlinesStatus}`);
+
+                    // Записываем статистику для любого перевода в финальный статус
+                    recordDeadlineStatusChange(room.deadlinesStatus);
+
                     saveDebounced();
                     renderRooms();
                     pushRoomsRealtime();
                     updateDeadlinesStatsIfOpen();
+                }
+
+                // Функция для записи изменения статуса в статистику
+                // Функция для записи изменения статуса в статистику
+                function recordDeadlineStatusChange(finalStatus) {
+                    console.log('=== recordDeadlineStatusChange called ===');
+                    console.log('finalStatus:', finalStatus);
+                    console.log('DEADLINE_STATUS.OK:', DEADLINE_STATUS.OK);
+                    console.log('DEADLINE_STATUS.PRODUCTS:', DEADLINE_STATUS.PRODUCTS);
+                    console.log('DEADLINE_STATUS.AUTO_OK:', DEADLINE_STATUS.AUTO_OK);
+
+                    // Считаем только финальные статусы (OK, AUTO_OK, PRODUCTS)
+                    const validStatuses = [DEADLINE_STATUS.OK, DEADLINE_STATUS.AUTO_OK, DEADLINE_STATUS.PRODUCTS];
+                    console.log('validStatuses:', validStatuses);
+                    console.log('finalStatus in validStatuses:', validStatuses.includes(finalStatus));
+
+                    if (!validStatuses.includes(finalStatus)) {
+                        console.log('❌ Ignoring intermediate status');
+                        return; // Игнорируем промежуточные статусы
+                    }
+
+                    const today = new Date();
+                    const dateKey = today.getFullYear() + '-' +
+                                   String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                                   String(today.getDate()).padStart(2, '0');
+
+                    console.log('Date key:', dateKey);
+
+                    // Создаем копию текущих данных
+                    const updatedStats = { ...deadlinesDailyStats };
+                    console.log('Current stats before:', updatedStats[dateKey]);
+
+                    if (!updatedStats[dateKey]) {
+                        updatedStats[dateKey] = { ok: 0, products: 0, dailyGoal: 0 };
+                    }
+
+                    // Увеличиваем соответствующий счетчик
+                    if (finalStatus === DEADLINE_STATUS.OK || finalStatus === DEADLINE_STATUS.AUTO_OK) {
+                        updatedStats[dateKey].ok++;
+                        console.log(`✅ Статистика: OK +1 (итого: ${updatedStats[dateKey].ok})`);
+                    } else if (finalStatus === DEADLINE_STATUS.PRODUCTS) {
+                        updatedStats[dateKey].products++;
+                        console.log(`✅ Статистика: PRODUCTS +1 (итого: ${updatedStats[dateKey].products})`);
+                    }
+
+                    console.log('Updated stats:', updatedStats[dateKey]);
+
+                    // Очищаем старые записи (оставляем только последние 30 дней)
+                    cleanupOldDeadlineStats(updatedStats);
+
+                    // Обновляем локальную переменную и appData
+                    deadlinesDailyStats = updatedStats;
+                    appData.deadlinesDailyStats = updatedStats;
+
+                    // Сохраняем в Firebase и обновляем локальные данные
+                    database.ref('deadlinesDailyStats').set(updatedStats).then(() => {
+                        console.log('Статистика успешно сохранена в Firebase');
+                        // После успешного сохранения обновляем локальные данные
+                        deadlinesDailyStats = updatedStats;
+                        appData.deadlinesDailyStats = updatedStats;
+
+                        // Обновляем график если модальное окно открыто
+                        if (deadlinesStatsModalOpen) {
+                            renderDeadlinesActivityChart();
+                        }
+                    }).catch(error => {
+                        console.error('Ошибка сохранения статистики в Firebase:', error);
+                    });
+
+                    console.log('=== recordDeadlineStatusChange finished ===');
+                }
+
+                // Функция для очистки старых записей статистики
+                function cleanupOldDeadlineStats(stats) {
+                    const dates = Object.keys(stats).sort();
+                    if (dates.length > 30) {
+                        const datesToRemove = dates.slice(0, dates.length - 30);
+                        datesToRemove.forEach(date => {
+                            delete stats[date];
+                        });
+                    }
                 }
                 function renderRooms() {
                     const grid = $('#rooms-grid');
@@ -4094,9 +4256,7 @@ section.appendChild(title);
                             roomEl.classList.toggle('status-auto-ok', status === DEADLINE_STATUS.AUTO_OK);
                             roomEl.classList.toggle('status-alert', status === DEADLINE_STATUS.PRODUCTS);
                             roomEl.classList.toggle('status-empty', status === DEADLINE_STATUS.NEUTRAL);
-                            // Номера со статусом AUTO_OK неактивны (нельзя нажать)
-                            // Ручной OK остается активным
-                            roomEl.classList.toggle('disabled', status === DEADLINE_STATUS.AUTO_OK);
+                            // Номера со статусом AUTO_OK теперь остаются активными
                             roomEl.classList.toggle('selected', deadlinesSelectedRooms.has(String(room.number)));
                             roomEl.dataset.room = String(room.number);
                             const numberEl = document.createElement('div');
@@ -4465,6 +4625,12 @@ const filteredRooms = selectedRooms.filter(num => {
                     if (prodEl) prodEl.textContent = data.products;
                     if (neutralEl) neutralEl.textContent = data.neutral;
 
+                    // Проверяем и рассчитываем цель на сегодня (если нужно)
+                    ensureDailyGoalCalculated();
+
+                    // Отображаем цель на сегодня
+                    updateDeadlinesDailyGoal(data);
+
                     const productsContainer = $('#deadlines-products-stats');
                     if (!productsContainer) return;
                     productsContainer.innerHTML = '';
@@ -4488,6 +4654,97 @@ const filteredRooms = selectedRooms.filter(num => {
                         productsContainer.appendChild(chip);
                     });
                 }
+
+                // Функция для расчета ежедневной цели (вызывается один раз в день)
+                function calculateDailyGoal() {
+                    const today = new Date();
+                    const currentDay = today.getDate();
+                    const dateKey = today.getFullYear() + '-' +
+                                   String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                                   String(today.getDate()).padStart(2, '0');
+
+                    // Получаем текущие данные о номерах
+                    const data = computeDeadlinesSummary();
+
+                    let target = 0;
+
+                    if (currentDay >= 20) {
+                        // Если сегодня 20 число или позже, цель = 0 (достигнута)
+                        target = 0;
+                    } else {
+                        // Количество дней до 20 числа (включительно)
+                        const daysUntil20th = 20 - currentDay + 1;
+
+                        // y = (нейтральные + продукты) / дней_до_20
+                        const remainingToCheck = data.neutral + data.products;
+                        target = Math.ceil(remainingToCheck / daysUntil20th);
+                    }
+
+                    // Сохраняем цель в статистике
+                    const updatedStats = { ...deadlinesDailyStats };
+                    if (!updatedStats[dateKey]) {
+                        updatedStats[dateKey] = { ok: 0, products: 0, dailyGoal: 0 };
+                    }
+                    updatedStats[dateKey].dailyGoal = target;
+
+                    // Обновляем локальные данные
+                    deadlinesDailyStats = updatedStats;
+                    appData.deadlinesDailyStats = updatedStats;
+
+                    // Сохраняем в Firebase
+                    database.ref('deadlinesDailyStats').set(updatedStats).catch(error => {
+                        console.error('Ошибка сохранения цели в Firebase:', error);
+                    });
+
+                    console.log(`Рассчитана цель на ${dateKey}: ${target} номеров`);
+                    return target;
+                }
+
+                // Функция для проверки и расчета цели на сегодня (если её нет)
+                function ensureDailyGoalCalculated() {
+                    const today = new Date();
+                    const dateKey = today.getFullYear() + '-' +
+                                   String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                                   String(today.getDate()).padStart(2, '0');
+
+                    const todayStats = deadlinesDailyStats[dateKey];
+
+                    // Если цели на сегодня нет или она равна 0 (нужно пересчитать)
+                    if (!todayStats || typeof todayStats.dailyGoal === 'undefined' || todayStats.dailyGoal === 0) {
+                        console.log('Цель на сегодня не рассчитана, рассчитываем...');
+                        calculateDailyGoal();
+                    }
+                }
+
+                // Функция для отображения цели на сегодня
+                function updateDeadlinesDailyGoal(data) {
+                    const goalEl = $('#deadlines-daily-goal');
+                    if (!goalEl) return;
+
+                    const today = new Date();
+                    const dateKey = today.getFullYear() + '-' +
+                                   String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                                   String(today.getDate()).padStart(2, '0');
+
+                    // x = количество номеров, переведенных в OK сегодня
+                    const todayStats = deadlinesDailyStats[dateKey] || { ok: 0, products: 0, dailyGoal: 0 };
+                    const completed = todayStats.ok;
+                    const target = todayStats.dailyGoal || 0;
+
+                    goalEl.textContent = `Цель на сегодня: ${completed}/${target} номеров`;
+
+                    // Добавляем цветовое оформление
+                    if (target === 0) {
+                        goalEl.style.color = '#1b7a2b'; // Зеленый - цель достигнута (после 20 числа)
+                    } else if (completed >= target) {
+                        goalEl.style.color = '#1b7a2b'; // Зеленый - цель достигнута
+                    } else if (completed >= target * 0.8) {
+                        goalEl.style.color = '#ffc107'; // Желтый - близко к цели
+                    } else {
+                        goalEl.style.color = '#666'; // Серый - цель не достигнута
+                    }
+                }
+
                 function openDeadlinesStatsModal() {
                     const overlay = $('#deadlines-stats-modal');
                     if (!overlay) return;
@@ -4497,6 +4754,8 @@ const filteredRooms = selectedRooms.filter(num => {
                     overlay.style.display = 'flex';
                     const modalEl = overlay.querySelector('.modal');
                     if (modalEl) modalEl.classList.add('show');
+                    // Рисуем график после открытия модального окна
+                    setTimeout(() => renderDeadlinesActivityChart(), 100);
                 }
                 function closeDeadlinesStatsModal() {
                     const overlay = $('#deadlines-stats-modal');
@@ -4512,6 +4771,340 @@ const filteredRooms = selectedRooms.filter(num => {
                 function updateDeadlinesStatsIfOpen() {
                     if (!deadlinesStatsModalOpen) return;
                     renderDeadlinesStats();
+                    renderDeadlinesActivityChart();
+                }
+
+                // Функция для отрисовки графика активности
+                function renderDeadlinesActivityChart() {
+                    const canvas = document.getElementById('deadlines-activity-chart');
+                    if (!canvas) return;
+
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    // Устанавливаем размеры canvas (на всю ширину контейнера)
+                    const container = canvas.parentElement;
+                    const containerWidth = container.offsetWidth;
+                    const canvasWidth = containerWidth;
+                    const canvasHeight = 250;
+
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+
+                    // Создаем массив для 30 дней (от 29 дней назад до сегодня)
+                    const today = new Date();
+                    const dates = [];
+                    const okData = [];
+                    const productsData = [];
+
+                    for (let i = 29; i >= 0; i--) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() - i);
+                        const dateKey = date.getFullYear() + '-' +
+                                      String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                                      String(date.getDate()).padStart(2, '0');
+
+                        dates.push(dateKey);
+                        const dayData = deadlinesDailyStats[dateKey] || { ok: 0, products: 0 };
+                        okData.push(dayData.ok || 0);
+                        productsData.push(dayData.products || 0);
+                    }
+
+                    // Находим максимальное значение для шкалы Y
+                    const allValues = [...okData, ...productsData];
+                    const maxValue = Math.max(...allValues, 1); // Минимум 1 для читаемости
+                    const hasData = allValues.some(v => v > 0);
+
+                    // Если совсем нет данных, показываем сообщение
+                    if (!hasData) {
+                        // Рисуем фон
+                        const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+                        gradient.addColorStop(0, '#ffffff');
+                        gradient.addColorStop(1, '#f8f9fa');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                        // Рисуем рамку
+                        ctx.strokeStyle = '#dee2e6';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(10, 10, canvasWidth - 20, canvasHeight - 20);
+
+                        // Сообщение
+                        ctx.fillStyle = '#6c757d';
+                        ctx.font = '16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('📊 Статистика появится после первой проверки', canvasWidth / 2, canvasHeight / 2 - 10);
+
+                        ctx.font = '12px Arial';
+                        ctx.fillStyle = '#9ca3af';
+                        ctx.fillText('Начните проверять номера, и здесь отобразится динамика', canvasWidth / 2, canvasHeight / 2 + 15);
+
+                        return;
+                    }
+
+                    // Размеры графика
+                    const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+                    const chartWidth = canvasWidth - margin.left - margin.right;
+                    const chartHeight = canvasHeight - margin.top - margin.bottom - 30; // -30 для легенды
+
+                    // Очищаем canvas
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+                    // Рисуем фон
+                    const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+                    gradient.addColorStop(0, '#ffffff');
+                    gradient.addColorStop(1, '#f8f9fa');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                    // Рисуем оси
+                    ctx.strokeStyle = '#dee2e6';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(margin.left, margin.top);
+                    ctx.lineTo(margin.left, canvasHeight - margin.bottom - 30);
+                    ctx.lineTo(canvasWidth - margin.right, canvasHeight - margin.bottom - 30);
+                    ctx.stroke();
+
+                    // Рисуем вертикальную сетку (каждые 5 дней)
+                    ctx.strokeStyle = '#e9ecef';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+
+                    for (let i = 0; i < dates.length; i += 5) {
+                        const x = margin.left + (chartWidth * i / (dates.length - 1));
+                        ctx.beginPath();
+                        ctx.moveTo(x, margin.top);
+                        ctx.lineTo(x, canvasHeight - margin.bottom - 30);
+                        ctx.stroke();
+                    }
+
+                    // Рисуем горизонтальную сетку
+                    for (let i = 0; i <= 5; i++) {
+                        const y = margin.top + (chartHeight * i / 5);
+                        ctx.beginPath();
+                        ctx.moveTo(margin.left, y);
+                        ctx.lineTo(canvasWidth - margin.right, y);
+                        ctx.stroke();
+                    }
+
+                    ctx.setLineDash([]); // Сбрасываем пунктир
+
+                    // Подписи по оси Y
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'right';
+                    for (let i = 0; i <= 5; i++) {
+                        const y = margin.top + (chartHeight * i / 5);
+                        const value = Math.round(maxValue * (5 - i) / 5);
+                        ctx.fillText(value.toString(), margin.left - 10, y + 4);
+                    }
+
+                    // Функция для рисования линии с точками
+                    const drawLineWithPoints = (data, color, label) => {
+                        const points = [];
+
+                        // Собираем точки
+                        data.forEach((value, index) => {
+                            const x = margin.left + (chartWidth * index / (data.length - 1));
+                            const y = margin.top + chartHeight - (value / maxValue * chartHeight);
+                            points.push({ x, y, value });
+                        });
+
+                        // Рисуем линию
+                        if (points.length > 1) {
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(points[0].x, points[0].y);
+
+                            for (let i = 1; i < points.length; i++) {
+                                ctx.lineTo(points[i].x, points[i].y);
+                            }
+                            ctx.stroke();
+                        }
+
+                        // Рисуем точки
+                        points.forEach(point => {
+                            if (point.value > 0) {
+                                ctx.fillStyle = color;
+                                ctx.beginPath();
+                                ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+                                ctx.fill();
+
+                                // Белая обводка точки
+                                ctx.strokeStyle = '#ffffff';
+                                ctx.lineWidth = 2;
+                                ctx.stroke();
+
+                                // Внутренняя обводка для контраста
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                            }
+                        });
+                    };
+
+                    // Анимированная отрисовка линий
+                    let animationProgress = 0;
+                    const animate = () => {
+                        animationProgress += 0.03;
+                        if (animationProgress > 1) animationProgress = 1;
+
+                        // Очищаем область графика
+                        ctx.clearRect(margin.left + 1, margin.top + 1, chartWidth - 2, chartHeight - 2);
+
+                        // Перерисовываем сетку
+                        ctx.strokeStyle = '#e9ecef';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([2, 2]);
+
+                        for (let i = 0; i < dates.length; i += 5) {
+                            const x = margin.left + (chartWidth * i / (dates.length - 1));
+                            ctx.beginPath();
+                            ctx.moveTo(x, margin.top);
+                            ctx.lineTo(x, canvasHeight - margin.bottom - 30);
+                            ctx.stroke();
+                        }
+
+                        for (let i = 0; i <= 5; i++) {
+                            const y = margin.top + (chartHeight * i / 5);
+                            ctx.beginPath();
+                            ctx.moveTo(margin.left, y);
+                            ctx.lineTo(canvasWidth - margin.right, y);
+                            ctx.stroke();
+                        }
+
+                        ctx.setLineDash([]);
+
+                        // Рисуем линии с анимацией
+                        const drawAnimatedLine = (data, color, progress) => {
+                            const points = [];
+                            data.forEach((value, index) => {
+                                if (index / data.length <= progress) {
+                                    const x = margin.left + (chartWidth * index / (data.length - 1));
+                                    const y = margin.top + chartHeight - (value / maxValue * chartHeight);
+                                    points.push({ x, y, value });
+                                }
+                            });
+
+                            if (points.length > 1) {
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.moveTo(points[0].x, points[0].y);
+                                for (let i = 1; i < points.length; i++) {
+                                    ctx.lineTo(points[i].x, points[i].y);
+                                }
+                                ctx.stroke();
+                            }
+
+                            points.forEach(point => {
+                                if (point.value > 0) {
+                                    ctx.fillStyle = color;
+                                    ctx.beginPath();
+                                    ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+                                    ctx.fill();
+                                    ctx.strokeStyle = '#ffffff';
+                                    ctx.lineWidth = 2;
+                                    ctx.stroke();
+                                    ctx.strokeStyle = color;
+                                    ctx.lineWidth = 1;
+                                    ctx.stroke();
+                                }
+                            });
+                        };
+
+                        drawAnimatedLine(productsData, '#dc3545', animationProgress);
+                        drawAnimatedLine(okData, '#28a745', animationProgress);
+
+                        if (animationProgress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            // После анимации рисуем подписи и легенду
+                            drawLabelsAndLegend();
+                        }
+                    };
+
+                    const drawLabelsAndLegend = () => {
+                        // Рисуем подписи дат (каждые 5 дней)
+                        ctx.fillStyle = '#495057';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+
+                        for (let i = 0; i < dates.length; i += 5) {
+                            const x = margin.left + (chartWidth * i / (dates.length - 1));
+                            const dateObj = new Date(dates[i]);
+                            const dateStr = `${dateObj.getDate()}.${dateObj.getMonth() + 1}`;
+                            ctx.fillText(dateStr, x, canvasHeight - margin.bottom - 5);
+                        }
+
+                        // Рисуем легенду под графиком
+                        const legendY = canvasHeight - 25;
+                        const legendItemWidth = 120;
+
+                        // Элемент легенды для PRODUCTS
+                        const productsX = margin.left;
+                        ctx.fillStyle = '#dc3545';
+                        ctx.fillRect(productsX, legendY - 8, 14, 14);
+                        ctx.fillStyle = '#495057';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.fillText('Нужно заменить', productsX + 20, legendY + 4);
+
+                        // Элемент легенды для OK
+                        const okX = margin.left + legendItemWidth;
+                        ctx.fillStyle = '#28a745';
+                        ctx.fillRect(okX, legendY - 8, 14, 14);
+                        ctx.fillStyle = '#495057';
+                        ctx.fillText('Сроки в порядке', okX + 20, legendY + 4);
+                    };
+
+                    // Запускаем анимацию
+                    animate();
+
+                    // Рисуем подписи дат
+                    ctx.fillStyle = '#495057';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'center';
+
+                    dates.forEach((date, index) => {
+                        // Показываем подпись для каждого дня или через один для плотных данных
+                        const showLabel = dates.length <= 7 || index % Math.ceil(dates.length / 7) === 0;
+                        if (showLabel) {
+                            const x = margin.left + (chartWidth * index / dates.length) + barWidth + barSpacing;
+                            const dateObj = new Date(date);
+                            const dateStr = `${dateObj.getDate()}.${dateObj.getMonth() + 1}`;
+                            ctx.fillText(dateStr, x, canvasHeight - margin.bottom + 20);
+                        }
+                    });
+
+                    // Рисуем легенду
+                    const legendX = margin.left + 20;
+                    const legendY = margin.top + 15;
+
+                    // Фон легенды
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.strokeStyle = '#dee2e6';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(legendX - 5, legendY - 12, 140, 35);
+                    ctx.strokeRect(legendX - 5, legendY - 12, 140, 35);
+
+                    // Элемент легенды для PRODUCTS
+                    ctx.fillStyle = '#dc3545';
+                    ctx.fillRect(legendX, legendY - 8, 12, 12);
+                    ctx.fillStyle = '#495057';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('Нужно заменить', legendX + 18, legendY + 2);
+
+                    // Элемент легенды для OK
+                    ctx.fillStyle = '#28a745';
+                    ctx.fillRect(legendX + 70, legendY - 8, 12, 12);
+                    ctx.fillStyle = '#495057';
+                    ctx.fillText('Сроки в порядке', legendX + 88, legendY + 2);
+
+                    console.log('Beautiful chart rendered with', dates.length, 'data points, max value:', maxValue);
                 }
 
                 /* renderProductButtons for forms */
@@ -5194,6 +5787,12 @@ saveBtn.addEventListener('click', () => {
     
     setupFirebaseListener();
     setupRoomsRealtimeListener();
+    setupDailyHistoryListener();
+
+    // Загружаем статистику и проверяем цель на сегодня
+    await loadDeadlinesStatsFromFirebase();
+    ensureDailyGoalCalculated();
+
     await loadData();
     
     // Дополнительная проверка истории
@@ -5743,14 +6342,49 @@ function restoreHistoryIfNeeded() {
                 // Переменные для управления датой в истории
                 let historyCurrentDate = new Date();
                 let historyDatePicker = null;
+                // Загружаем сохранённый подраздел из localStorage
+                let historySubtab = localStorage.getItem('historySubtab') || 'gih'; // 'gih' или 'daily'
+                let dailyHistoryData = {}; // Данные ежедневных проверок: { 'YYYY-MM-DD': { room: { ts } } }
+                let dailyHistoryRef = null;
+
+                // Функция для форматирования времени из timestamp (UTC+5, Екатеринбург)
+                function timeStringFromUnix(tsSec) {
+                    if (!tsSec || typeof tsSec !== 'number') return '';
+                    const offsetMs = 5 * 60 * 60 * 1000;
+                    const d = new Date(tsSec * 1000 + offsetMs);
+                    const h = String(d.getUTCHours()).padStart(2, '0');
+                    const m = String(d.getUTCMinutes()).padStart(2, '0');
+                    return `${h}:${m}`;
+                }
+
+                // Функция для форматирования даты в ключ формата YYYY-MM-DD
+                function dateKeyFromDate(date) {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
 
                 // Инициализация управления датой в истории
                 function initHistoryDateControls() {
     const prevBtn = document.getElementById('history-prev-day');
     const nextBtn = document.getElementById('history-next-day');
     const dateDisplay = document.getElementById('history-current-date');
+    const gihBtn = document.getElementById('history-subtab-gih');
+    const dailyBtn = document.getElementById('history-subtab-daily');
     
     if (!prevBtn || !nextBtn || !dateDisplay) return;
+
+    // Обработчики для кнопок переключения подразделов
+    if (gihBtn) {
+        gihBtn.addEventListener('click', () => switchHistorySubtab('gih'));
+    }
+    if (dailyBtn) {
+        dailyBtn.addEventListener('click', () => switchHistorySubtab('daily'));
+    }
+
+    // Инициализируем активную кнопку (используем сохранённое значение или 'gih' по умолчанию)
+    switchHistorySubtab(historySubtab);
 
     // Функция для обновления отображения даты
     function updateDateDisplay() {
@@ -5761,6 +6395,29 @@ function restoreHistoryIfNeeded() {
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
         dateText = dateText.replace(/\./g, ' ');
+
+        // Добавляем количество записей/номеров
+        if (historySubtab === 'daily') {
+            // Для подраздела "Ежедневные" добавляем количество проверенных номеров
+            const dateKey = dateKeyFromDate(historyCurrentDate);
+            const dayData = dailyHistoryData[dateKey] || {};
+            const count = Object.keys(dayData).length;
+            if (count > 0) {
+                dateText += ` (${count})`;
+            }
+        } else if (historySubtab === 'gih') {
+            // Для подраздела "GIH" добавляем количество записей за выбранную дату
+            const selectedDateStr = historyCurrentDate.toLocaleDateString('ru-RU');
+            const filteredHistory = (appData.gihHistory || []).filter(entry => {
+                if (!entry.createdAt) return false;
+                const entryDate = new Date(entry.createdAt).toLocaleDateString('ru-RU');
+                return entryDate === selectedDateStr;
+            });
+            const count = filteredHistory.length;
+            if (count > 0) {
+                dateText += ` (${count})`;
+            }
+        }
 
         dateDisplay.textContent = dateText;
         dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', {
@@ -5806,10 +6463,18 @@ function restoreHistoryIfNeeded() {
                 // Модифицируем функцию renderHistory для фильтрации по выбранной дате
 
                 function renderHistory() {
+                    // Если выбран подраздел ежедневных проверок, используем другую функцию
+                    if (historySubtab === 'daily') {
+                        renderDailyHistory();
+                        return;
+                    }
+
                     const historyList = document.getElementById('history-list');
                     if (!historyList) return;
 
                     historyList.innerHTML = '';
+                    // Убираем класс floor-mode для подраздела GIH
+                    historyList.classList.remove('floor-mode');
 
                     // Фильтруем записи по выбранной дате
                     const selectedDateStr = historyCurrentDate.toLocaleDateString('ru-RU');
@@ -5942,6 +6607,151 @@ function restoreHistoryIfNeeded() {
                         card.innerHTML = headerHtml + contentHtml;
                         historyList.appendChild(card);
                     });
+                }
+
+                // Функция для группировки номеров по этажам (для ежедневных проверок)
+                function groupRoomsByFloorForDaily(rooms) {
+                    const floors = {};
+                    rooms.forEach(r => {
+                        const room = String(r.room);
+                        let floor;
+                        if (room.length === 3) {
+                            floor = room.charAt(0);
+                        } else {
+                            floor = room.substring(0, 2);
+                        }
+                        if (!floors[floor]) {
+                            floors[floor] = [];
+                        }
+                        floors[floor].push(r);
+                    });
+                    return floors;
+                }
+
+                // Функция для отображения ежедневных проверок
+                function renderDailyHistory() {
+                    const historyList = document.getElementById('history-list');
+                    if (!historyList) return;
+
+                    historyList.innerHTML = '';
+                    // Добавляем класс floor-mode для отображения этажей в отдельных строках
+                    historyList.classList.add('floor-mode');
+
+                    const selectedDateKey = dateKeyFromDate(historyCurrentDate);
+                    const dayData = dailyHistoryData[selectedDateKey] || {};
+
+                    const rooms = Object.entries(dayData).map(([room, entry]) => ({
+                        room: room,
+                        time: timeStringFromUnix(entry.ts || 0),
+                        ts: entry.ts || 0
+                    })).sort((a, b) => parseInt(a.room) - parseInt(b.room));
+
+                    if (rooms.length === 0) {
+                        historyList.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">За выбранный день записей нет</div>';
+                        historyList.classList.remove('floor-mode');
+                        return;
+                    }
+
+                    // Группируем по этажам
+                    const floors = groupRoomsByFloorForDaily(rooms);
+                    const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+
+                    sortedFloors.forEach(floor => {
+                        const floorSection = document.createElement('div');
+                        floorSection.className = 'dispatchers-floor-section';
+
+                        const floorTitle = document.createElement('div');
+                        floorTitle.className = 'dispatchers-floor-title';
+                        floorTitle.textContent = `${floor} этаж`;
+                        floorSection.appendChild(floorTitle);
+
+                        const roomList = document.createElement('div');
+                        roomList.className = 'dispatchers-room-list';
+
+                        const sortedRooms = floors[floor].sort((a, b) => parseInt(a.room) - parseInt(b.room));
+
+                        sortedRooms.forEach(r => {
+                            const card = document.createElement('div');
+                            card.className = 'dispatchers-today-room-card';
+                            card.dataset.room = r.room;
+
+                            card.innerHTML = `
+                                <div class="dispatchers-today-room-number">${r.room}</div>
+                                <div class="dispatchers-today-room-time">${r.time}</div>
+                            `;
+
+                            roomList.appendChild(card);
+                        });
+
+                        floorSection.appendChild(roomList);
+                        historyList.appendChild(floorSection);
+                    });
+                }
+
+                // Функция для настройки Firebase listener для ежедневных проверок
+                function setupDailyHistoryListener() {
+                    if (!database || typeof database.ref !== 'function') return;
+                    if (dailyHistoryRef) return;
+                    
+                    dailyHistoryRef = database.ref('vkCheckedRoomsByDate');
+                    dailyHistoryRef.on('value', snapshot => {
+                        const data = snapshot.val() || {};
+                        dailyHistoryData = data;
+                        if (historySubtab === 'daily') {
+                            renderDailyHistory();
+                            updateDateDisplay();
+                        }
+                        // Обновляем календарь при изменении данных (если календарь уже инициализирован)
+                        setTimeout(() => {
+                            if (typeof customCalendar !== 'undefined' && customCalendar) {
+                                customCalendar.render();
+                            }
+                        }, 100);
+                    });
+                }
+
+                // Функция для переключения подразделов истории
+                function switchHistorySubtab(subtab) {
+                    historySubtab = subtab;
+                    
+                    // Сохраняем выбранный подраздел в localStorage
+                    localStorage.setItem('historySubtab', subtab);
+                    
+                    // Обновляем стили кнопок
+                    const gihBtn = document.getElementById('history-subtab-gih');
+                    const dailyBtn = document.getElementById('history-subtab-daily');
+                    
+                    if (gihBtn && dailyBtn) {
+                        if (subtab === 'gih') {
+                            gihBtn.classList.remove('ghost');
+                            dailyBtn.classList.add('ghost');
+                        } else {
+                            dailyBtn.classList.remove('ghost');
+                            gihBtn.classList.add('ghost');
+                        }
+                    }
+
+                    // Проверяем, активен ли поиск (есть ли значение в поле поиска)
+                    const searchInput = document.getElementById('history-search-input');
+                    const searchValue = searchInput ? searchInput.value.trim() : '';
+                    
+                    if (searchValue) {
+                        // Если поиск активен, перезапускаем поиск для нового подраздела
+                        // Используем событие input, чтобы триггерить поиск
+                        if (searchInput) {
+                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    } else {
+                        // Если поиск не активен, просто перерисовываем историю
+                        if (subtab === 'gih') {
+                            renderHistory();
+                        } else {
+                            renderDailyHistory();
+                        }
+                    }
+                    
+                    // Обновляем отображение даты
+                    updateDateDisplay();
                 }
 
             </script>
@@ -6839,6 +7649,12 @@ function restoreHistoryIfNeeded() {
                         dateRow.style.display = 'flex';
                         btnClear.style.display = 'none'; // Скрываем кнопку-крутик
                         historyList.classList.remove("search-active");
+                        // Убираем floor-mode если был добавлен при поиске
+                        if (typeof historySubtab !== 'undefined' && historySubtab === 'daily') {
+                            historyList.classList.add("floor-mode");
+                        } else {
+                            historyList.classList.remove("floor-mode");
+                        }
                         renderHistory();
                     }
 
@@ -6856,9 +7672,15 @@ function restoreHistoryIfNeeded() {
                         const cleanQuery = query.trim();
                         if (!cleanQuery) { renderHistory(); return; }
 
+                        // Если выбран подраздел "Ежедневные", ищем по ежедневным проверкам
+                        if (typeof historySubtab !== 'undefined' && historySubtab === 'daily') {
+                            renderDailySearchResults(cleanQuery);
+                            return;
+                        }
+
                         const regex = new RegExp('\\b' + escapeRegExp(cleanQuery) + '\\b', 'i');
 
-                        /* фильтруем по всей истории */
+                        /* фильтруем по всей истории GIH */
                         const matched = (appData.gihHistory || []).filter(entry =>
                             regex.test(entry.room || entry.number || '')
                         );
@@ -6876,6 +7698,7 @@ function restoreHistoryIfNeeded() {
                         });
 
                         historyList.classList.add("search-active");
+                        historyList.classList.remove("floor-mode");
                         /* рендерим аналогично renderHistory, но за все даты */
                         list.innerHTML = '';
                         Object.keys(byDate).sort((a, b) => new Date(b.split('.').reverse().join('-')) - new Date(a.split('.').reverse().join('-')))
@@ -6887,6 +7710,157 @@ function restoreHistoryIfNeeded() {
 
                                 byDate[date].forEach(entry => list.appendChild(buildHistoryCard(entry)));
                             });
+                    }
+
+                    // Функция для поиска по ежедневным проверкам
+                    function renderDailySearchResults(query) {
+                        const historyList = document.getElementById("history-list");
+                        const cleanQuery = query.trim();
+                        
+                        // Функция группировки по этажам (локальная копия для поиска)
+                        function groupRoomsByFloor(rooms) {
+                            const floors = {};
+                            rooms.forEach(r => {
+                                const room = String(r.room);
+                                let floor;
+                                if (room.length === 3) {
+                                    floor = room.charAt(0);
+                                } else {
+                                    floor = room.substring(0, 2);
+                                }
+                                if (!floors[floor]) {
+                                    floors[floor] = [];
+                                }
+                                floors[floor].push(r);
+                            });
+                            return floors;
+                        }
+                        
+                        if (!dailyHistoryData || typeof dailyHistoryData !== 'object') {
+                            list.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">Ничего не найдено</div>';
+                            return;
+                        }
+
+                        // Пытаемся распарсить запрос как дату (различные форматы)
+                        let searchDate = null;
+                        const dateFormats = [
+                            /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,  // DD.MM.YYYY
+                            /^(\d{1,2})\.(\d{1,2})$/,            // DD.MM (текущий год)
+                            /^(\d{4})-(\d{2})-(\d{2})$/,        // YYYY-MM-DD
+                        ];
+
+                        for (const format of dateFormats) {
+                            const match = cleanQuery.match(format);
+                            if (match) {
+                                if (format === dateFormats[0]) { // DD.MM.YYYY
+                                    searchDate = new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
+                                } else if (format === dateFormats[1]) { // DD.MM
+                                    const today = new Date();
+                                    searchDate = new Date(today.getFullYear(), parseInt(match[2]) - 1, parseInt(match[1]));
+                                } else if (format === dateFormats[2]) { // YYYY-MM-DD
+                                    searchDate = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+                                }
+                                break;
+                            }
+                        }
+
+                        const regex = new RegExp('\\b' + escapeRegExp(cleanQuery) + '\\b', 'i');
+                        const matchedRooms = [];
+                        const matchedDates = {};
+
+                        // Проходим по всем датам в dailyHistoryData
+                        Object.keys(dailyHistoryData).forEach(dateKey => {
+                            const dayData = dailyHistoryData[dateKey] || {};
+                            const dateObj = new Date(dateKey + 'T00:00:00');
+                            const dateStr = dateObj.toLocaleDateString('ru-RU');
+                            
+                            // Проверяем, соответствует ли дата запросу
+                            let dateMatches = false;
+                            if (searchDate) {
+                                const searchDateStr = searchDate.toLocaleDateString('ru-RU');
+                                dateMatches = dateStr === searchDateStr || dateKey.includes(cleanQuery);
+                            } else {
+                                dateMatches = dateStr.includes(cleanQuery) || dateKey.includes(cleanQuery);
+                            }
+
+                            // Проходим по всем номерам за эту дату
+                            Object.keys(dayData).forEach(room => {
+                                const entry = dayData[room];
+                                const roomMatches = regex.test(room);
+                                
+                                if (roomMatches || dateMatches) {
+                                    if (!matchedDates[dateKey]) {
+                                        matchedDates[dateKey] = [];
+                                    }
+                                    matchedDates[dateKey].push({
+                                        room: room,
+                                        time: typeof timeStringFromUnix === 'function' ? timeStringFromUnix(entry.ts || 0) : '',
+                                        ts: entry.ts || 0
+                                    });
+                                }
+                            });
+                        });
+
+                        if (Object.keys(matchedDates).length === 0) {
+                            list.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">Ничего не найдено</div>';
+                            return;
+                        }
+
+                        historyList.classList.add("search-active");
+                        historyList.classList.add("floor-mode");
+                        list.innerHTML = '';
+
+                        // Сортируем даты (новые сверху)
+                        const sortedDates = Object.keys(matchedDates).sort((a, b) => {
+                            return new Date(b) - new Date(a);
+                        });
+
+                        sortedDates.forEach(dateKey => {
+                            const dateObj = new Date(dateKey + 'T00:00:00');
+                            const dateStr = dateObj.toLocaleDateString('ru-RU');
+                            
+                            // Заголовок даты
+                            const header = document.createElement('div');
+                            header.className = 'history-date-header';
+                            header.textContent = dateStr;
+                            list.appendChild(header);
+
+                            // Группируем по этажам
+                            const rooms = matchedDates[dateKey];
+                            const floors = groupRoomsByFloor(rooms);
+                            const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+
+                            sortedFloors.forEach(floor => {
+                                const floorSection = document.createElement('div');
+                                floorSection.className = 'dispatchers-floor-section';
+
+                                const floorTitle = document.createElement('div');
+                                floorTitle.className = 'dispatchers-floor-title';
+                                floorTitle.textContent = `${floor} этаж`;
+                                floorSection.appendChild(floorTitle);
+
+                                const roomList = document.createElement('div');
+                                roomList.className = 'dispatchers-room-list';
+
+                                const sortedRooms = floors[floor].sort((a, b) => parseInt(a.room) - parseInt(b.room));
+
+                                sortedRooms.forEach(r => {
+                                    const card = document.createElement('div');
+                                    card.className = 'dispatchers-today-room-card';
+                                    card.dataset.room = r.room;
+
+                                    card.innerHTML = `
+                                        <div class="dispatchers-today-room-number">${r.room}</div>
+                                        <div class="dispatchers-today-room-time">${r.time}</div>
+                                    `;
+
+                                    roomList.appendChild(card);
+                                });
+
+                                floorSection.appendChild(roomList);
+                                list.appendChild(floorSection);
+                            });
+                        });
                     }
 
                     /* ----- строим карточку найденной записи (копия renderHistory) ----- */
@@ -7128,6 +8102,21 @@ class CustomCalendar {
 
     // Функция для подсчета записей за конкретную дату
     getRecordsCountForDate(date) {
+        // Если выбран подраздел "Ежедневные", считаем количество проверенных номеров
+        if (typeof historySubtab !== 'undefined' && historySubtab === 'daily') {
+            if (!dailyHistoryData || typeof dailyHistoryData !== 'object') return 0;
+            
+            // Форматируем дату в ключ формата YYYY-MM-DD
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const dateKey = `${y}-${m}-${d}`;
+            
+            const dayData = dailyHistoryData[dateKey] || {};
+            return Object.keys(dayData).length;
+        }
+        
+        // Для подраздела GIH считаем записи из gihHistory
         if (!appData.gihHistory || !Array.isArray(appData.gihHistory)) return 0;
         
         const targetDateString = date.toLocaleDateString('ru-RU');
@@ -7313,7 +8302,7 @@ function initCustomCalendar() {
     }
 }
 
-// Обновляем функцию отображения даты - БЕЗ счетчика записей
+// Обновляем функцию отображения даты - с учетом подраздела
 function updateDateDisplay() {
     const dateDisplay = document.getElementById('history-current-date');
     if (!dateDisplay) return;
@@ -7322,7 +8311,35 @@ function updateDateDisplay() {
     let dateText = historyCurrentDate.toLocaleDateString('ru-RU', options);
     dateText = dateText.replace(/\./g, ' ');
     
-    // Убираем счетчик записей - оставляем только дату
+    // Добавляем количество записей/номеров
+    if (typeof historySubtab !== 'undefined') {
+        if (historySubtab === 'daily') {
+            // Для подраздела "Ежедневные" добавляем количество проверенных номеров
+            if (typeof dateKeyFromDate === 'function' && typeof dailyHistoryData !== 'undefined') {
+                const dateKey = dateKeyFromDate(historyCurrentDate);
+                const dayData = dailyHistoryData[dateKey] || {};
+                const count = Object.keys(dayData).length;
+                if (count > 0) {
+                    dateText += ` (${count})`;
+                }
+            }
+        } else if (historySubtab === 'gih') {
+            // Для подраздела "GIH" добавляем количество записей за выбранную дату
+            if (typeof appData !== 'undefined' && appData.gihHistory) {
+                const selectedDateStr = historyCurrentDate.toLocaleDateString('ru-RU');
+                const filteredHistory = (appData.gihHistory || []).filter(entry => {
+                    if (!entry.createdAt) return false;
+                    const entryDate = new Date(entry.createdAt).toLocaleDateString('ru-RU');
+                    return entryDate === selectedDateStr;
+                });
+                const count = filteredHistory.length;
+                if (count > 0) {
+                    dateText += ` (${count})`;
+                }
+            }
+        }
+    }
+    
     dateDisplay.textContent = dateText;
     dateDisplay.title = historyCurrentDate.toLocaleDateString('ru-RU', {
         weekday: 'long',
