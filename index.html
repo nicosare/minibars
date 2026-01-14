@@ -1943,6 +1943,18 @@ function updateGIHRoomsSummary() {
         flex-direction: column;
     }
 
+    /* Стили для режима "По времени" в Ежедневных (вертикальный список) */
+    #history-list.time-mode {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #history-list.time-mode > .dispatchers-today-room-card {
+        width: 100%;
+        max-width: none;
+    }
+
     #history-list.floor-mode > .dispatchers-floor-section {
         width: 100%;
         margin-bottom: 16px;
@@ -2910,13 +2922,24 @@ min-height: 18px;
 <div style="font-weight:700; font-size:16px">Настройки приложения</div>
 </div>
 <div style="margin-top:15px;">
-<p>Здесь появятся настройки:</p>
-<ul style="margin:10px 0 0 20px">
-<li>Синхронизация</li>
-<li>Внешний вид</li>
-<li>Управление данными</li>
-<li>Резервное копирование</li>
-</ul>
+<div style="display: flex; gap: 12px; margin-bottom: 20px;">
+    <button class="btn" id="export-database-btn">
+        <i class="fas fa-download"></i> Экспорт БД
+    </button>
+    <button class="btn ghost" id="import-database-btn">
+        <i class="fas fa-upload"></i> Импорт БД
+    </button>
+</div>
+
+<div style="margin-top: 20px; padding: 15px; background: rgba(15,23,36,0.05); border-radius: 8px; border: 1px solid rgba(15,23,36,0.08);">
+    <h4 style="margin: 0 0 10px 0; color: #333;">⚠️ Важная информация</h4>
+    <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px;">
+        <li><strong>Экспорт</strong> - сохраняет все данные приложения в файл JSON</li>
+        <li><strong>Импорт</strong> - загружает данные из файла JSON (текущие данные будут заменены)</li>
+        <li>Рекомендуется делать резервную копию перед импортом</li>
+        <li>Файлы экспорта можно использовать для переноса данных между устройствами</li>
+    </ul>
+</div>
 </div>
 </div>
 <!-- ==== Обучение ==== -->
@@ -2965,9 +2988,11 @@ min-height: 18px;
 </div>
 <!-- ==== История ==== -->
 <div class="card hidden" id="history-section">
-<!-- Заголовок + поиск -->
+<!-- Заголовок + поиск + сортировка -->
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-<div style="font-weight:700; font-size:16px">История</div><div class="row" style="align-items:center; gap:6px;"><div id="history-search-wrapper" style="display:flex; align-items:center; gap:6px;">
+<div style="font-weight:700; font-size:16px">История</div><div class="row" style="align-items:center; gap:6px;"><button class="btn ghost small" id="history-sort-toggle" style="white-space: nowrap; margin-right:8px;">
+<i class="fas fa-sort"></i> <span id="history-sort-label">По номерам</span>
+</button><div id="history-search-wrapper" style="display:flex; align-items:center; gap:6px;">
 <button class="btn ghost small" id="history-search-clear" style="display:none; min-width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center;">
 <i class="fas fa-times"></i>
 </button>
@@ -3028,11 +3053,11 @@ min-height: 18px;
                 <li>В результатах: один клик - исключить жилой номер, двойной клик - пометить номер на заезд</li>
                 <li>Нажмите "Выгрузить депатчеры" для печати итогового списка</li>
             </ol>
-            <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px;">
-                <div style="margin-bottom: 8px; font-weight: 600;">Путь к файлу:</div>
-                <button class="copy-text onclick="copyText('G:\\Food and Beverage\\F&B Service\\Outlets\\Room Service\\04 MB\\OperaPrint.pdf')">
+            <div class="file-path" style="font-family:monospace; background:rgba(15,23,36,0.06); padding:8px; border-radius:8px; margin-top:12px; font-size:12px; cursor:pointer;" onclick="copyFilePath()">
+                <div style="margin-bottom: 8px; font-weight: 600;">Путь к файлу (кликните для копирования):</div>
+                <div style="color:#0066cc; text-decoration:underline;">
                     G:\Food and Beverage\F&B Service\Outlets\Room Service\04 MB\OperaPrint.pdf
-                  </button>
+                </div>
             </div>
         </div>
     </div>
@@ -3099,7 +3124,7 @@ min-height: 18px;
 <!-- Mobile connection indicator -->
 <div class="mobile-connection-indicator disconnected" id="mobileConnectionIndicator"></div>
 <div class="b-item active" data-tab="accises" title="Акцизы"><i class="fas fa-file-invoice"></i><div class="b-label">Акцизы</div></div>
-<div class="b-item" data-tab="dispatchers" title="Депатчеры"><i class="fas fa-list"></i><div class="b-label">Депатчеры</div></div>
+<div class="b-item desktop-only" data-tab="dispatchers" title="Депатчеры"><i class="fas fa-list"></i><div class="b-label">Депатчеры</div></div>
 <div class="b-item" data-tab="sroki" title="Сроки"><i class="fas fa-door-closed"></i><div class="b-label">Сроки</div></div>
 <div class="b-item" data-tab="history" title="История"><i class="fas fa-history"></i><div class="b-label">История</div></div>
 <div class="b-item" data-tab="gih" title="GIH"><i class="fas fa-users"></i><div class="b-label">GIH</div></div>
@@ -3140,6 +3165,7 @@ min-height: 18px;
 <div id="deadlines-stats-content" style="display:flex; flex-direction:column; gap:16px;">
 <div style="text-align:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.1); margin-bottom:8px;">
 <div style="font-weight:600; color:#666;" id="deadlines-daily-goal">Цель на сегодня: 0/0 номеров</div>
+<div style="font-size:12px; color:#888; margin-top:4px;" id="deadlines-tomorrow-goal">Цель на завтра: 0 номеров</div>
 </div>
 <div style="display:flex; gap:12px; flex-wrap:wrap;">
 <div class="card" style="flex:1; min-width:160px; padding:12px;">
@@ -3175,6 +3201,12 @@ min-height: 18px;
 <script>
     function copyText(textToCopy) {
       navigator.clipboard.writeText(textToCopy)
+    }
+
+    function copyFilePath() {
+      const filePath = 'G:\\Food and Beverage\\F&B Service\\Outlets\\Room Service\\04 MB\\OperaPrint.pdf';
+      copyText(filePath);
+      showToast('Путь к файлу скопирован в буфер обмена', 'success');
     }
     </script>
 <script>
@@ -3368,7 +3400,7 @@ min-height: 18px;
             
             // Сохраняем текущую историю на случай конфликта
             const currentHistory = appData.gihHistory || [];
-            
+
             Object.assign(appData, data);
 
             // Синхронизируем deadlinesDailyStats
@@ -3397,6 +3429,40 @@ min-height: 18px;
                         appData.deadlinesDailyStats = data;
                         console.log('Загружена статистика сроков из Firebase:', data);
                         return data;
+                    });
+                }
+
+                // Настраиваем realtime синхронизацию для deadlinesDailyStats
+                let lastLocalChangeTime = 0; // Время последнего локального изменения
+
+                function setupDeadlinesStatsRealtimeListener() {
+                    database.ref('deadlinesDailyStats').on('value', snapshot => {
+                        const remoteData = snapshot.val() || {};
+                        const currentTime = Date.now();
+
+                        // Если прошло менее 2 секунд с момента локального изменения,
+                        // игнорируем обновление из Firebase (предотвращаем перезапись локальных изменений)
+                        if (currentTime - lastLocalChangeTime < 2000) {
+                            console.log('Игнорируем обновление из Firebase (локальное изменение было недавно)');
+                            return;
+                        }
+
+                        const oldStats = { ...deadlinesDailyStats };
+
+                        // Синхронизируем только если удаленные данные отличаются
+                        if (JSON.stringify(remoteData) !== JSON.stringify(deadlinesDailyStats)) {
+                            deadlinesDailyStats = remoteData;
+                            appData.deadlinesDailyStats = remoteData;
+
+                            // Если данные изменились, обновляем UI если модальное окно открыто
+                            if (deadlinesStatsModalOpen) {
+                                console.log('Обновлена статистика сроков из Firebase:', remoteData);
+                                renderDeadlinesStats();
+
+                                // Показываем уведомление о синхронизации
+                                showToast('Статистика синхронизирована с другими устройствами', 'info');
+                            }
+                        }
                     });
                 }
 
@@ -3842,6 +3908,103 @@ function toggleFloorSelection(floorNumber) {
 }
 
 
+                function initSettings() {
+                    // Обработчик экспорта базы данных
+                    const exportBtn = document.getElementById('export-database-btn');
+                    if (exportBtn) {
+                        exportBtn.addEventListener('click', exportDatabase);
+                    }
+
+                    // Обработчик импорта базы данных
+                    const importBtn = document.getElementById('import-database-btn');
+                    if (importBtn) {
+                        importBtn.addEventListener('click', () => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = '.json';
+                            input.onchange = handleImportFile;
+                            input.click();
+                        });
+                    }
+                }
+
+                // Функция экспорта базы данных
+                function exportDatabase() {
+                    try {
+                        // Создаем копию данных без локальных акциз
+                        const { accises, ...exportData } = appData;
+
+                        const dataStr = JSON.stringify(exportData, null, 2);
+                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(dataBlob);
+                        link.download = `minibars-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        showToast('База данных успешно экспортирована', 'success');
+                    } catch (error) {
+                        console.error('Ошибка экспорта:', error);
+                        showToast('Ошибка при экспорте базы данных', 'error');
+                    }
+                }
+
+                // Функция обработки файла импорта
+                function handleImportFile(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    if (!confirm('Вы уверены, что хотите импортировать базу данных? Текущие данные будут заменены.')) {
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+
+                            // Проверяем структуру данных
+                            if (!importedData || typeof importedData !== 'object') {
+                                throw new Error('Неверный формат файла');
+                            }
+
+                            // Сохраняем локальные акцизы
+                            const localAccises = appData.accises || [];
+
+                            // Обновляем данные
+                            Object.assign(appData, importedData);
+
+                            // Восстанавливаем локальные акцизы
+                            appData.accises = localAccises;
+
+                            // Сохраняем в Firebase
+                            saveToFirebase().then(() => {
+                                // Перезагружаем интерфейс
+                                renderHistory();
+                                renderRooms();
+                                renderAllGIHRecords();
+                                updateAcciseStats();
+                                updateGIHSummary();
+                                updateGIHRoomsSummary();
+
+                                showToast('База данных успешно импортирована', 'success');
+                            }).catch(error => {
+                                console.error('Ошибка сохранения после импорта:', error);
+                                showToast('Ошибка сохранения импортированных данных', 'error');
+                            });
+
+                        } catch (error) {
+                            console.error('Ошибка импорта:', error);
+                            showToast('Ошибка при импорте базы данных: ' + error.message, 'error');
+                        }
+                    };
+
+                    reader.readAsText(file);
+                }
+
                 function initSroki() {
                     renderRooms();
                     const overlay = $('#modal');
@@ -4145,6 +4308,9 @@ function toggleFloorSelection(floorNumber) {
                     deadlinesDailyStats = updatedStats;
                     appData.deadlinesDailyStats = updatedStats;
 
+                    // Устанавливаем время последнего локального изменения
+                    lastLocalChangeTime = Date.now();
+
                     // Сохраняем в Firebase и обновляем локальные данные
                     database.ref('deadlinesDailyStats').set(updatedStats).then(() => {
                         console.log('Статистика успешно сохранена в Firebase');
@@ -4366,6 +4532,11 @@ section.appendChild(title);
                     }
                     updateDeadlinesSelectedCount();
                     renderRooms();
+
+                    // В мобильном режиме выключаем режим выбора после клика на номер
+                    if (window.innerWidth <= 920 && deadlinesSelectMode) {
+                        toggleDeadlinesSelectMode();
+                    }
                 }
 
                 function updateDeadlinesSelectedCount() {
@@ -4614,6 +4785,49 @@ const filteredRooms = selectedRooms.filter(num => {
                     });
                     return summary;
                 }
+                // Функция для выбора номеров с выбранным продуктом
+                function selectRoomsWithProduct(productKey) {
+                    const roomsWithProduct = (appData.rooms || []).filter(room => {
+                        if (!room || !room.products) return false;
+                        return room.products[productKey] && room.products[productKey] > 0;
+                    });
+
+                    if (roomsWithProduct.length === 0) {
+                        alert(`Нет номеров с выбранным продуктом`);
+                        return;
+                    }
+
+                    // Включаем режим выбора, если он не включен
+                    if (!deadlinesSelectMode) {
+                        toggleDeadlinesSelectMode();
+                    }
+
+                    // Сбрасываем предыдущий выбор
+                    deadlinesSelectedRooms.clear();
+
+                    // Выбираем все номера с этим продуктом
+                    roomsWithProduct.forEach(room => {
+                        const roomNumber = room.number || room.name;
+                        if (roomNumber) {
+                            const roomStr = String(roomNumber);
+                            deadlinesSelectedRooms.add(roomStr);
+                        }
+                    });
+
+                    // Закрываем модальное окно статистики ПЕРВЫМ ДЕЛОМ
+                    closeDeadlinesStatsModal();
+
+                    // Обновляем счетчик выбранных номеров
+                    updateDeadlinesSelectedCount();
+
+                    // Перерисовываем номера с выделением выбранных
+                    renderRooms();
+
+                    // Показываем уведомление
+                    const productName = appData.products[productKey] || productKey;
+                    showToast(`Выбрано ${roomsWithProduct.length} номеров с продуктом "${productName}"`, 'success');
+                }
+
                 function renderDeadlinesStats() {
                     const data = computeDeadlinesSummary();
                     const okEl = $('#deadlines-count-ok');
@@ -4650,7 +4864,25 @@ const filteredRooms = selectedRooms.filter(num => {
                         chip.style.borderRadius = '999px';
                         chip.style.background = 'rgba(15,23,36,0.06)';
                         chip.style.border = '1px solid rgba(15,23,36,0.08)';
+                        chip.style.cursor = 'pointer';
+                        chip.style.transition = 'all 0.2s ease';
                         chip.textContent = `${name}  x${count}`;
+
+                        // Добавляем обработчик клика для выбора номеров с этим продуктом
+                        chip.addEventListener('click', () => {
+                            selectRoomsWithProduct(key);
+                        });
+
+                        // Добавляем hover эффекты
+                        chip.addEventListener('mouseenter', () => {
+                            chip.style.background = 'rgba(15,23,36,0.12)';
+                            chip.style.borderColor = 'rgba(15,23,36,0.2)';
+                        });
+                        chip.addEventListener('mouseleave', () => {
+                            chip.style.background = 'rgba(15,23,36,0.06)';
+                            chip.style.borderColor = 'rgba(15,23,36,0.08)';
+                        });
+
                         productsContainer.appendChild(chip);
                     });
                 }
@@ -4691,6 +4923,9 @@ const filteredRooms = selectedRooms.filter(num => {
                     deadlinesDailyStats = updatedStats;
                     appData.deadlinesDailyStats = updatedStats;
 
+                    // Устанавливаем время последнего локального изменения
+                    lastLocalChangeTime = Date.now();
+
                     // Сохраняем в Firebase
                     database.ref('deadlinesDailyStats').set(updatedStats).catch(error => {
                         console.error('Ошибка сохранения цели в Firebase:', error);
@@ -4716,12 +4951,14 @@ const filteredRooms = selectedRooms.filter(num => {
                     }
                 }
 
-                // Функция для отображения цели на сегодня
+                // Функция для отображения целей на сегодня и завтра
                 function updateDeadlinesDailyGoal(data) {
                     const goalEl = $('#deadlines-daily-goal');
-                    if (!goalEl) return;
+                    const tomorrowGoalEl = $('#deadlines-tomorrow-goal');
+                    if (!goalEl || !tomorrowGoalEl) return;
 
                     const today = new Date();
+                    const currentDay = today.getDate();
                     const dateKey = today.getFullYear() + '-' +
                                    String(today.getMonth() + 1).padStart(2, '0') + '-' +
                                    String(today.getDate()).padStart(2, '0');
@@ -4731,9 +4968,10 @@ const filteredRooms = selectedRooms.filter(num => {
                     const completed = todayStats.ok;
                     const target = todayStats.dailyGoal || 0;
 
+                    // Отображаем цель на сегодня
                     goalEl.textContent = `Цель на сегодня: ${completed}/${target} номеров`;
 
-                    // Добавляем цветовое оформление
+                    // Цветовое оформление для цели на сегодня
                     if (target === 0) {
                         goalEl.style.color = '#1b7a2b'; // Зеленый - цель достигнута (после 20 числа)
                     } else if (completed >= target) {
@@ -4743,6 +4981,23 @@ const filteredRooms = selectedRooms.filter(num => {
                     } else {
                         goalEl.style.color = '#666'; // Серый - цель не достигнута
                     }
+
+                    // Рассчитываем цель на завтра (динамически)
+                    let tomorrowTarget = 0;
+                    if (currentDay < 20) {
+                        // Оставшиеся номера после сегодняшнего прогресса
+                        const remainingAfterToday = data.neutral + data.products - completed;
+                        // Оставшиеся дни (от завтра до 20 числа включительно)
+                        const remainingDays = 20 - currentDay;
+
+                        if (remainingDays > 1 && remainingAfterToday > 0) {
+                            // Цель на завтра = оставшиеся номера / оставшиеся дни (не включая сегодняшний)
+                            tomorrowTarget = Math.ceil(remainingAfterToday / (remainingDays - 1));
+                        }
+                    }
+
+                    // Отображаем цель на завтра
+                    tomorrowGoalEl.textContent = `Цель на завтра: ${tomorrowTarget} номеров`;
                 }
 
                 function openDeadlinesStatsModal() {
@@ -4941,6 +5196,14 @@ const filteredRooms = selectedRooms.filter(num => {
                                 ctx.strokeStyle = color;
                                 ctx.lineWidth = 1;
                                 ctx.stroke();
+
+                                // Отображаем значение над точкой
+                                ctx.fillStyle = '#333333'; // Темный цвет для лучшей видимости
+                                ctx.font = 'bold 12px Arial';
+                                ctx.textAlign = 'center';
+                                // Убеждаемся, что текст не уходит за верхнюю границу
+                                const textY = Math.max(point.y - 15, margin.top + 15);
+                                ctx.fillText(point.value.toString(), point.x, textY);
                             }
                         });
                     };
@@ -5011,6 +5274,14 @@ const filteredRooms = selectedRooms.filter(num => {
                                     ctx.strokeStyle = color;
                                     ctx.lineWidth = 1;
                                     ctx.stroke();
+
+                                    // Отображаем значение над точкой
+                                    ctx.fillStyle = '#333333'; // Темный цвет для лучшей видимости
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    // Убеждаемся, что текст не уходит за верхнюю границу
+                                    const textY = Math.max(point.y - 15, margin.top + 15);
+                                    ctx.fillText(point.value.toString(), point.x, textY);
                                 }
                             });
                         };
@@ -5779,6 +6050,7 @@ saveBtn.addEventListener('click', () => {
     initNav();
     initAccises();
     initSroki();
+    initSettings();
     initGIH();
     initHistoryDateControls();
     
@@ -5788,6 +6060,7 @@ saveBtn.addEventListener('click', () => {
     setupFirebaseListener();
     setupRoomsRealtimeListener();
     setupDailyHistoryListener();
+    setupDeadlinesStatsRealtimeListener(); // Включаем realtime синхронизацию статистики
 
     // Загружаем статистику и проверяем цель на сегодня
     await loadDeadlinesStatsFromFirebase();
@@ -6221,7 +6494,7 @@ function restoreHistoryIfNeeded() {
 
                     // Сортируем по дате (новые сверху)
                     const sortedHistory = [...appData.gihHistory].sort((a, b) =>
-                        new Date(b.createdAt) - new Date(a.createdAt)
+                        new Date(b.savedAt || b.createdAt) - new Date(a.savedAt || a.createdAt)
                     );
 
                     // Группируем по дате
@@ -6344,6 +6617,7 @@ function restoreHistoryIfNeeded() {
                 let historyDatePicker = null;
                 // Загружаем сохранённый подраздел из localStorage
                 let historySubtab = localStorage.getItem('historySubtab') || 'gih'; // 'gih' или 'daily'
+                let historySortMode = localStorage.getItem('historySortMode') || 'rooms'; // 'rooms' или 'time'
                 let dailyHistoryData = {}; // Данные ежедневных проверок: { 'YYYY-MM-DD': { room: { ts } } }
                 let dailyHistoryRef = null;
 
@@ -6383,8 +6657,17 @@ function restoreHistoryIfNeeded() {
         dailyBtn.addEventListener('click', () => switchHistorySubtab('daily'));
     }
 
+    // Обработчик для кнопки сортировки
+    const sortToggleBtn = document.getElementById('history-sort-toggle');
+    if (sortToggleBtn) {
+        sortToggleBtn.addEventListener('click', toggleHistorySortMode);
+    }
+
     // Инициализируем активную кнопку (используем сохранённое значение или 'gih' по умолчанию)
     switchHistorySubtab(historySubtab);
+
+    // Инициализируем режим сортировки
+    updateHistorySortButton();
 
     // Функция для обновления отображения даты
     function updateDateDisplay() {
@@ -6488,24 +6771,30 @@ function restoreHistoryIfNeeded() {
                         return;
                     }
 
-                    // Сортируем по номеру комнаты (если есть цифры) — численно, иначе по строке
-                    function roomToNum(e) {
-                        if (!e) return Number.POSITIVE_INFINITY;
-                        const r = (e.room || e.number || '');
-                        if (typeof r === 'number') return r;
-                        const m = String(r).match(/-?\d+/);
-                        if (m) return parseInt(m[0], 10);
-                        return Number.POSITIVE_INFINITY;
+                    // Сортируем в зависимости от выбранного режима
+                    if (historySortMode === 'time') {
+                        // Сортировка по времени (новые сверху)
+                        filteredHistory.sort((a, b) => new Date(b.savedAt || b.createdAt) - new Date(a.savedAt || a.createdAt));
+                    } else {
+                        // Сортировка по номерам (режим 'rooms' - по умолчанию)
+                        function roomToNum(e) {
+                            if (!e) return Number.POSITIVE_INFINITY;
+                            const r = (e.room || e.number || '');
+                            if (typeof r === 'number') return r;
+                            const m = String(r).match(/-?\d+/);
+                            if (m) return parseInt(m[0], 10);
+                            return Number.POSITIVE_INFINITY;
+                        }
+                        filteredHistory.sort((a, b) => {
+                            const na = roomToNum(a);
+                            const nb = roomToNum(b);
+                            if (isFinite(na) && isFinite(nb)) return na - nb;
+                            if (isFinite(na)) return -1;
+                            if (isFinite(nb)) return 1;
+                            // fallback to locale string compare (natural sort)
+                            return String((a.room || a.number || '')).localeCompare(String((b.room || b.number || '')), 'ru-RU', { numeric: true });
+                        });
                     }
-                    filteredHistory.sort((a, b) => {
-                        const na = roomToNum(a);
-                        const nb = roomToNum(b);
-                        if (isFinite(na) && isFinite(nb)) return na - nb;
-                        if (isFinite(na)) return -1;
-                        if (isFinite(nb)) return 1;
-                        // fallback to locale string compare (natural sort)
-                        return String((a.room || a.number || '')).localeCompare(String((b.room || b.number || '')), 'ru-RU', { numeric: true });
-                    });
 
                     // Отрисовываем записи за выбранную дату
                     filteredHistory.forEach(entry => {
@@ -6644,17 +6933,59 @@ function restoreHistoryIfNeeded() {
                         room: room,
                         time: timeStringFromUnix(entry.ts || 0),
                         ts: entry.ts || 0
-                    })).sort((a, b) => parseInt(a.room) - parseInt(b.room));
+                    }));
+
+                    // Сортируем в зависимости от выбранного режима
+                    if (historySortMode === 'time') {
+                        // Сортировка по времени (новые в конце)
+                        rooms.sort((a, b) => a.ts - b.ts);
+                    } else {
+                        // Сортировка по номерам (режим 'rooms' - по умолчанию)
+                        rooms.sort((a, b) => parseInt(a.room) - parseInt(b.room));
+                    }
 
                     if (rooms.length === 0) {
                         historyList.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">За выбранный день записей нет</div>';
                         historyList.classList.remove('floor-mode');
+                        historyList.classList.remove('time-mode');
                         return;
                     }
 
-                    // Группируем по этажам
-                    const floors = groupRoomsByFloorForDaily(rooms);
-                    const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
+                    // В режиме "По времени" не группируем по этажам, показываем плоский список
+                    if (historySortMode === 'time') {
+                        historyList.classList.remove('floor-mode');
+                        historyList.classList.add('time-mode');
+
+                        rooms.forEach(r => {
+                            const card = document.createElement('div');
+                            card.className = 'dispatchers-today-room-card';
+                            card.dataset.room = r.room;
+
+                            card.innerHTML = `
+                                <div class="dispatchers-today-room-number">${r.room}</div>
+                                <div class="dispatchers-today-room-time">${r.time}</div>
+                            `;
+
+                            // Проверяем, является ли номер опустошённым
+                            const roomData = (appData.rooms || []).find(room => room && (room.number == r.room || room.name == r.room));
+                            const isEmptied = roomData && roomData.deadlinesStatus === DEADLINE_STATUS.AUTO_OK;
+
+                            // Значок опустошения (∅) в левом нижнем углу, если номер опустошён
+                            if (isEmptied) {
+                                const emptyMark = document.createElement('div');
+                                emptyMark.className = 'dispatchers-today-room-empty';
+                                emptyMark.textContent = '∅';
+                                card.appendChild(emptyMark);
+                            }
+
+                            historyList.appendChild(card);
+                        });
+                    } else {
+                        // Группируем по этажам в режиме "По номерам"
+                        historyList.classList.add('floor-mode');
+                        historyList.classList.remove('time-mode');
+                        const floors = groupRoomsByFloorForDaily(rooms);
+                        const sortedFloors = Object.keys(floors).sort((a, b) => parseInt(a) - parseInt(b));
 
                     sortedFloors.forEach(floor => {
                         const floorSection = document.createElement('div');
@@ -6668,7 +6999,16 @@ function restoreHistoryIfNeeded() {
                         const roomList = document.createElement('div');
                         roomList.className = 'dispatchers-room-list';
 
-                        const sortedRooms = floors[floor].sort((a, b) => parseInt(a.room) - parseInt(b.room));
+                        // Сортируем комнаты в этаже в зависимости от режима
+                        const sortedRooms = floors[floor].sort((a, b) => {
+                            if (historySortMode === 'time') {
+                                // Сортировка по времени (новые сверху)
+                                return b.ts - a.ts;
+                            } else {
+                                // Сортировка по номерам (режим 'rooms' - по умолчанию)
+                                return parseInt(a.room) - parseInt(b.room);
+                            }
+                        });
 
                         sortedRooms.forEach(r => {
                             const card = document.createElement('div');
@@ -6680,12 +7020,25 @@ function restoreHistoryIfNeeded() {
                                 <div class="dispatchers-today-room-time">${r.time}</div>
                             `;
 
+                            // Проверяем, является ли номер опустошённым
+                            const roomData = (appData.rooms || []).find(room => room && (room.number == r.room || room.name == r.room));
+                            const isEmptied = roomData && roomData.deadlinesStatus === DEADLINE_STATUS.AUTO_OK;
+
+                            // Значок опустошения (∅) в левом нижнем углу, если номер опустошён
+                            if (isEmptied) {
+                                const emptyMark = document.createElement('div');
+                                emptyMark.className = 'dispatchers-today-room-empty';
+                                emptyMark.textContent = '∅';
+                                card.appendChild(emptyMark);
+                            }
+
                             roomList.appendChild(card);
                         });
 
                         floorSection.appendChild(roomList);
                         historyList.appendChild(floorSection);
                     });
+                    } // Закрываем блок else для режима "По номерам"
                 }
 
                 // Функция для настройки Firebase listener для ежедневных проверок
@@ -6752,6 +7105,28 @@ function restoreHistoryIfNeeded() {
                     
                     // Обновляем отображение даты
                     updateDateDisplay();
+                }
+
+                // Функция для переключения режима сортировки истории
+                function toggleHistorySortMode() {
+                    historySortMode = historySortMode === 'time' ? 'rooms' : 'time';
+                    localStorage.setItem('historySortMode', historySortMode);
+                    updateHistorySortButton();
+
+                    // Перерисовываем историю с новым режимом сортировки
+                    if (historySubtab === 'gih') {
+                        renderHistory();
+                    } else {
+                        renderDailyHistory();
+                    }
+                }
+
+                // Функция для обновления текста кнопки сортировки
+                function updateHistorySortButton() {
+                    const sortLabel = document.getElementById('history-sort-label');
+                    if (sortLabel) {
+                        sortLabel.textContent = historySortMode === 'time' ? 'По времени' : 'По номерам';
+                    }
                 }
 
             </script>
@@ -9332,9 +9707,17 @@ function printDepartures() {
             if (item) {
                 let sub = '';
 
-                // Проверяем, был ли номер помечен как опустошённый в todayRoomsData
+                // Проверяем, был ли номер помечен как опустошённый
                 let isEmptied = false;
-                if (window.todayRoomsData && Array.isArray(window.todayRoomsData)) {
+
+                // Сначала проверяем статус в appData.rooms (это самый надежный способ)
+                const roomData = (appData.rooms || []).find(r => r && String(r.number) === String(item.number));
+                if (roomData && roomData.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) {
+                    isEmptied = true;
+                }
+
+                // Дополнительно проверяем todayRoomsData
+                if (!isEmptied && window.todayRoomsData && Array.isArray(window.todayRoomsData)) {
                     const info = window.todayRoomsData.find(r => String(r.room) === String(item.number));
                     if (info && info.emptied) {
                         isEmptied = true;
@@ -9396,9 +9779,17 @@ function printDepartures() {
             if (item) {
                 let sub = '';
 
-                // Проверяем, был ли номер помечен как опустошённый в todayRoomsData
+                // Проверяем, был ли номер помечен как опустошённый
                 let isEmptied = false;
-                if (window.todayRoomsData && Array.isArray(window.todayRoomsData)) {
+
+                // Сначала проверяем статус в appData.rooms (это самый надежный способ)
+                const roomData = (appData.rooms || []).find(r => r && String(r.number) === String(item.number));
+                if (roomData && roomData.deadlinesStatus === DEADLINE_STATUS.AUTO_OK) {
+                    isEmptied = true;
+                }
+
+                // Дополнительно проверяем todayRoomsData
+                if (!isEmptied && window.todayRoomsData && Array.isArray(window.todayRoomsData)) {
                     const info = window.todayRoomsData.find(r => String(r.room) === String(item.number));
                     if (info && info.emptied) {
                         isEmptied = true;
