@@ -410,6 +410,8 @@ async function upsertMessageRooms(msg) {
 
     // Собираем номера с продуктами для уведомлений
     const roomsWithProducts = [];
+    // Собираем пополненные номера (были пустыми, теперь пополнены)
+    const refilledRooms = [];
 
     for (const room of parsed.rooms) {
       // Добавляем/обновляем в списке проверенных на сегодня
@@ -447,6 +449,7 @@ async function upsertMessageRooms(msg) {
         // Если был опустошён ранее, а теперь пришёл без пометки, сбрасываем статус
         if (wasEmptied) {
           await setDeadlineStatusForRoom(room, 'neutral');
+          refilledRooms.push(room);
           console.log(`Added room ${room} without emptied mark, reset status from emptied`);
         } else {
           console.log(`Added room ${room} without emptied mark`);
@@ -463,6 +466,17 @@ async function upsertMessageRooms(msg) {
         const result = await sendVKMessage(PEER_ID, message);
         console.log('📤 Send result:', result ? 'SUCCESS' : 'FAILED');
       }
+    }
+
+    // Отправляем уведомление о пополненных пустых номерах
+    if (parsed.type === 'add' && !parsed.emptied && refilledRooms.length > 0) {
+      const roomsText = refilledRooms.length === 1 
+        ? `номер ${refilledRooms[0]}` 
+        : `номера ${refilledRooms.join(', ')}`;
+      const message = `Был пополнен пустой ${roomsText}`;
+      console.log('📤 Sending refilled rooms notification to', PEER_ID, ':', message);
+      const result = await sendVKMessage(PEER_ID, message);
+      console.log('📤 Send result:', result ? 'SUCCESS' : 'FAILED');
     }
   }
 }
