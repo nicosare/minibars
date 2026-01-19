@@ -3365,11 +3365,39 @@ min-height: 18px;
         const mergedHistory = Array.from(byId.values());
         
         // 3) готовим итоговые данные к сохранению
-        const dataToSave = { ...appData, gihHistory: mergedHistory };
+        // Сначала читаем текущие данные из Firebase, чтобы не потерять другие данные
+        const currentSnap = await database.ref('minibarData').once('value');
+        const currentData = currentSnap.val() || {};
         
-        // 4) сохраняем целиком, но уже с объединённой историей
+        // Мержим данные: сохраняем текущие данные из Firebase и обновляем только измененные
+        const dataToSave = {
+            ...currentData,  // Сохраняем все существующие данные из Firebase
+            ...appData,      // Обновляем локальные данные
+            gihHistory: mergedHistory,  // Используем объединенную историю
+        };
+        
+        // Убеждаемся, что deadlinesDailyStats включен в данные для сохранения
+        // Используем локальные данные, если они есть, иначе данные из Firebase
+        if (appData.deadlinesDailyStats) {
+            dataToSave.deadlinesDailyStats = appData.deadlinesDailyStats;
+            console.log('✅ deadlinesDailyStats включен в данные для сохранения:', appData.deadlinesDailyStats);
+        } else if (currentData.deadlinesDailyStats) {
+            // Если локальной статистики нет, сохраняем ту, что есть в Firebase
+            dataToSave.deadlinesDailyStats = currentData.deadlinesDailyStats;
+            console.log('✅ Используем deadlinesDailyStats из Firebase:', currentData.deadlinesDailyStats);
+        } else {
+            console.warn('⚠️ deadlinesDailyStats отсутствует в appData и Firebase при сохранении');
+        }
+        
+        // 4) сохраняем целиком, но уже с объединённой историей и сохраненными данными
         await database.ref('minibarData').set(dataToSave);
-        console.log('Данные (с объединённой историей) сохранены в Firebase');
+        console.log('✅ Данные (с объединённой историей) сохранены в Firebase');
+        console.log('📊 Сохранено deadlinesDailyStats:', JSON.stringify(dataToSave.deadlinesDailyStats, null, 2));
+        
+        // Проверяем, что данные действительно сохранились
+        const verifySnap = await database.ref('minibarData/deadlinesDailyStats').once('value');
+        const verified = verifySnap.val();
+        console.log('✅ Проверка сохранения: deadlinesDailyStats в Firebase:', JSON.stringify(verified, null, 2));
     } catch (error) {
         console.error('Ошибка сохранения в Firebase:', error);
         // Данные не сохраняются локально - только в БД
@@ -3408,15 +3436,34 @@ min-height: 18px;
             
             // Сохраняем текущую историю на случай конфликта
             const currentHistory = appData.gihHistory || [];
-
+            
+            // НЕ сохраняем локальные изменения при обновлении из Firebase
+            // Данные всегда должны браться из БД
             Object.assign(appData, data);
 
             // Синхронизируем deadlinesDailyStats
             deadlinesDailyStats = appData.deadlinesDailyStats || {};
 
             // Обновляем статистику если модальное окно открыто
+            // НЕ вызываем ensureDailyGoalCalculated() при обновлении из Firebase,
+            // чтобы избежать циклических обновлений
             if (deadlinesStatsModalOpen) {
-                renderDeadlinesStats();
+                // Используем существующую функцию renderDeadlinesStats, но без пересчета цели
+                // Просто обновляем отображение с текущими данными
+                const data = computeDeadlinesSummary();
+                const okEl = $('#deadlines-count-ok');
+                const autoOkEl = $('#deadlines-count-auto-ok');
+                const prodEl = $('#deadlines-count-products');
+                const neutralEl = $('#deadlines-count-neutral');
+                if (okEl) okEl.textContent = data.ok;
+                if (autoOkEl) autoOkEl.textContent = data.auto_ok;
+                if (prodEl) prodEl.textContent = data.products;
+                if (neutralEl) neutralEl.textContent = data.neutral;
+                
+                // Обновляем отображение цели без пересчета (используем данные из Firebase)
+                updateDeadlinesDailyGoal(data);
+                
+                // Обновляем график активности
                 renderDeadlinesActivityChart();
             }
 
@@ -4236,7 +4283,9 @@ function toggleFloorSelection(floorNumber) {
                         console.log(`After normalize: ${room.deadlinesStatus}`);
 
                         // Записываем статистику только если статус действительно изменился
-                        recordDeadlineStatusChange(room.deadlinesStatus, previousStatus);
+                        recordDeadlineStatusChange(room.deadlinesStatus, previousStatus).catch(error => {
+                            console.error('❌ Ошибка записи статистики:', error);
+                        });
                     });
                     deadlinesSelectedRooms.clear();
                     saveDebounced();
@@ -4296,7 +4345,9 @@ function toggleFloorSelection(floorNumber) {
                     }
 
                     // Записываем статистику только если статус действительно изменился
-                    recordDeadlineStatusChange(finalStatus, previousStatus);
+                    recordDeadlineStatusChange(finalStatus, previousStatus).catch(error => {
+                        console.error('❌ Ошибка записи статистики:', error);
+                    });
 
                     saveDebounced();
                     renderRooms();
@@ -4306,7 +4357,7 @@ function toggleFloorSelection(floorNumber) {
 
                 // Функция для записи изменения статуса в статистику
                 // Функция для записи изменения статуса в статистику
-                function recordDeadlineStatusChange(finalStatus, previousStatus) {
+                async function recordDeadlineStatusChange(finalStatus, previousStatus) {
                     console.log('=== recordDeadlineStatusChange called ===');
                     console.log('finalStatus:', finalStatus);
                     console.log('previousStatus:', previousStatus);
@@ -4351,9 +4402,14 @@ function toggleFloorSelection(floorNumber) {
 
                     console.log('Date key:', dateKey);
 
-                    // Создаем копию текущих данных
-                    const updatedStats = { ...deadlinesDailyStats };
-                    console.log('Current stats before:', updatedStats[dateKey]);
+                    // Всегда берем данные из БД (appData.deadlinesDailyStats синхронизируется с Firebase)
+                    // Сначала читаем текущие данные из Firebase, чтобы не потерять данные
+                    const currentStatsSnap = await database.ref('minibarData/deadlinesDailyStats').once('value');
+                    const currentStatsFromDB = currentStatsSnap.val() || {};
+                    
+                    // Мержим данные: сначала данные из БД, затем обновляем только сегодняшнюю дату
+                    const updatedStats = { ...currentStatsFromDB };
+                    console.log('Current stats from DB:', updatedStats[dateKey]);
 
                     if (!updatedStats[dateKey]) {
                         updatedStats[dateKey] = { ok: 0, products: 0, dailyGoal: 0 };
@@ -4373,19 +4429,16 @@ function toggleFloorSelection(floorNumber) {
                     // Очищаем старые записи (оставляем только последние 30 дней)
                     cleanupOldDeadlineStats(updatedStats);
 
-                    // Обновляем локальную переменную и appData
+                    // Обновляем локальную переменную и appData (синхронизируем с БД)
                     deadlinesDailyStats = updatedStats;
                     appData.deadlinesDailyStats = updatedStats;
 
                     // Устанавливаем время последнего локального изменения
                     lastLocalChangeTime = Date.now();
-
-                    // Обновляем локальные данные (сохранение в Firebase произойдет через saveToFirebase)
-                    deadlinesDailyStats = updatedStats;
-                    appData.deadlinesDailyStats = updatedStats;
                     
-                    // Сохраняем через общую функцию сохранения (в minibarData)
-                    saveToFirebase();
+                    // Сохраняем статистику с мержанными данными
+                    console.log('📊 Сохраняем обновленную статистику в Firebase:', updatedStats);
+                    await database.ref('minibarData/deadlinesDailyStats').set(updatedStats);
 
                     // Обновляем график если модальное окно открыто
                     if (deadlinesStatsModalOpen) {
@@ -4906,7 +4959,10 @@ const filteredRooms = selectedRooms.filter(num => {
                     if (neutralEl) neutralEl.textContent = data.neutral;
 
                     // Проверяем и рассчитываем цель на сегодня (если нужно)
-                    ensureDailyGoalCalculated();
+                    // Цель пересчитывается только если её нет или если изменилось количество номеров
+                    ensureDailyGoalCalculated().catch(error => {
+                        console.error('❌ Ошибка проверки цели:', error);
+                    });
 
                     // Отображаем цель на сегодня
                     updateDeadlinesDailyGoal(data);
@@ -4954,7 +5010,7 @@ const filteredRooms = selectedRooms.filter(num => {
                 }
 
                 // Функция для расчета ежедневной цели (вызывается один раз в день)
-                function calculateDailyGoal() {
+                async function calculateDailyGoal() {
                     const today = new Date();
                     const currentDay = today.getDate();
                     const currentMonth = today.getMonth();
@@ -4969,6 +5025,19 @@ const filteredRooms = selectedRooms.filter(num => {
                     // Количество номеров, которые нужно перевести в статус ok
                     // Это все номера, которые НЕ в статусе ok (нейтральные + продукты, пустые не учитываем)
                     const remainingToOk = data.neutral + data.products;
+                    
+                    console.log('📊 Расчет цели на сегодня:', {
+                        dateKey,
+                        currentDay,
+                        currentMonth: currentMonth + 1,
+                        currentYear,
+                        neutral: data.neutral,
+                        products: data.products,
+                        remainingToOk,
+                        totalRooms: (appData.rooms || []).length,
+                        ok: data.ok,
+                        auto_ok: data.auto_ok
+                    });
 
                     let target = 0;
                     let targetDate = 20; // По умолчанию цель до 20 числа
@@ -4979,6 +5048,7 @@ const filteredRooms = selectedRooms.filter(num => {
                         const daysUntil20th = 20 - currentDay + 1;
                         target = remainingToOk > 0 ? Math.ceil(remainingToOk / daysUntil20th) : 0;
                         targetDate = 20;
+                        console.log(`📅 До 20 числа: ${remainingToOk} номеров / ${daysUntil20th} дней = ${target}`);
                     } else {
                         // После 20 числа: пересчитываем до последнего дня месяца
                         const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -4991,42 +5061,88 @@ const filteredRooms = selectedRooms.filter(num => {
                             target = 0;
                         }
                         targetDate = lastDayOfMonth;
+                        console.log(`📅 После 20 числа: ${remainingToOk} номеров / ${daysUntilEndOfMonth} дней = ${target}`);
                     }
 
-                    // Сохраняем цель в статистике
-                    const updatedStats = { ...deadlinesDailyStats };
+                    // Всегда берем данные из БД (appData.deadlinesDailyStats синхронизируется с Firebase)
+                    // Сначала читаем текущие данные из Firebase, чтобы не потерять данные
+                    const currentStatsSnap = await database.ref('minibarData/deadlinesDailyStats').once('value');
+                    const currentStatsFromDB = currentStatsSnap.val() || {};
+                    
+                    // Мержим данные: сначала данные из БД, затем обновляем только сегодняшнюю дату
+                    const updatedStats = { ...currentStatsFromDB };
                     if (!updatedStats[dateKey]) {
-                        updatedStats[dateKey] = { ok: 0, products: 0, dailyGoal: 0 };
+                        // Если записи нет, создаем новую
+                        updatedStats[dateKey] = { ok: 0, products: 0, dailyGoal: target };
+                    } else {
+                        // Сохраняем существующие счетчики ok и products, обновляем только цель
+                        updatedStats[dateKey] = { 
+                            ...updatedStats[dateKey],
+                            ok: updatedStats[dateKey].ok || 0,
+                            products: updatedStats[dateKey].products || 0,
+                            dailyGoal: target
+                        };
                     }
-                    updatedStats[dateKey].dailyGoal = target;
 
-                    // Обновляем локальные данные
+                    // Обновляем локальные данные (синхронизируем с БД)
                     deadlinesDailyStats = updatedStats;
                     appData.deadlinesDailyStats = updatedStats;
 
                     // Устанавливаем время последнего локального изменения
                     lastLocalChangeTime = Date.now();
 
-                    // Сохраняем через общую функцию сохранения (в minibarData)
-                    saveToFirebase();
+                    // Сохраняем статистику с мержанными данными
+                    console.log('🎯 Сохраняем обновленную цель в Firebase:', updatedStats);
+                    await database.ref('minibarData/deadlinesDailyStats').set(updatedStats);
 
                     console.log(`Рассчитана цель на ${dateKey}: ${target} номеров (цель до ${targetDate} числа)`);
                     return target;
                 }
 
                 // Функция для проверки и расчета цели на сегодня (если её нет)
-                function ensureDailyGoalCalculated() {
+                async function ensureDailyGoalCalculated() {
                     const today = new Date();
                     const dateKey = today.getFullYear() + '-' +
                                    String(today.getMonth() + 1).padStart(2, '0') + '-' +
                                    String(today.getDate()).padStart(2, '0');
 
-                    const todayStats = deadlinesDailyStats[dateKey];
+                    // Всегда читаем данные из БД перед проверкой
+                    try {
+                        const statsSnap = await database.ref('minibarData/deadlinesDailyStats').once('value');
+                        const statsFromDB = statsSnap.val() || {};
+                        
+                        // Синхронизируем данные из БД
+                        deadlinesDailyStats = statsFromDB;
+                        appData.deadlinesDailyStats = statsFromDB;
+                        
+                        const todayStats = statsFromDB[dateKey];
+                        
+                        console.log('🔍 Проверка цели на сегодня:', {
+                            dateKey,
+                            todayStats,
+                            hasDailyGoal: todayStats && typeof todayStats.dailyGoal !== 'undefined',
+                            dailyGoal: todayStats?.dailyGoal
+                        });
 
-                    // Если цели на сегодня нет или она равна 0 (нужно пересчитать)
-                    if (!todayStats || typeof todayStats.dailyGoal === 'undefined' || todayStats.dailyGoal === 0) {
-                        console.log('Цель на сегодня не рассчитана, рассчитываем...');
-                        calculateDailyGoal();
+                        // Если цели на сегодня нет или она не определена, рассчитываем
+                        // НЕ пересчитываем, если цель уже установлена (даже если она равна 0)
+                        const needsRecalculation = !todayStats || typeof todayStats.dailyGoal === 'undefined';
+                        
+                        if (needsRecalculation) {
+                            const currentData = computeDeadlinesSummary();
+                            const currentRemainingToOk = currentData.neutral + currentData.products;
+                            console.log('❌ Цель на сегодня не рассчитана, рассчитываем...', {
+                                todayStats,
+                                currentRemainingToOk,
+                                neutral: currentData.neutral,
+                                products: currentData.products
+                            });
+                            await calculateDailyGoal();
+                        } else {
+                            console.log('✅ Цель на сегодня уже рассчитана:', todayStats.dailyGoal, 'не пересчитываем');
+                        }
+                    } catch (error) {
+                        console.error('❌ Ошибка проверки цели:', error);
                     }
                 }
 
@@ -5070,22 +5186,35 @@ const filteredRooms = selectedRooms.filter(num => {
                     // data уже отражает текущее состояние, включая сегодняшние переводы
                     const remainingToOk = data.neutral + data.products;
                     
+                    // Вычитаем количество номеров, переведенных сегодня в OK
+                    // чтобы рассчитать, сколько останется на завтра
+                    const remainingAfterToday = Math.max(0, remainingToOk - completed);
+                    
+                    console.log('🔮 Расчет цели на завтра:', {
+                        remainingToOk,
+                        completed,
+                        remainingAfterToday,
+                        currentDay
+                    });
+                    
                     if (currentDay < 20) {
                         // До 20 числа: оставшиеся дни (от завтра до 20 числа включительно)
                         const remainingDays = 20 - currentDay;
                         
-                        if (remainingDays > 0 && remainingToOk > 0) {
+                        if (remainingDays > 0 && remainingAfterToday > 0) {
                             // Цель на завтра = оставшиеся номера / оставшиеся дни
-                            tomorrowTarget = Math.ceil(remainingToOk / remainingDays);
+                            tomorrowTarget = Math.ceil(remainingAfterToday / remainingDays);
+                            console.log(`🔮 До 20 числа: ${remainingAfterToday} номеров / ${remainingDays} дней = ${tomorrowTarget}`);
                         }
                     } else {
                         // После 20 числа: пересчитываем до последнего дня месяца
                         const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
                         const daysUntilEndOfMonth = lastDayOfMonth - currentDay;
                         
-                        if (daysUntilEndOfMonth > 0 && remainingToOk > 0) {
+                        if (daysUntilEndOfMonth > 0 && remainingAfterToday > 0) {
                             // Цель на завтра = оставшиеся номера / оставшиеся дни до конца месяца
-                            tomorrowTarget = Math.ceil(remainingToOk / daysUntilEndOfMonth);
+                            tomorrowTarget = Math.ceil(remainingAfterToday / daysUntilEndOfMonth);
+                            console.log(`🔮 После 20 числа: ${remainingAfterToday} номеров / ${daysUntilEndOfMonth} дней = ${tomorrowTarget}`);
                         }
                     }
 
@@ -5118,6 +5247,10 @@ const filteredRooms = selectedRooms.filter(num => {
                 }
                 function updateDeadlinesStatsIfOpen() {
                     if (!deadlinesStatsModalOpen) return;
+                    // Синхронизируем данные перед обновлением
+                    if (appData.deadlinesDailyStats) {
+                        deadlinesDailyStats = appData.deadlinesDailyStats;
+                    }
                     renderDeadlinesStats();
                     renderDeadlinesActivityChart();
                 }
@@ -5153,7 +5286,10 @@ const filteredRooms = selectedRooms.filter(num => {
                                       String(date.getDate()).padStart(2, '0');
 
                         dates.push(dateKey);
-                        const dayData = deadlinesDailyStats[dateKey] || { ok: 0, products: 0 };
+                        // Используем актуальные данные из appData, синхронизируем с локальной переменной
+                        const currentStats = appData.deadlinesDailyStats || deadlinesDailyStats || {};
+                        deadlinesDailyStats = currentStats;
+                        const dayData = currentStats[dateKey] || { ok: 0, products: 0 };
                         okData.push(dayData.ok || 0);
                         productsData.push(dayData.products || 0);
                     }
@@ -6130,7 +6266,7 @@ saveBtn.addEventListener('click', () => {
 
     // Загружаем статистику и проверяем цель на сегодня
     await loadDeadlinesStatsFromFirebase();
-    ensureDailyGoalCalculated();
+    await ensureDailyGoalCalculated();
 
     await loadData();
     
